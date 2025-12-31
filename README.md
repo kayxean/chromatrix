@@ -1,61 +1,80 @@
-# Color Manipulation Library
+# Color
 
-A lightweight and powerful TypeScript library for color conversions, manipulations, and interpolations.
+Type-safe, blazingly-fast, and zero-dependency. Most color tools are either too heavy or too inaccurate, so I made this. It handles complex color space conversions correctly using CIEXYZ, but keeps the footprint small and the performance high.
 
-## Features
+## What it actually does
 
-- **Color Parsing:** Parse CSS color strings (`#rgb`, `rgb()`, `hsl()`, `hwb()`, `lab()`, `lch()`, `oklab()`, `oklch()`).
-- **Color Conversion:** Convert colors between various color spaces (RGB, HSL, HWB, LAB, LCH, OKLAB, OKLCH).
-- **Color Interpolation:**
-    - Create harmonious color palettes.
-    - Generate color shades between two colors.
-    - Create color scales from multiple color stops.
-- **CSS Output:** Format colors into CSS-compatible strings.
-- **Type-Safe:** Written in TypeScript for robust, type-safe operations.
+It uses CIEXYZ (D65/D50) and Bradford CAT to move colors around. I'm told this is the "correct" way to do it so the colors don't look weird.
 
-## Installation
+- **Converts stuff**: Changes colors between color spaces.
+- **Reads CSS**: You give it a string like `#ff0000` or `rgb(255, 0, 0)` and it figures it out.
+- **Writes CSS**: It turns the color objects back into strings you can actually use in your CSS.
+- **Makes palettes**: It can generate harmonies, shades, and scales.
 
-To get started, clone the repository and install the dependencies using `pnpm`:
+## How to use it
 
-```bash
-git clone https://github.com/kayxean/color.git
+### Changing color modes
 
-cd color
+Use `convertColor`. You tell it what you have and what you want.
 
-pnpm install
+```typescript
+import type { ColorSpace } from './types';
+import { convertColor } from './convert';
+import { parseCss } from './parse';
+
+const redRgb = [1, 0, 0] as ColorSpace<'rgb'>;
+
+// Move it to HSL
+const redHsl = convertColor(redRgb, 'rgb', 'hsl');
+
+// Now make it a string so CSS understands it
+const css = parseCss('hsl', redHsl);
 ```
 
-## Usage
+### Reading and writing CSS
 
-### Building the Library
+`parseColor` turns a string into an array of values. `parseCss` does the opposite.
 
-To build the library, run the following command:
+```typescript
+import { parseColor, parseCss } from './parse';
 
-```bash
-pnpm build
+const color = parseColor('hsl(120, 100%, 50%)');
+
+const backToString = parseCss('rgb', [1, 0, 0]);
 ```
 
-This will compile the TypeScript source files into JavaScript in the `dist` directory.
+### Making things look nice
 
-### Running Tests
+`createHarmony` for matching colors, `createShades` for a simple gradient, and `createScales` for when you have a bunch of colors and want a smooth line between them.
 
-To ensure everything is working correctly, you can run the test suite. The tests will build the project and then execute a set of test cases.
+```typescript
+import { createHarmony, createShades, createScales } from './interpolate';
 
-```bash
-pnpm build
+// Get a complementary color
+const mix = createHarmony([1, 0, 0], 'rgb', [{ name: 'comp', ratios: [180] }]);
 
-node dist/index.mjs
+// 5 steps from white to black
+const shades = createShades([1, 1, 1], [0, 0, 0], 'rgb', 5);
 
-node dist/palette.mjs
+// Scale between Red -> Yellow -> Green
+const scale = createScales([[1,0,0], [1,1,0], [0,1,0]], 'rgb', 7);
 ```
 
-This will run a random test from the test suite. To run all tests, you can modify `test/index.ts` to call `inspectColor(true)`.
+## How the math works (The "Hub" thing)
 
-## Core Functions
+I didn't want to write a thousand different math formulas for every possible conversion. Instead, everything converts to a "Hub" first (CIEXYZ).
 
-- `parseColor(css: string)`: Parses a CSS color string.
-- `convertColor(color, from, to)`: Converts a color from one color space to another.
-- `createHarmony(color, mode, variants)`: Creates color harmonies.
-- `createShades(start, end, mode, steps)`: Creates shades between two colors.
-- `createScales(stops, mode, steps)`: Creates a scale from multiple color stops.
-- `parseCss(mode, values)`: Formats a color into a CSS string.
+- `The Hubs`: Most things (sRGB, Oklab) go to **D65**. Old-school stuff (LAB) goes to **D50**.
+- `The Bridge`: To get between the two hubs, I used something called **Bradford CAT**. It’s like a translator so the colors don't shift weirdly when they change systems.
+
+Basically: *Your Color* -> Hub -> *(Bridge if needed)* -> New Color.
+
+## Commands
+
+If you want to build it or check if I broke something:
+
+```bash
+pnpm build     # Makes the 'dist' folder
+just core      # Runs tests
+just palette   # Shows a visual test of the colors
+```
