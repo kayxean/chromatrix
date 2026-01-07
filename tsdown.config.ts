@@ -2,10 +2,8 @@ import { defineConfig } from 'tsdown';
 
 export default defineConfig({
   entry: {
-    convert: 'src/convert.ts',
-    parse: 'src/parse.ts',
-    interpolate: 'src/interpolate.ts',
-    index: 'test/index.ts',
+    index: 'src/index.ts',
+    converter: 'test/converter.ts',
     palette: 'test/palette.ts',
   },
   minify: true,

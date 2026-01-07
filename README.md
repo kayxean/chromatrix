@@ -74,7 +74,15 @@ Basically: *Your Color* -> Hub -> *(Bridge if needed)* -> New Color.
 If you want to build it or check if I broke something:
 
 ```bash
-pnpm build     # Makes the 'dist' folder
-just core      # Runs tests
-just palette   # Shows a visual test of the colors
+# Build the project
+pnpm build
+
+# Run specific tests
+just test {name}
+
+# Run the color conversion test
+just converter
+
+# Run the color palette test
+just palette
 ```

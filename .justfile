@@ -1,5 +1,5 @@
-core:
-    node dist/index.mjs
+converter:
+    node dist/converter.mjs
 
 palette:
     node dist/palette.mjs
