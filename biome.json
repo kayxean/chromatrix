@@ -8,7 +8,7 @@
   "formatter": {
     "indentStyle": "space",
     "indentWidth": 2,
-    "lineWidth": 128,
+    "lineWidth": 80,
     "expand": "auto"
   },
   "assist": {
@@ -17,7 +17,13 @@
         "organizeImports": {
           "level": "on",
           "options": {
-            "groups": [{ "type": true }, ":NODE:", ":PACKAGE:", ":ALIAS:", ":PATH:"],
+            "groups": [
+              { "type": true },
+              ":NODE:",
+              ":PACKAGE:",
+              ":ALIAS:",
+              ":PATH:"
+            ],
             "identifierOrder": "natural"
           }
         }
@@ -70,6 +76,16 @@
       "json": {
         "formatter": {
           "expand": "always"
+        }
+      }
+    },
+    {
+      "includes": ["src/index.ts"],
+      "assist": {
+        "actions": {
+          "source": {
+            "organizeImports": "off"
+          }
         }
       }
     },

@@ -6,7 +6,10 @@ const APCA_SCALE = 1.14;
 const DARK_THRESH = 0.022;
 const DARK_CLAMP = 1414 / 1000;
 
-export const getLuminanceD65 = <T extends ColorMode>(color: ColorSpace<T>, mode: T): number => {
+export const getLuminanceD65 = <T extends ColorMode>(
+  color: ColorSpace<T>,
+  mode: T,
+): number => {
   let xyz = TO_HUB[mode](color);
 
   if (NATIVE_HUB[mode] === 'xyz50') {
@@ -16,7 +19,11 @@ export const getLuminanceD65 = <T extends ColorMode>(color: ColorSpace<T>, mode:
   return xyz[1];
 };
 
-export const checkContrast = <T extends ColorMode>(text: ColorSpace<T>, background: ColorSpace<T>, mode: T): number => {
+export const checkContrast = <T extends ColorMode>(
+  text: ColorSpace<T>,
+  background: ColorSpace<T>,
+  mode: T,
+): number => {
   const yt = getLuminanceD65(text, mode);
   const yb = getLuminanceD65(background, mode);
 
@@ -53,7 +60,11 @@ export const checkContrastBulk = <T extends ColorMode>(
   colors: ColorSpace<T>[],
   mode: T,
 ): { color: ColorSpace<T>; contrast: number; rating: string }[] => {
-  const interpolate: { color: ColorSpace<T>; contrast: number; rating: string }[] = [];
+  const interpolate: {
+    color: ColorSpace<T>;
+    contrast: number;
+    rating: string;
+  }[] = [];
 
   for (let i = 0; i < colors.length; i++) {
     const color = colors[i];

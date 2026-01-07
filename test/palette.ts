@@ -11,7 +11,11 @@ const colorBlock = (hex: string) => {
 };
 
 const runVisualRandomTest = () => {
-  const baseRgb = [Math.random(), Math.random(), Math.random()] as ColorSpace<'rgb'>;
+  const baseRgb = [
+    Math.random(),
+    Math.random(),
+    Math.random(),
+  ] as ColorSpace<'rgb'>;
   const harmonies = [
     { name: 'Compl', ratios: [0, 180] },
     { name: 'Analogous', ratios: [-30, 0, 30] },
@@ -21,9 +25,15 @@ const runVisualRandomTest = () => {
     { name: 'Rectangle', ratios: [0, 60, 180, 240] },
   ];
 
-  const harmonyResults = harmonies.map((h) => createHarmony(baseRgb, 'rgb', [h])[0]);
-  const harmonyRow = harmonyResults.map((h) => h.colors.map((c) => colorBlock(rgbToHex(c))).join('')).join('   ');
-  const labelRow = harmonyResults.map((h) => h.name.padEnd(h.colors.length * 3 + 3)).join('');
+  const harmonyResults = harmonies.map(
+    (h) => createHarmony(baseRgb, 'rgb', [h])[0],
+  );
+  const harmonyRow = harmonyResults
+    .map((h) => h.colors.map((c) => colorBlock(rgbToHex(c))).join(''))
+    .join('   ');
+  const labelRow = harmonyResults
+    .map((h) => h.name.padEnd(h.colors.length * 3 + 3))
+    .join('');
 
   console.log(`${harmonyRow}`);
   console.log(`${labelRow}\n`);
@@ -40,10 +50,14 @@ const runVisualRandomTest = () => {
   const cLeft = [Math.random(), 0.2, 0.2] as ColorSpace<'rgb'>;
   const cMid = [1, 1, 1] as ColorSpace<'rgb'>;
   const cRight = [0.2, 0.2, Math.random()] as ColorSpace<'rgb'>;
-  const scaleHexes = createScales([cLeft, cMid, cRight], 'rgb', 9).map((c) => rgbToHex(c));
+  const scaleHexes = createScales([cLeft, cMid, cRight], 'rgb', 9).map((c) =>
+    rgbToHex(c),
+  );
 
   console.log(`${scaleHexes.map((h) => colorBlock(h)).join('')}`);
-  console.log(`${scaleHexes[0]} (Start)  ➜  ${scaleHexes[4]} (Anchor)  ➜  ${scaleHexes[8]} (End)\n`);
+  console.log(
+    `${scaleHexes[0]} (Start)  ➜  ${scaleHexes[4]} (Anchor)  ➜  ${scaleHexes[8]} (End)\n`,
+  );
 };
 
 runVisualRandomTest();
