@@ -1,6 +1,8 @@
 import type { ColorMode, ColorSpace, ColorValues } from './types';
 
-export const parseColor = (css: string): { mode: ColorMode; values: ColorValues } => {
+export const parseColor = (
+  css: string,
+): { mode: ColorMode; values: ColorValues } => {
   const trimmed = css.trim();
   const len = trimmed.length;
 
@@ -23,7 +25,10 @@ export const parseColor = (css: string): { mode: ColorMode; values: ColorValues 
         g = parseInt(hex.substring(start + 2, start + 4), 16);
         b = parseInt(hex.substring(start + 4, start + 6), 16);
       }
-      return { mode: 'rgb', values: [r / 255, g / 255, b / 255] as ColorValues };
+      return {
+        mode: 'rgb',
+        values: [r / 255, g / 255, b / 255] as ColorValues,
+      };
     }
   }
 
@@ -71,7 +76,12 @@ const format = (num: number, precision = 2): string => {
   return (Math.round(num * factor) / factor).toString();
 };
 
-export const parseCss = (mode: ColorMode, values: ColorSpace<ColorMode>, percent?: boolean, angle?: boolean): string => {
+export const parseCss = (
+  mode: ColorMode,
+  values: ColorSpace<ColorMode>,
+  percent?: boolean,
+  angle?: boolean,
+): string => {
   const v1 = values[0];
   const v2 = values[1];
   const v3 = values[2];

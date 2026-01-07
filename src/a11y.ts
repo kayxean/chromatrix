@@ -15,7 +15,9 @@ export const matchContrast = <T extends ColorMode>(
 
   const needsReversion = mode !== 'oklch';
   const polarValues = (
-    needsReversion ? convertColor(color, mode, 'oklch' as Exclude<ColorMode, T>) : color
+    needsReversion
+      ? convertColor(color, mode, 'oklch' as Exclude<ColorMode, T>)
+      : color
   ) as ColorSpace<'oklch'>;
 
   const lightness = polarValues[0];
@@ -34,7 +36,9 @@ export const matchContrast = <T extends ColorMode>(
     const rotated = [t, chroma, hue] as ColorSpace<'oklch'>;
 
     const res = (
-      needsReversion ? convertColor(rotated, 'oklch', mode as Exclude<ColorMode, 'oklch'>) : rotated
+      needsReversion
+        ? convertColor(rotated, 'oklch', mode as Exclude<ColorMode, 'oklch'>)
+        : rotated
     ) as ColorSpace<T>;
 
     const testContrast = checkContrast(res, background, mode);
@@ -52,7 +56,11 @@ export const matchContrast = <T extends ColorMode>(
   const rotated = [bestL, chroma, hue] as ColorSpace<'oklch'>;
 
   if (needsReversion) {
-    return convertColor(rotated, 'oklch', mode as Exclude<ColorMode, 'oklch'>) as ColorSpace<T>;
+    return convertColor(
+      rotated,
+      'oklch',
+      mode as Exclude<ColorMode, 'oklch'>,
+    ) as ColorSpace<T>;
   }
 
   return rotated as unknown as ColorSpace<T>;
