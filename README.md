@@ -6,10 +6,11 @@ Type-safe, blazingly-fast, and zero-dependency. Most color tools are either too 
 
 It uses CIEXYZ (D65/D50) and Bradford CAT to move colors around. I'm told this is the "correct" way to do it so the colors don't look weird.
 
-- **Converts stuff**: Changes colors between color spaces.
-- **Reads CSS**: You give it a string like `#ff0000` or `rgb(255, 0, 0)` and it figures it out.
-- **Writes CSS**: It turns the color objects back into strings you can actually use in your CSS.
-- **Makes palettes**: It can generate harmonies, shades, and scales.
+-   **Converts stuff**: Changes colors between `rgb`, `hsl`, `hwb`, `lab`, `lch`, `oklab`, and `oklch`.
+-   **Reads CSS**: You give it a string like `#ff0000` or `oklab(59% 0.22 0.12)` and it figures it out.
+-   **Writes CSS**: It turns the color objects back into strings you can actually use in your CSS.
+-   **Checks contrast**: Calculates APCA contrast and can find a color that meets a specific contrast target.
+-   **Makes palettes**: It can generate harmonies, shades, and multi-color scales.
 
 ## How to use it
 
@@ -18,29 +19,53 @@ It uses CIEXYZ (D65/D50) and Bradford CAT to move colors around. I'm told this i
 Use `convertColor`. You tell it what you have and what you want.
 
 ```typescript
-import type { ColorSpace } from './types';
-import { convertColor } from './convert';
-import { parseCss } from './parse';
+import type { ColorSpace } from './core/types';
+import { convertColor } from './core/convert';
+import { formatCss } from './core/format';
 
 const redRgb = [1, 0, 0] as ColorSpace<'rgb'>;
 
-// Move it to HSL
-const redHsl = convertColor(redRgb, 'rgb', 'hsl');
+// Move it to Oklch
+const redOklch = convertColor(redRgb, 'rgb', 'oklch');
 
 // Now make it a string so CSS understands it
-const css = parseCss('hsl', redHsl);
+const css = formatCss('oklch', redOklch);
+// oklch(0.6279 0.2576 29.2332)
 ```
 
 ### Reading and writing CSS
 
-`parseColor` turns a string into an array of values. `parseCss` does the opposite.
+`parseColor` turns a string into an object with mode and values. `formatCss` does the opposite.
 
 ```typescript
-import { parseColor, parseCss } from './parse';
+import { parseColor } from './core/parse';
+import { formatCss } from './core/format';
 
-const color = parseColor('hsl(120, 100%, 50%)');
+const color = parseColor('oklab(0.62 -0.07 -0.15)');
+// color -> { mode: 'oklab', values: [0.62, -0.07, -0.15] }
 
-const backToString = parseCss('rgb', [1, 0, 0]);
+const backToString = formatCss('rgb', [0, 0.5, 1]);
+// backToString -> 'rgb(0 128 255)'
+```
+
+### Checking and matching contrast
+
+It uses APCA for contrast checking, which is a more perceptually accurate model.
+
+```typescript
+import type { ColorSpace } from './core/types';
+import { checkContrast, matchContrast } from './utils/contrast';
+
+const textColor = [0.95, 0.05, 0.2] as ColorSpace<'oklab'>; // A pinkish color
+const bgColor = [0.2, 0, 0] as ColorSpace<'oklab'>; // A very dark color
+
+// Get APCA contrast value (Lc)
+const contrast = checkContrast(textColor, bgColor, 'oklab');
+// contrast -> 78.79
+
+// Find a new text color that meets a target contrast of Lc 60
+// It will darken the pink to meet the target against the dark background
+const newTextColor = matchContrast(textColor, bgColor, 'oklab', 60);
 ```
 
 ### Making things look nice
@@ -48,41 +73,39 @@ const backToString = parseCss('rgb', [1, 0, 0]);
 `createHarmony` for matching colors, `createShades` for a simple gradient, and `createScales` for when you have a bunch of colors and want a smooth line between them.
 
 ```typescript
-import { createHarmony, createShades, createScales } from './interpolate';
+import type { ColorSpace } from './core/types';
+import { createHarmony, createShades, createScales } from './utils/palette';
 
-// Get a complementary color
-const mix = createHarmony([1, 0, 0], 'rgb', [{ name: 'comp', ratios: [180] }]);
+const blue = [0, 0, 1] as ColorSpace<'rgb'>;
 
-// 5 steps from white to black
-const shades = createShades([1, 1, 1], [0, 0, 0], 'rgb', 5);
+// Get analogous colors
+const mix = createHarmony(blue, 'rgb', [{ name: 'analogous', ratios: [-30, 30] }]);
+
+// 5 steps from white to black in Oklab
+const shades = createShades(
+  [1, 0, 0] as ColorSpace<'oklab'>,
+  [0, 0, 0] as ColorSpace<'oklab'>,
+  'oklab',
+  5
+);
 
 // Scale between Red -> Yellow -> Green
-const scale = createScales([[1,0,0], [1,1,0], [0,1,0]], 'rgb', 7);
+const scale = createScales(
+  [
+    [1, 0, 0] as ColorSpace<'rgb'>,
+    [1, 1, 0] as ColorSpace<'rgb'>,
+    [0, 1, 0] as ColorSpace<'rgb'>,
+  ],
+  'rgb',
+  7
+);
 ```
 
 ## How the math works (The "Hub" thing)
 
-I didn't want to write a thousand different math formulas for every possible conversion. Instead, everything converts to a "Hub" first (CIEXYZ).
+I didn't want to write a thousand different math formulas for every possible conversion. Instead, everything converts to a "Hub" first (CIEXYZ). This makes the conversions more accurate.
 
-- `The Hubs`: Most things (sRGB, Oklab) go to **D65**. Old-school stuff (LAB) goes to **D50**.
-- `The Bridge`: To get between the two hubs, I used something called **Bradford CAT**. It’s like a translator so the colors don't shift weirdly when they change systems.
+-   **The Hubs**: Modern spaces (`rgb`, `oklab`, etc.) go to **CIEXYZ D65**. Older ones (`lab`, `lch`) go to **CIEXYZ D50**.
+-   **The Bridge**: To get between the two hubs, I used the **Bradford CAT**. It’s a translator so the colors don't shift weirdly when they change illuminants.
 
-Basically: *Your Color* -> Hub -> *(Bridge if needed)* -> New Color.
-
-## Commands
-
-If you want to build it or check if I broke something:
-
-```bash
-# Build the project
-pnpm build
-
-# Run specific tests
-just test {name}
-
-# Run the color conversion test
-just converter
-
-# Run the color palette test
-just palette
-```
+Basically: `Your Color` -> Hub -> `(Bridge if needed)` -> `New Color`. It's fast, and it works.
