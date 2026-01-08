@@ -1,5 +1,5 @@
-import type { ColorHue, ColorMode, ColorSpace } from './types';
-import { convertColor, convertHue } from './convert';
+import type { ColorHue, ColorMode, ColorSpace } from '../core/types';
+import { convertColor, convertHue } from '../core/convert';
 
 export const createHarmony = <T extends ColorMode>(
   input: ColorSpace<T>,

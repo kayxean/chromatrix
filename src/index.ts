@@ -5,22 +5,19 @@ export type {
   ColorMode,
   ColorSpace,
   ColorValues,
-} from './types';
+} from './core/types';
+
+export { convertColor, convertHue } from './core/convert';
+export { formatCss } from './core/format';
+export { parseColor } from './core/parse';
 
 export {
-  DIRECT_HUB,
-  FROM_HUB,
-  HUE_BASE,
-  NATIVE_HUB,
-  TO_HUB,
-  convertColor,
-  convertHue,
-} from './convert';
+  getLuminanceD65,
+  checkContrast,
+  getContrastRating,
+  checkContrastBulk,
+  matchContrast,
+  matchScales,
+} from './utils/contrast';
 
-export { parseColor, parseCss } from './parse';
-
-export { createHarmony, createScales, createShades } from './interpolate';
-
-export { matchContrast, matchContrastScale } from './a11y';
-
-export { checkContrast, getLuminanceD65 } from './luminance';
+export { createHarmony, createScales, createShades } from './utils/palette';

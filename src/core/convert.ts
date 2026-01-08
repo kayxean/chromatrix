@@ -1,19 +1,19 @@
 import type { ColorFn, ColorHue, ColorMode, ColorSpace } from './types';
-import { xyz50ToXyz65, xyz65ToXyz50 } from './adapters/cat';
-import { labToXyz50, xyz50ToLab } from './adapters/d50';
+import { xyz50ToXyz65, xyz65ToXyz50 } from '../adapters/cat';
+import { labToXyz50, xyz50ToLab } from '../adapters/d50';
 import {
   lrgbToXyz65,
   oklabToXyz65,
   xyz65ToLrgb,
   xyz65ToOklab,
-} from './adapters/d65';
-import { lrgbToRgb, rgbToLrgb } from './adapters/gamma';
+} from '../adapters/d65';
+import { lrgbToRgb, rgbToLrgb } from '../adapters/gamma';
 import {
   labToLch,
   lchToLab,
   oklabToOklch,
   oklchToOklab,
-} from './adapters/polar';
+} from '../adapters/polar';
 import {
   hslToHsv,
   hsvToHsl,
@@ -21,7 +21,7 @@ import {
   hsvToRgb,
   hwbToHsv,
   rgbToHsv,
-} from './adapters/srgb';
+} from '../adapters/srgb';
 
 export const NATIVE_HUB: { [T in ColorMode]: 'xyz50' | 'xyz65' } = {
   rgb: 'xyz65',
