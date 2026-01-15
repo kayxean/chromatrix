@@ -2,7 +2,9 @@ import type { ColorMode, ColorSpace } from './types';
 
 const format = (num: number, precision = 2): string => {
   if (num % 1 === 0) return num.toString();
+
   const factor = precision === 4 ? 10000 : 100;
+
   return (Math.round(num * factor) / factor).toString();
 };
 
@@ -13,7 +15,8 @@ export const formatCss = (
 ): string => {
   const [v1, v2, v3] = values;
 
-  const a = alpha !== undefined && alpha < 1 ? ` / ${format(alpha)}` : '';
+  const a =
+    alpha !== undefined && alpha < 1 ? ` / ${format(alpha * 100)}%` : '';
 
   if (mode === 'rgb') {
     return `rgb(${Math.round(v1 * 255)} ${Math.round(v2 * 255)} ${Math.round(v3 * 255)}${a})`;

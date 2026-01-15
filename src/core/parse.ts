@@ -7,10 +7,10 @@ export const parseColor = (
 
   if (trimmed.startsWith('#')) {
     const hex = trimmed.slice(1);
-    let r = 0;
-    let g = 0;
-    let b = 0;
-    let a = 1;
+    let r = 0,
+      g = 0,
+      b = 0,
+      a = 1;
 
     if (hex.length === 3 || hex.length === 4) {
       r = parseInt(hex[0] + hex[0], 16);
@@ -36,24 +36,29 @@ export const parseColor = (
 
   if (openParen !== -1 && closeParen !== -1) {
     const rawMode = trimmed.slice(0, openParen).toLowerCase();
-
     const mode = rawMode.replace(/a$/, '') as ColorMode;
     const content = trimmed.slice(openParen + 1, closeParen);
 
     const parts = content.split(/[\s,/]+/).filter(Boolean);
+    if (parts.length < 3) throw new Error(`Invalid color values: ${css}`);
 
     const v0 = parseFloat(parts[0]);
     const v1 = parseFloat(parts[1]);
     const v2 = parseFloat(parts[2]);
 
-    const alpha = parts[3] ? parseFloat(parts[3]) : 1;
+    let alpha = 1;
+    if (parts[3]) {
+      const rawAlpha = parts[3];
+      alpha = rawAlpha.endsWith('%')
+        ? parseFloat(rawAlpha) / 100
+        : parseFloat(rawAlpha);
+    }
 
     if (Number.isNaN(v0) || Number.isNaN(v1) || Number.isNaN(v2)) {
       throw new Error(`Invalid color values: ${css}`);
     }
 
     let normalizedValues: number[];
-
     switch (mode) {
       case 'rgb':
         normalizedValues = [v0 / 255, v1 / 255, v2 / 255];
@@ -75,7 +80,7 @@ export const parseColor = (
     }
 
     return {
-      alpha: alpha > 1 ? alpha / 100 : alpha,
+      alpha: Math.max(0, Math.min(1, alpha)),
       mode,
       values: normalizedValues as ColorSpace<ColorMode>,
     };
