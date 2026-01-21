@@ -1,6 +1,7 @@
 import type { ColorMode, ColorSpace } from '../core/types';
 import { xyz50ToXyz65, xyz65ToXyz50 } from '../adapters/cat';
 import { FROM_HUB, NATIVE_HUB, TO_HUB } from '../core/convert';
+import { clampColor } from './gamut';
 
 export type DeficiencyType =
   | 'protanopia'
@@ -48,5 +49,6 @@ export const simulateDeficiency = <T extends ColorMode>(
     res = xyz65ToXyz50(res as ColorSpace<'xyz65'>);
   }
 
-  return FROM_HUB[mode](res);
+  const s = FROM_HUB[mode](res);
+  return clampColor(s, mode);
 };
