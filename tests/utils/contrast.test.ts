@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createColor } from '~/shared';
 import {
   checkContrast,
   checkContrastBulk,
@@ -6,8 +7,7 @@ import {
   getLuminanceD65,
   matchContrast,
   matchScales,
-} from '~/shared/contrast';
-import { createColor } from '~/utils';
+} from '~/utils/contrast';
 
 describe('Contrast & Readability (APCA)', () => {
   describe('getLuminanceD65', () => {

@@ -11,21 +11,21 @@ export {
   cloneColor,
   updateColor,
   createBuffer,
-} from './utils';
+} from './shared';
 
-export { color } from './shared/api';
+export { color } from './utils/api';
 
-export { isEqual, getDistance } from './shared/compare';
+export { isEqual, getDistance } from './utils/compare';
 
-export { checkContrast, matchContrast } from './shared/contrast';
+export { checkContrast, matchContrast } from './utils/contrast';
 
-export { checkGamut, clampColor } from './shared/gamut';
+export { checkGamut, clampColor } from './utils/gamut';
 
 export {
   createHarmony,
   createShades,
   createScales,
   mixColor,
-} from './shared/palette';
+} from './utils/palette';
 
-export { simulateDeficiency } from './shared/simulate';
+export { simulateDeficiency } from './utils/simulate';

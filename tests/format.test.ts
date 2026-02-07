@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatCss } from '~/format';
-import { createColor } from '~/utils';
+import { createColor } from '~/shared';
 
 describe('CSS Formatter', () => {
   describe('Hex Output (RGB only)', () => {

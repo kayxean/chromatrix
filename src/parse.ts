@@ -1,11 +1,7 @@
 import type { Color, ColorSpace } from './types';
-import { createColor } from './utils';
+import { createColor } from './shared';
 
-export interface ParsedColor extends Color {
-  alpha: number;
-}
-
-export function parseColor(css: string): ParsedColor {
+export function parseColor(css: string): Color {
   const trimmed = css.trim();
 
   if (trimmed[0] === '#') {

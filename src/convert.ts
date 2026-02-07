@@ -22,7 +22,7 @@ import {
   hwbToHsv,
   rgbToHsv,
 } from './adapters/srgb';
-import { createBuffer } from './utils';
+import { createBuffer } from './shared';
 
 export const NATIVE_HUB: Record<ColorSpace, 'xyz50' | 'xyz65'> = {
   rgb: 'xyz65',
@@ -57,7 +57,7 @@ export const FROM_HUB: Record<ColorSpace, ColorAdapter[]> = {
   lch: [xyz50ToLab, labToLch],
 };
 
-export const DIRECT: Partial<
+export const DIRECT_HUB: Partial<
   Record<ColorSpace, Partial<Record<ColorSpace, ColorAdapter[]>>>
 > = {
   rgb: {
@@ -84,7 +84,7 @@ export const DIRECT: Partial<
   oklch: { oklab: [oklchToOklab] },
 };
 
-const convertScratch = createBuffer(new Float32Array(3));
+const HUB_SCRATCH = createBuffer(new Float32Array(3));
 
 export function applyAdapter(
   chain: ColorAdapter[],
@@ -94,10 +94,10 @@ export function applyAdapter(
   let currentInput = input;
 
   for (let i = 0; i < chain.length; i++) {
-    const target = i === chain.length - 1 ? output : convertScratch;
+    const target = i === chain.length - 1 ? output : HUB_SCRATCH;
     chain[i](currentInput, target);
 
-    currentInput = convertScratch;
+    currentInput = HUB_SCRATCH;
   }
 }
 
@@ -119,7 +119,7 @@ export function convertColor<T extends ColorSpace, R extends ColorSpace>(
     return;
   }
 
-  const directChain = DIRECT[from]?.[to];
+  const directChain = DIRECT_HUB[from]?.[to];
   if (directChain) {
     applyAdapter(directChain, input, output);
     return;

@@ -1,7 +1,7 @@
 import type { Color, ColorArray } from '../types';
 import { xyz50ToXyz65 } from '../adapters/cat';
 import { applyAdapter, convertColor, NATIVE_HUB, TO_HUB } from '../convert';
-import { createBuffer } from '../utils';
+import { createBuffer } from '../shared';
 import { createScales } from './palette';
 
 const APCA_SCALE = 1.14;

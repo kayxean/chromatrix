@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { convertColor, convertHue, NATIVE_HUB } from '~/convert';
-import { createBuffer } from '~/utils';
+import { createBuffer } from '~/shared';
 
 describe('Color Converter (Pathfinding & Orchestration)', () => {
   describe('convertColor', () => {
