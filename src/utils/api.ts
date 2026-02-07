@@ -1,7 +1,7 @@
-import type { Color, ColorArray, ColorSpace } from '~/types';
-import { formatCss } from '~/format';
-import { parseColor } from '~/parse';
-import { createBuffer, deriveColor, updateColor } from '~/utils';
+import type { Color, ColorArray, ColorSpace } from '../types';
+import { formatCss } from '../format';
+import { parseColor } from '../parse';
+import { createBuffer, deriveColor, updateColor } from '../shared';
 
 interface ColorApi {
   readonly space: ColorSpace;

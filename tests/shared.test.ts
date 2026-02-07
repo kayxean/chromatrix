@@ -6,7 +6,7 @@ import {
   deriveColor,
   mutateColor,
   updateColor,
-} from '~/utils';
+} from '~/shared';
 
 describe('Utility Helpers', () => {
   describe('createBuffer', () => {

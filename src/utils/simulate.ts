@@ -1,14 +1,8 @@
-import type { Color, ColorArray } from '../types';
+import type { Color, ColorArray, DeficiencyType } from '../types';
 import { xyz50ToXyz65, xyz65ToXyz50 } from '../adapters/cat';
 import { applyAdapter, FROM_HUB, NATIVE_HUB, TO_HUB } from '../convert';
-import { createBuffer } from '../utils';
+import { createBuffer } from '../shared';
 import { clampColor } from './gamut';
-
-export type DeficiencyType =
-  | 'protanopia'
-  | 'deuteranopia'
-  | 'tritanopia'
-  | 'achromatopsia';
 
 const SIM_HUB_SCRATCH = createBuffer(new Float32Array(3));
 const SIM_RES_SCRATCH = createBuffer(new Float32Array(3));

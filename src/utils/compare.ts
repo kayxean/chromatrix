@@ -1,6 +1,6 @@
 import type { Color, ColorBuffer } from '../types';
 import { convertColor } from '../convert';
-import { createBuffer } from '../utils';
+import { createBuffer } from '../shared';
 
 const COMPARE_SCRATCH_B = createBuffer(new Float32Array(3));
 const DISTANCE_SCRATCH_A = createBuffer(new Float32Array(3));

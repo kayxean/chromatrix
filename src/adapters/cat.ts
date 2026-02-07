@@ -1,5 +1,5 @@
 import type { ColorBuffer, ColorMatrix } from '../types';
-import { createBuffer, createMatrix } from '../utils';
+import { createBuffer, createMatrix } from '../shared';
 
 export function multiplyMatrixVector(
   matrix: ColorMatrix,

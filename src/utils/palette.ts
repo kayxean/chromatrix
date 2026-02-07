@@ -1,6 +1,6 @@
 import type { Color, ColorArray, ColorSpace } from '../types';
 import { convertColor, convertHue } from '../convert';
-import { createBuffer } from '../utils';
+import { createBuffer } from '../shared';
 
 const HARMONY_SCRATCH = createBuffer(new Float32Array(3));
 

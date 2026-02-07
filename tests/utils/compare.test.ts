@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getDistance, isEqual } from '~/shared/compare';
-import { createColor } from '~/utils';
+import { createColor } from '~/shared';
+import { getDistance, isEqual } from '~/utils/compare';
 
 describe('Color Comparison (Similarity & Distance)', () => {
   describe('isEqual', () => {

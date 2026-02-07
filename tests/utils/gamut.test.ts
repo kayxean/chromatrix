@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { checkGamut, clampColor } from '~/shared/gamut';
-import { createColor } from '~/utils';
+import { createColor } from '~/shared';
+import { checkGamut, clampColor } from '~/utils/gamut';
 
 describe('Gamut Management', () => {
   describe('checkGamut', () => {

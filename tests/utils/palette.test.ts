@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { createColor } from '~/shared';
 import {
   createHarmony,
   createScales,
   createShades,
   mixColor,
-} from '~/shared/palette';
-import { createColor } from '~/utils';
+} from '~/utils/palette';
 
 describe('Palette & Harmony Utilities', () => {
   describe('createHarmony', () => {

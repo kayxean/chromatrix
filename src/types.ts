@@ -19,8 +19,15 @@ export type ColorArray<S extends ColorSpace = ColorSpace> = ColorBuffer & {
 export type Color = {
   space: ColorSpace;
   value: ColorArray;
+  alpha?: number;
 };
 
 export type ColorAdapter = (input: ColorBuffer, output: ColorBuffer) => void;
 
 export type ColorMatrix = readonly [ColorBuffer, ColorBuffer, ColorBuffer];
+
+export type DeficiencyType =
+  | 'protanopia'
+  | 'deuteranopia'
+  | 'tritanopia'
+  | 'achromatopsia';

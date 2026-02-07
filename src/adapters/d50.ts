@@ -1,5 +1,5 @@
 import type { ColorBuffer } from '../types';
-import { createBuffer } from '../utils';
+import { createBuffer } from '../shared';
 
 const EPSILON = 0.008856;
 const KAPPA = 903.3;

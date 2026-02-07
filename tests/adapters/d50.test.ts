@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { labToXyz50, xyz50ToLab } from '~/adapters/d50';
-import { createBuffer } from '~/utils';
+import { createBuffer } from '~/shared';
 
 describe('D50 Adapter (XYZ <-> Lab)', () => {
   const WHITE_D50 = [0.96422, 1.0, 0.82521];

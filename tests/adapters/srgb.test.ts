@@ -9,7 +9,7 @@ import {
   rgbToHex,
   rgbToHsv,
 } from '~/adapters/srgb';
-import { createBuffer } from '~/utils';
+import { createBuffer } from '~/shared';
 
 describe('sRGB Adapter (Cylindrical & Hex)', () => {
   describe('rgbToHsv', () => {

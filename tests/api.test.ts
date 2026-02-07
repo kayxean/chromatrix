@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { formatCss } from '~/format';
 import { parseColor } from '~/parse';
-import { color } from '~/shared/api';
-import { getDistance, isEqual } from '~/shared/compare';
-import { checkContrast, matchContrast } from '~/shared/contrast';
-import { checkGamut, clampColor } from '~/shared/gamut';
-import { createHarmony, createScales, createShades } from '~/shared/palette';
-import { simulateDeficiency } from '~/shared/simulate';
-import { createColor, deriveColor, mutateColor } from '~/utils';
+import { createColor, deriveColor, mutateColor } from '~/shared';
+import { color } from '~/utils/api';
+import { getDistance, isEqual } from '~/utils/compare';
+import { checkContrast, matchContrast } from '~/utils/contrast';
+import { checkGamut, clampColor } from '~/utils/gamut';
+import { createHarmony, createScales, createShades } from '~/utils/palette';
+import { simulateDeficiency } from '~/utils/simulate';
 
 describe('Color API', () => {
   describe('Creating and Mutating', () => {

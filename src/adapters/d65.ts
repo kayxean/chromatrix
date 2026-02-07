@@ -1,5 +1,5 @@
 import type { ColorBuffer } from '../types';
-import { createBuffer, createMatrix } from '../utils';
+import { createBuffer, createMatrix } from '../shared';
 import { multiplyMatrixVector } from './cat';
 
 const M_SRGB = createMatrix(
