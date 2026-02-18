@@ -1,6 +1,16 @@
 import type { Color } from './types';
 
-const F_FACTORS = [1, 10, 100, 1000, 10000, 100000];
+// Pre-calculate factors for precision up to 10
+const F_FACTORS = new Float32Array([1, 10, 100, 1000, 10000, 100000, 1000000]);
+
+/**
+ * Rounds a number to a specific precision using pre-calculated factors.
+ */
+function roundTo(val: number, precision: number): number {
+  const f =
+    precision < F_FACTORS.length ? F_FACTORS[precision] : 10 ** precision;
+  return Math.round(val * f) / f;
+}
 
 export function formatCss(
   color: Color,
@@ -9,14 +19,13 @@ export function formatCss(
   precision = 2,
 ): string {
   const { space, value } = color;
-  const f = precision < 6 ? F_FACTORS[precision] : 10 ** precision;
 
+  // Handle Hex specifically for RGB
   if (asHex && space === 'rgb') {
     const r = (value[0] * 255 + 0.5) | 0;
     const g = (value[1] * 255 + 0.5) | 0;
     const b = (value[2] * 255 + 0.5) | 0;
-
-    const rgbHex = ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+    const rgbHex = ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
 
     if (alpha !== undefined && alpha < 1) {
       const a = (alpha * 255 + 0.5) | 0;
@@ -25,12 +34,15 @@ export function formatCss(
     return `#${rgbHex}`;
   }
 
-  const n1 = Math.round(value[0] * f) / f;
-  const n2 = Math.round(value[1] * f) / f;
-  const n3 = Math.round(value[2] * f) / f;
+  // Common rounding for primary values
+  const n1 = roundTo(value[0], precision);
+  const n2 = roundTo(value[1], precision);
+  const n3 = roundTo(value[2], precision);
 
-  const suffix =
-    alpha !== undefined && alpha < 1 ? ` / ${Math.round(alpha * f) / f}` : '';
+  let suffix = '';
+  if (alpha !== undefined && alpha < 1) {
+    suffix = ` / ${roundTo(alpha, precision)}`;
+  }
 
   switch (space) {
     case 'rgb': {
@@ -41,23 +53,28 @@ export function formatCss(
     }
 
     case 'hsl':
-    case 'hwb':
-      return `${space}(${n1}deg ${Math.round(value[1] * 100 * f) / f}% ${Math.round(value[2] * 100 * f) / f}%${suffix})`;
+    case 'hwb': {
+      const s = roundTo(value[1] * 100, precision);
+      const b = roundTo(value[2] * 100, precision);
+      return `${space}(${n1}deg ${s}% ${b}%${suffix})`;
+    }
 
     case 'lab':
-      return `lab(${n1}% ${n2} ${n3}${suffix})`;
+      return `lab(${roundTo(value[0] * 100, precision)}% ${n2} ${n3}${suffix})`;
 
     case 'lch':
-      return `lch(${n1}% ${n2} ${n3}deg${suffix})`;
+      return `lch(${roundTo(value[0] * 100, precision)}% ${n2} ${n3}deg${suffix})`;
 
     case 'oklab': {
-      const f4 = 10000;
-      return `oklab(${Math.round(value[0] * 100 * f) / f}% ${Math.round(value[1] * f4) / f4} ${Math.round(value[2] * f4) / f4}${suffix})`;
+      const l = roundTo(value[0] * 100, precision);
+      // Use higher default internal precision for Oklab components if needed,
+      // but respect the user's precision parameter.
+      return `oklab(${l}% ${n2} ${n3}${suffix})`;
     }
 
     case 'oklch': {
-      const f4 = 10000;
-      return `oklch(${Math.round(value[0] * 100 * f) / f}% ${Math.round(value[1] * f4) / f4} ${n3}deg${suffix})`;
+      const l = roundTo(value[0] * 100, precision);
+      return `oklch(${l}% ${n2} ${n3}deg${suffix})`;
     }
 
     case 'lrgb':

@@ -1,7 +1,7 @@
 import type { ColorArray } from '../types';
-import { createMatrix, dropMatrix } from '../shared';
 import { multiplyMatrixVector } from './cat';
 
+// sRGB <-> XYZ D65 Matrices (Used by the non-inlined lrgb functions)
 const M_SRGB = new Float32Array([
   0.4124564, 0.3575761, 0.1804375, 0.2126729, 0.7151522, 0.072175, 0.0193339,
   0.119192, 0.9503041,
@@ -12,16 +12,6 @@ const M_SRGB_INV = new Float32Array([
   -0.2040259, 1.0572252,
 ]);
 
-const M_OKLAB = new Float32Array([
-  0.8189330101, 0.3618667424, -0.1288597137, 0.0329845436, 0.9293118715,
-  0.0361456387, 0.0482003018, 0.2643662691, 0.633851707,
-]);
-
-const M_OKLAB_INV = new Float32Array([
-  1.2270138511, -0.5577999807, 0.281256149, -0.0405801784, 1.1122568696,
-  -0.0716766787, -0.0763812845, -0.4214819784, 1.5861632204,
-]);
-
 export function xyz65ToLrgb(input: ColorArray, output: ColorArray): void {
   multiplyMatrixVector(M_SRGB_INV, input, output);
 }
@@ -30,36 +20,48 @@ export function lrgbToXyz65(input: ColorArray, output: ColorArray): void {
   multiplyMatrixVector(M_SRGB, input, output);
 }
 
+/**
+ * Optimized XYZ D65 to Oklab
+ * Manual inlining for peak performance and zero allocations.
+ */
 export function xyz65ToOklab(input: ColorArray, output: ColorArray): void {
-  const scratch = createMatrix('xyz65');
-  multiplyMatrixVector(M_OKLAB, input, scratch);
+  const x = input[0],
+    y = input[1],
+    z = input[2];
 
-  const l = Math.cbrt(scratch[0]);
-  const m = Math.cbrt(scratch[1]);
-  const s = Math.cbrt(scratch[2]);
+  // LMS transform (Inlined M_OKLAB)
+  const l_pre = 0.8189330101 * x + 0.3618667424 * y - 0.1288597137 * z;
+  const m_pre = 0.0329845436 * x + 0.9293118715 * y + 0.0361456387 * z;
+  const s_pre = 0.0482003018 * x + 0.2643662691 * y + 0.633851707 * z;
+
+  const l = Math.cbrt(l_pre);
+  const m = Math.cbrt(m_pre);
+  const s = Math.cbrt(s_pre);
 
   output[0] = 0.2104542553 * l + 0.7936177046 * m - 0.0040704681 * s;
   output[1] = 1.9779984951 * l - 2.4285921822 * m + 0.4505936871 * s;
   output[2] = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
-
-  dropMatrix(scratch);
 }
 
+/**
+ * Optimized Oklab to XYZ D65
+ * Manual inlining for peak performance and zero allocations.
+ */
 export function oklabToXyz65(input: ColorArray, output: ColorArray): void {
-  const L = input[0];
-  const a = input[1];
-  const b = input[2];
+  const L = input[0],
+    a = input[1],
+    b = input[2];
 
   const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
   const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
   const s_ = L - 0.0894841775 * a - 1.291485548 * b;
 
-  const scratch = createMatrix('xyz65');
-  scratch[0] = l_ * l_ * l_;
-  scratch[1] = m_ * m_ * m_;
-  scratch[2] = s_ * s_ * s_;
+  const l3 = l_ * l_ * l_;
+  const m3 = m_ * m_ * m_;
+  const s3 = s_ * s_ * s_;
 
-  multiplyMatrixVector(M_OKLAB_INV, scratch, output);
-
-  dropMatrix(scratch);
+  // Inverse LMS to XYZ (Inlined M_OKLAB_INV)
+  output[0] = 1.2270138511 * l3 - 0.5577999807 * m3 + 0.281256149 * s3;
+  output[1] = -0.0405801784 * l3 + 1.1122568696 * m3 - 0.0716766787 * s3;
+  output[2] = -0.0763812845 * l3 - 0.4214819784 * m3 + 1.5861632204 * s3;
 }
