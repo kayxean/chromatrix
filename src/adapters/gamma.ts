@@ -1,29 +1,42 @@
-import type { ColorBuffer } from '../types';
+import type { ColorArray } from '../types';
 
+// Pre-calculated constants to replace divisions with multiplications
+const INV_12_92 = 1 / 12.92;
+const INV_1_055 = 1 / 1.055;
 const GAMMA_EXP = 2.4;
 const GAMMA_COMP = 1 / 2.4;
 
-export function rgbToLrgb(input: ColorBuffer, output: ColorBuffer): void {
-  const r = input[0];
-  output[0] = r <= 0.04045 ? r / 12.92 : ((r + 0.055) / 1.055) ** GAMMA_EXP;
+/**
+ * Converts sRGB (gamma encoded) to Linear RGB.
+ */
+export function rgbToLrgb(input: ColorArray, output: ColorArray): void {
+  const r = input[0],
+    g = input[1],
+    b = input[2];
 
-  const g = input[1];
-  output[1] = g <= 0.04045 ? g / 12.92 : ((g + 0.055) / 1.055) ** GAMMA_EXP;
-
-  const b = input[2];
-  output[2] = b <= 0.04045 ? b / 12.92 : ((b + 0.055) / 1.055) ** GAMMA_EXP;
+  // Using ** to satisfy Biome, but keeping pre-calculated INV_1_055
+  output[0] =
+    r <= 0.04045 ? r * INV_12_92 : ((r + 0.055) * INV_1_055) ** GAMMA_EXP;
+  output[1] =
+    g <= 0.04045 ? g * INV_12_92 : ((g + 0.055) * INV_1_055) ** GAMMA_EXP;
+  output[2] =
+    b <= 0.04045 ? b * INV_12_92 : ((b + 0.055) * INV_1_055) ** GAMMA_EXP;
 }
 
-export function lrgbToRgb(input: ColorBuffer, output: ColorBuffer): void {
-  const lR = input[0];
-  const cR = lR < 0 ? 0 : lR;
-  output[0] = cR <= 0.0031308 ? cR * 12.92 : 1.055 * cR ** GAMMA_COMP - 0.055;
+/**
+ * Converts Linear RGB to sRGB (gamma encoded).
+ */
+export function lrgbToRgb(input: ColorArray, output: ColorArray): void {
+  const lr = input[0],
+    lg = input[1],
+    lb = input[2];
 
-  const lG = input[1];
-  const cG = lG < 0 ? 0 : lG;
-  output[1] = cG <= 0.0031308 ? cG * 12.92 : 1.055 * cG ** GAMMA_COMP - 0.055;
+  // Clamp negatives to 0 to avoid NaN results from fractional exponents
+  const cr = lr < 0 ? 0 : lr;
+  const cg = lg < 0 ? 0 : lg;
+  const cb = lb < 0 ? 0 : lb;
 
-  const lB = input[2];
-  const cB = lB < 0 ? 0 : lB;
-  output[2] = cB <= 0.0031308 ? cB * 12.92 : 1.055 * cB ** GAMMA_COMP - 0.055;
+  output[0] = cr <= 0.0031308 ? cr * 12.92 : 1.055 * cr ** GAMMA_COMP - 0.055;
+  output[1] = cg <= 0.0031308 ? cg * 12.92 : 1.055 * cg ** GAMMA_COMP - 0.055;
+  output[2] = cb <= 0.0031308 ? cb * 12.92 : 1.055 * cb ** GAMMA_COMP - 0.055;
 }

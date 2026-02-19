@@ -1,67 +1,72 @@
-import type { Color, ColorArray, ColorSpace } from '../types';
-import { convertColor, convertHue } from '../convert';
-import { createBuffer } from '../shared';
+import type { Color, ColorSpace } from '../types';
+import { convertColor } from '../convert';
+import { createMatrix, dropMatrix } from '../shared';
 
-const HARMONY_SCRATCH = createBuffer(new Float32Array(3));
-
-export function createHarmony(
-  input: Color,
+/**
+ * Generates color harmonies by rotating the hue in a polar space.
+ */
+export function createHarmony<S extends ColorSpace>(
+  input: Color<S>,
   variants: { name: string; ratios: number[] }[],
-): { name: string; colors: Color[] }[] {
-  const { space, value } = input;
+): { name: string; colors: Color<S>[] }[] {
+  const { space, value, alpha = 1 } = input;
 
-  convertHue(value, HARMONY_SCRATCH, space);
+  let polarSpace: ColorSpace;
+  let hIdx: number;
 
-  let polarSpace: ColorSpace = 'hsl';
-  let hueIndex = 0;
-
-  if (space === 'lab' || space === 'lch') {
-    polarSpace = 'lch';
-    hueIndex = 2;
-  } else if (space === 'oklab' || space === 'oklch') {
+  if (space === 'oklch' || space === 'oklab') {
     polarSpace = 'oklch';
-    hueIndex = 2;
+    hIdx = 2;
+  } else if (space === 'lch' || space === 'lab') {
+    polarSpace = 'lch';
+    hIdx = 2;
+  } else {
+    polarSpace = 'hsl';
+    hIdx = 0;
   }
 
-  const baseHue = HARMONY_SCRATCH[hueIndex];
-  const needsReversion = polarSpace !== space;
-  const results: { name: string; colors: Color[] }[] = [];
+  const polarMat = createMatrix(polarSpace);
+  convertColor(value, polarMat, space, polarSpace);
+
+  const baseH = polarMat[hIdx];
+  const results: { name: string; colors: Color<S>[] }[] = [];
 
   for (let i = 0; i < variants.length; i++) {
-    const variant = variants[i];
-    const colors: Color[] = [];
+    const { name, ratios } = variants[i];
+    const colors: Color<S>[] = [];
 
-    for (let j = 0; j < variant.ratios.length; j++) {
-      const h = (((baseHue + variant.ratios[j]) % 360) + 360) % 360;
-      const res = new Float32Array(3) as ColorArray<ColorSpace>;
+    for (let j = 0; j < ratios.length; j++) {
+      let h = (baseH + ratios[j]) % 360;
+      if (h < 0) h += 360;
 
-      if (needsReversion) {
-        const originalHue = HARMONY_SCRATCH[hueIndex];
-        HARMONY_SCRATCH[hueIndex] = h;
-        convertColor(HARMONY_SCRATCH, res, polarSpace, space);
-        HARMONY_SCRATCH[hueIndex] = originalHue;
+      const newMat = createMatrix(space);
+      const originalH = polarMat[hIdx];
 
-        colors.push({ space, value: res as ColorArray<typeof space> });
-      } else {
-        res.set(HARMONY_SCRATCH);
-        res[hueIndex] = h;
-        colors.push({
-          space: polarSpace,
-          value: res as ColorArray<typeof polarSpace>,
-        });
-      }
+      polarMat[hIdx] = h;
+      convertColor(polarMat, newMat, polarSpace, space);
+      polarMat[hIdx] = originalH;
+
+      colors.push({ space, value: newMat, alpha });
     }
-    results.push({ name: variant.name, colors });
+    results.push({ name, colors });
   }
 
+  dropMatrix(polarMat);
   return results;
 }
 
-export function mixColor(start: Color, end: Color, t: number): Color {
+/**
+ * Mixes two colors. Optimized for speed by minimizing branching.
+ */
+export function mixColor<S extends ColorSpace>(
+  start: Color<S>,
+  end: Color<S>,
+  t: number,
+): Color<S> {
   const space = start.space;
-  const weight = Math.max(0, Math.min(1, t));
+  const w = t < 0 ? 0 : t > 1 ? 1 : t;
 
-  const hueIndex =
+  const hIdx =
     space === 'hsl' || space === 'hwb'
       ? 0
       : space === 'lch' || space === 'oklch'
@@ -70,59 +75,83 @@ export function mixColor(start: Color, end: Color, t: number): Color {
 
   const sV = start.value;
   const eV = end.value;
-  const res = new Float32Array(3) as ColorArray<typeof space>;
+  const res = createMatrix(space);
 
   for (let c = 0; c < 3; c++) {
-    if (c === hueIndex) {
-      const sH = sV[c];
-      let eH = eV[c];
-      const diff = eH - sH;
+    const startVal = sV[c];
+    let endVal = eV[c];
 
-      if (diff > 180) eH -= 360;
-      else if (diff < -180) eH += 360;
+    if (c === hIdx) {
+      const diff = endVal - startVal;
+      if (diff > 180) endVal -= 360;
+      else if (diff < -180) endVal += 360;
 
-      const h = sH + (eH - sH) * weight;
-      res[c] = ((h % 360) + 360) % 360;
+      let h = startVal + (endVal - startVal) * w;
+      h %= 360;
+      if (h < 0) h += 360;
+      res[c] = h;
     } else {
-      res[c] = sV[c] + (eV[c] - sV[c]) * weight;
+      res[c] = startVal + (endVal - startVal) * w;
     }
   }
 
-  return { space, value: res };
+  const sA = start.alpha ?? 1;
+  const eA = end.alpha ?? 1;
+
+  return { space, value: res, alpha: sA + (eA - sA) * w };
 }
 
-export function createShades(start: Color, end: Color, steps: number): Color[] {
-  if (steps <= 1) return [start];
-  const shades: Color[] = [];
-  const total = steps - 1;
+/**
+ * Generates a list of colors between start and end.
+ */
+export function createShades<S extends ColorSpace>(
+  start: Color<S>,
+  end: Color<S>,
+  steps: number,
+): Color<S>[] {
+  if (steps <= 0) return [];
+  if (steps === 1) {
+    const val = createMatrix(start.space);
+    val.set(start.value);
+    return [{ space: start.space, value: val, alpha: start.alpha }];
+  }
+
+  const shades: Color<S>[] = [];
+  const invTotal = 1 / (steps - 1);
 
   for (let i = 0; i < steps; i++) {
-    shades.push(mixColor(start, end, i / total));
+    shades.push(mixColor(start, end, i * invTotal));
   }
+
   return shades;
 }
 
-export function createScales(stops: Color[], steps: number): Color[] {
+/**
+ * Generates a multi-stop scale.
+ */
+export function createScales<S extends ColorSpace>(
+  stops: Color<S>[],
+  steps: number,
+): Color<S>[] {
+  if (steps <= 0) return [];
   if (stops.length < 2) {
-    return stops.map((s) => ({
-      space: s.space,
-      value: new Float32Array(s.value) as ColorArray<typeof s.space>,
-    }));
+    return stops.map((s) => {
+      const val = createMatrix(s.space);
+      val.set(s.value);
+      return { space: s.space, value: val, alpha: s.alpha };
+    });
   }
 
-  const scale: Color[] = [];
+  const scale: Color<S>[] = [];
   const totalSegments = stops.length - 1;
   const stepInterval = 1 / (steps - 1);
 
   for (let i = 0; i < steps; i++) {
-    const globalRatio = i * stepInterval;
-    const segmentRaw = globalRatio * totalSegments;
+    const segmentRaw = i * stepInterval * totalSegments;
+    let idx = segmentRaw | 0;
+    if (idx >= totalSegments) idx = totalSegments - 1;
 
-    let index = Math.floor(segmentRaw);
-    if (index >= totalSegments) index = totalSegments - 1;
-
-    const t = segmentRaw - index;
-    scale.push(mixColor(stops[index], stops[index + 1], t));
+    scale.push(mixColor(stops[idx], stops[idx + 1], segmentRaw - idx));
   }
 
   return scale;

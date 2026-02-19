@@ -1,64 +1,59 @@
-import type { Color, ColorArray, DeficiencyType } from '../types';
-import { xyz50ToXyz65, xyz65ToXyz50 } from '../adapters/cat';
-import { applyAdapter, FROM_HUB, NATIVE_HUB, TO_HUB } from '../convert';
-import { createBuffer } from '../shared';
+import type { Color, ColorSpace, DeficiencyType } from '../types';
+import { convertColor } from '../convert';
+import { createMatrix, dropMatrix } from '../shared';
 import { clampColor } from './gamut';
 
-const SIM_HUB_SCRATCH = createBuffer(new Float32Array(3));
-const SIM_RES_SCRATCH = createBuffer(new Float32Array(3));
+/**
+ * Simulates how a color appears to someone with a specific color vision deficiency.
+ * Uses Linear RGB (lrgb) as the simulation space for mathematical accuracy.
+ */
+export function simulateDeficiency<S extends ColorSpace>(
+  color: Color<S>,
+  type: DeficiencyType,
+): Color<S> {
+  const { space, alpha = 1 } = color;
 
-export function simulateDeficiency(color: Color, type: DeficiencyType): Color {
-  const { space, value } = color;
+  // 1. Move to Linear RGB (the standard space for CVD simulation matrices)
+  const lrgbMat = createMatrix('lrgb');
+  convertColor(color.value, lrgbMat, space, 'lrgb');
 
-  applyAdapter(TO_HUB[space], value, SIM_HUB_SCRATCH);
+  const r = lrgbMat[0];
+  const g = lrgbMat[1];
+  const b = lrgbMat[2];
 
-  if (NATIVE_HUB[space] === 'xyz50') {
-    xyz50ToXyz65(SIM_HUB_SCRATCH, SIM_HUB_SCRATCH);
-  }
-
-  const x = SIM_HUB_SCRATCH[0];
-  const y = SIM_HUB_SCRATCH[1];
-  const z = SIM_HUB_SCRATCH[2];
-
-  let rx = x,
-    ry = y,
-    rz = z;
-
+  // 2. Apply Simulation Matrices (Brettel/Viénot approximation in Linear RGB)
   switch (type) {
     case 'protanopia':
-      rx = 0.112 * x + 0.888 * y;
-      ry = 0.112 * x + 0.888 * y;
-      rz = -0.001 * x + 0.001 * y + z;
+      lrgbMat[0] = 0.56667 * r + 0.43333 * g;
+      lrgbMat[1] = 0.55833 * r + 0.44167 * g;
+      lrgbMat[2] = 0.0 * r + 0.24167 * g + 0.75833 * b;
       break;
     case 'deuteranopia':
-      rx = 0.292 * x + 0.708 * y;
-      ry = 0.292 * x + 0.708 * y;
-      rz = -0.022 * x + 0.022 * y + z;
+      lrgbMat[0] = 0.625 * r + 0.375 * g;
+      lrgbMat[1] = 0.7 * r + 0.3 * g;
+      lrgbMat[2] = 0.0 * r + 0.3 * g + 0.7 * b;
       break;
     case 'tritanopia':
-      rx = 1.012 * x + 0.052 * y - 0.064 * z;
-      ry = 0.877 * y + 0.123 * z;
-      rz = 0.877 * y + 0.123 * z;
+      lrgbMat[0] = 0.95 * r + 0.05 * g;
+      lrgbMat[1] = 0.0 * r + 0.43333 * g + 0.56667 * b;
+      lrgbMat[2] = 0.0 * r + 0.475 * g + 0.525 * b;
       break;
-    case 'achromatopsia':
-      rx = ry = rz = y;
+    case 'achromatopsia': {
+      // Standard luminance weights for sRGB
+      const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      lrgbMat[0] = lum;
+      lrgbMat[1] = lum;
+      lrgbMat[2] = lum;
       break;
+    }
   }
 
-  SIM_HUB_SCRATCH[0] = rx;
-  SIM_HUB_SCRATCH[1] = ry;
-  SIM_HUB_SCRATCH[2] = rz;
+  // 3. Convert back to original space
+  const resValue = createMatrix(space);
+  convertColor(lrgbMat, resValue, 'lrgb', space);
 
-  if (NATIVE_HUB[space] === 'xyz50') {
-    xyz65ToXyz50(SIM_HUB_SCRATCH, SIM_HUB_SCRATCH);
-  }
+  dropMatrix(lrgbMat);
 
-  applyAdapter(FROM_HUB[space], SIM_HUB_SCRATCH, SIM_RES_SCRATCH);
-
-  const resValue = new Float32Array(SIM_RES_SCRATCH) as ColorArray<
-    typeof space
-  >;
-  const result: Color = { space, value: resValue };
-
-  return clampColor(result);
+  // 4. Clamp and return (simulations often push colors slightly out of gamut)
+  return clampColor({ space, value: resValue, alpha });
 }

@@ -1,45 +1,55 @@
-import type { Color, ColorArray } from '../types';
-import { xyz50ToXyz65 } from '../adapters/cat';
-import { applyAdapter, convertColor, NATIVE_HUB, TO_HUB } from '../convert';
-import { createBuffer } from '../shared';
+import type { Color, ColorSpace } from '../types';
+import { convertColor } from '../convert';
+import { createMatrix, dropMatrix } from '../shared';
 import { createScales } from './palette';
 
 const APCA_SCALE = 1.14;
 const DARK_THRESH = 0.022;
 const DARK_CLAMP = 1414 / 1000;
 
-const XYZ_SCRATCH = createBuffer(new Float32Array(3));
-const POLAR_SCRATCH = createBuffer(new Float32Array(3));
-
+/**
+ * Extracts the Y (luminance) channel from the color in XYZ D65 space.
+ */
 export function getLuminanceD65(color: Color): number {
-  applyAdapter(TO_HUB[color.space], color.value, XYZ_SCRATCH);
-
-  if (NATIVE_HUB[color.space] === 'xyz50') {
-    xyz50ToXyz65(XYZ_SCRATCH, XYZ_SCRATCH);
-  }
-
-  return XYZ_SCRATCH[1];
+  const xyz = createMatrix('xyz65');
+  convertColor(color.value, xyz, color.space, 'xyz65');
+  const y = xyz[1];
+  dropMatrix(xyz);
+  return y;
 }
 
+/**
+ * APCA Soft Clamp / Perceptual Encoding helper.
+ */
+function getSapcV(y: number): number {
+  return y > DARK_THRESH ? y : y + (DARK_THRESH - y) ** DARK_CLAMP;
+}
+
+/**
+ * Internal APCA math to calculate contrast between two encoded luminances.
+ */
+function calculateLc(v_t: number, v_b: number): number {
+  return v_b > v_t
+    ? (v_b ** 0.56 - v_t ** 0.57) * APCA_SCALE
+    : (v_b ** 0.65 - v_t ** 0.62) * APCA_SCALE;
+}
+
+/**
+ * Calculates APCA contrast (Lc).
+ * Returns a signed value: positive = light bg, negative = dark bg.
+ */
 export function checkContrast(text: Color, background: Color): number {
-  const yt = getLuminanceD65(text);
-  const yb = getLuminanceD65(background);
+  const vt = getSapcV(getLuminanceD65(text));
+  const vb = getSapcV(getLuminanceD65(background));
+  const Lc = calculateLc(vt, vb);
 
-  const vt = yt > DARK_THRESH ? yt : yt + (DARK_THRESH - yt) ** DARK_CLAMP;
-  const vb = yb > DARK_THRESH ? yb : yb + (DARK_THRESH - yb) ** DARK_CLAMP;
-
-  let contrast = 0;
-
-  if (vb > vt) {
-    contrast = (vb ** 0.56 - vt ** 0.57) * APCA_SCALE;
-  } else {
-    contrast = (vb ** 0.65 - vt ** 0.62) * APCA_SCALE;
-  }
-
-  const res = Math.abs(contrast) < 0.1 ? 0 : contrast * 100;
-  return Number(res.toFixed(2));
+  const res = Math.abs(Lc) < 0.001 ? 0 : Lc * 100;
+  return Math.round(res * 100) / 100;
 }
 
+/**
+ * Returns a readability tier based on the absolute contrast value.
+ */
 export function getContrastRating(contrast: number): string {
   const rate = Math.abs(contrast);
   if (rate >= 90) return 'platinum';
@@ -50,95 +60,92 @@ export function getContrastRating(contrast: number): string {
   return 'fail';
 }
 
-export function matchContrast(
-  color: Color,
+/**
+ * Adjusts color lightness in Oklch space to meet a target APCA contrast.
+ * Uses binary search to find the closest lightness value.
+ */
+export function matchContrast<S extends ColorSpace>(
+  color: Color<S>,
   background: Color,
   targetContrast: number,
-): Color {
-  const currentContrast = checkContrast(color, background);
-  if (Math.abs(currentContrast) >= targetContrast) return color;
+): Color<S> {
+  const yb = getLuminanceD65(background);
+  const vb = getSapcV(yb);
+  const isDarkBg = yb < 0.5;
 
-  const space = color.space;
-  const needsReversion = space !== 'oklch';
+  const oklchMat = createMatrix('oklch');
+  convertColor(color.value, oklchMat, color.space, 'oklch');
 
-  if (needsReversion) {
-    convertColor(color.value, POLAR_SCRATCH, space, 'oklch');
-  } else {
-    POLAR_SCRATCH.set(color.value);
-  }
+  const chroma = oklchMat[1];
+  const hue = oklchMat[2];
 
-  const chroma = POLAR_SCRATCH[1];
-  const hue = POLAR_SCRATCH[2];
+  let low = isDarkBg ? oklchMat[0] : 0;
+  let high = isDarkBg ? 1 : oklchMat[0];
+  let bestL = oklchMat[0];
 
-  const backgroundLum = getLuminanceD65(background);
-  const isDarkBg = backgroundLum < 0.5;
+  const testMat = createMatrix('oklch');
+  testMat[1] = chroma;
+  testMat[2] = hue;
 
-  let low = isDarkBg ? POLAR_SCRATCH[0] : 0;
-  let high = isDarkBg ? 1 : POLAR_SCRATCH[0];
-  let bestL = POLAR_SCRATCH[0];
+  // Reusable object for the binary search to avoid GC pressure
+  const testCol: Color<'oklch'> = { space: 'oklch', value: testMat };
 
-  const testBuffer = new Float32Array([
-    bestL,
-    chroma,
-    hue,
-  ]) as ColorArray<'oklch'>;
-  const testColor: Color = { space: 'oklch', value: testBuffer };
+  for (let i = 0; i < 12; i++) {
+    testMat[0] = (low + high) * 0.5;
+    const vt = getSapcV(getLuminanceD65(testCol));
+    const Lc = calculateLc(vt, vb);
 
-  const scratchBuffer = needsReversion
-    ? (new Float32Array(3) as ColorArray<typeof space>)
-    : null;
-  const compareTarget: Color = scratchBuffer
-    ? { space, value: scratchBuffer }
-    : testColor;
-
-  for (let i = 0; i < 10; i++) {
-    const t = (low + high) / 2;
-    testBuffer[0] = t;
-
-    if (scratchBuffer) {
-      convertColor(testBuffer, scratchBuffer, 'oklch', space);
-    }
-
-    const testContrast = checkContrast(compareTarget, background);
-
-    if (Math.abs(testContrast) < targetContrast) {
-      if (isDarkBg) low = t;
-      else high = t;
+    if (Math.abs(Lc * 100) < targetContrast) {
+      if (isDarkBg) low = testMat[0];
+      else high = testMat[0];
     } else {
-      bestL = t;
-      if (isDarkBg) high = t;
-      else low = t;
+      bestL = testMat[0];
+      if (isDarkBg) high = testMat[0];
+      else low = testMat[0];
     }
   }
 
-  const res = new Float32Array([bestL, chroma, hue]) as ColorArray<'oklch'>;
+  const resValue = createMatrix(color.space);
+  testMat[0] = bestL;
+  convertColor(testMat, resValue, 'oklch', color.space);
 
-  if (needsReversion) {
-    const revertedValue = new Float32Array(3) as ColorArray<typeof space>;
-    convertColor(res, revertedValue, 'oklch', space);
-    return { space, value: revertedValue };
-  }
+  dropMatrix(oklchMat);
+  dropMatrix(testMat);
 
-  return { space: 'oklch', value: res };
+  return { space: color.space, value: resValue, alpha: color.alpha };
 }
 
+/**
+ * Calculates contrast and ratings for an array of colors against one background.
+ */
 export function checkContrastBulk(
   background: Color,
   colors: Color[],
 ): { color: Color; contrast: number; rating: string }[] {
-  return colors.map((color) => ({
-    color,
-    contrast: checkContrast(color, background),
-    rating: getContrastRating(checkContrast(color, background)),
-  }));
+  const vb = getSapcV(getLuminanceD65(background));
+
+  return colors.map((color) => {
+    const vt = getSapcV(getLuminanceD65(color));
+    const Lc = calculateLc(vt, vb);
+    const contrast = Math.abs(Lc) < 0.001 ? 0 : Math.round(Lc * 10000) / 100;
+
+    return {
+      color,
+      contrast,
+      rating: getContrastRating(contrast),
+    };
+  });
 }
 
-export function matchScales(
-  stops: Color[],
+/**
+ * Generates a color scale and adjusts each step to meet a target contrast.
+ */
+export function matchScales<S extends ColorSpace>(
+  stops: Color<S>[],
   background: Color,
   targetContrast: number,
   steps: number,
-): Color[] {
+): Color<S>[] {
   const scale = createScales(stops, steps);
   return scale.map((s) => matchContrast(s, background, targetContrast));
 }

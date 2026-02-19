@@ -1,68 +1,108 @@
-import type {
-  Color,
-  ColorArray,
-  ColorBuffer,
-  ColorMatrix,
-  ColorSpace,
-} from './types';
+import type { Color, ColorArray, ColorMatrix, ColorSpace } from './types';
 import { convertColor } from './convert';
 
-export function createBuffer(data: Float32Array | number[]): ColorBuffer {
-  if (data.length !== 3) throw new Error('ColorArray must have length 3');
-  return (
-    data instanceof Float32Array ? data : new Float32Array(data)
-  ) as ColorBuffer;
+const MAX_POOL_SIZE = 256;
+const pool: ColorArray[] = [];
+
+/**
+ * Retrieves a matrix from the pool or allocates a new one.
+ */
+export function createMatrix<S extends ColorSpace>(_space?: S): ColorMatrix<S> {
+  // Pop from pool or create new. All buffers are Float32Array(3).
+  const arr = pool.pop() ?? new Float32Array(3);
+  return arr as ColorMatrix<S>;
 }
 
-export function createMatrix(
-  v1: [number, number, number],
-  v2: [number, number, number],
-  v3: [number, number, number],
-): ColorMatrix {
-  return [createBuffer(v1), createBuffer(v2), createBuffer(v3)];
+/**
+ * Returns a matrix to the pool for reuse.
+ */
+export function dropMatrix(arr: ColorArray): void {
+  if (pool.length < MAX_POOL_SIZE) {
+    pool.push(arr);
+  }
 }
 
+/**
+ * Creates a new Color object with a managed value buffer.
+ */
 export function createColor<S extends ColorSpace>(
   space: S,
-  values: [number, number, number],
-): Color {
-  const buffer = createBuffer(values);
-  const value = buffer as ColorArray<S>;
-  return { space, value };
+  values: [number, number, number] | Float32Array | ColorArray,
+  alpha = 1,
+): Color<S> {
+  const value = createMatrix(space);
+  value.set(values);
+  return { space, value, alpha };
 }
 
-export function cloneColor(color: Color): Color {
+/**
+ * Frees the memory buffer associated with a color.
+ */
+export function dropColor(color: Color): void {
+  dropMatrix(color.value);
+}
+
+/**
+ * Deep clone of a color using a pooled buffer.
+ */
+export function cloneColor<S extends ColorSpace>(color: Color<S>): Color<S> {
+  const copy = createMatrix(color.space);
+  copy.set(color.value);
   return {
     space: color.space,
-    value: new Float32Array(color.value) as ColorArray<ColorSpace>,
+    value: copy,
+    alpha: color.alpha,
   };
 }
 
-export function updateColor(
-  color: Color,
-  values: [number, number, number] | Float32Array,
-): void {
-  color.value.set(values);
-}
-
-export function mutateColor<T extends ColorSpace>(color: Color, to: T): void {
+/**
+ * Mutates a color in-place to a new space.
+ * Uses a type-safe override to update the space discriminator.
+ */
+export function mutateColor<S extends ColorSpace>(color: Color, to: S): void {
   const from = color.space;
   if (from === (to as ColorSpace)) return;
 
   convertColor(color.value, color.value, from, to);
+
+  /**
+   * By casting to a version of Color where space is not readonly,
+   * we satisfy the compiler while maintaining property name safety.
+   */
   (color as { space: ColorSpace }).space = to;
 }
 
-export function deriveColor<T extends ColorSpace>(color: Color, to: T): Color {
+/**
+ * Returns a new color in the target space without affecting the original.
+ */
+export function deriveColor<S extends ColorSpace>(
+  color: Color,
+  to: S,
+): Color<S> {
   if (color.space === (to as ColorSpace)) {
-    return cloneColor(color);
+    return cloneColor(color as Color<S>);
   }
 
-  const newValues = new Float32Array(3) as ColorArray<T>;
-  convertColor(color.value, newValues, color.space, to);
+  const newValue = createMatrix(to);
+  convertColor(color.value, newValue, color.space, to);
 
   return {
     space: to,
-    value: newValues,
+    value: newValue,
+    alpha: color.alpha,
   };
+}
+
+/**
+ * Pre-fills the pool to reduce initial runtime latency.
+ */
+export function preallocatePool(size: number): void {
+  const count = Math.min(size, MAX_POOL_SIZE - pool.length);
+  for (let i = 0; i < count; i++) {
+    pool.push(new Float32Array(3) as ColorArray);
+  }
+}
+
+export function clearPool(): void {
+  pool.length = 0;
 }

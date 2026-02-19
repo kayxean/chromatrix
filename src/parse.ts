@@ -1,94 +1,133 @@
 import type { Color, ColorSpace } from './types';
 import { createColor } from './shared';
 
+const INV_255 = 1 / 255;
+const INV_100 = 1 / 100;
+
+/**
+ * Fast hex parsing using bitwise shifts.
+ */
+function fastParseHex(hex: string): {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+} {
+  const len = hex.length;
+  const num = Number.parseInt(hex, 16);
+
+  if (len === 3) {
+    return {
+      r: ((num >> 8) & 0xf) * 17,
+      g: ((num >> 4) & 0xf) * 17,
+      b: (num & 0xf) * 17,
+      a: 255,
+    };
+  }
+  if (len === 4) {
+    return {
+      r: ((num >> 12) & 0xf) * 17,
+      g: ((num >> 8) & 0xf) * 17,
+      b: ((num >> 4) & 0xf) * 17,
+      a: (num & 0xf) * 17,
+    };
+  }
+  if (len === 6) {
+    return {
+      r: (num >> 16) & 0xff,
+      g: (num >> 8) & 0xff,
+      b: num & 0xff,
+      a: 255,
+    };
+  }
+  if (len === 8) {
+    return {
+      r: (num >> 24) & 0xff,
+      g: (num >> 16) & 0xff,
+      b: (num >> 8) & 0xff,
+      a: num & 0xff,
+    };
+  }
+  throw new Error(`Invalid Hex length: ${len}`);
+}
+
 export function parseColor(css: string): Color {
   const trimmed = css.trim();
 
+  // 1. Optimized Hex Path
   if (trimmed[0] === '#') {
     const hex = trimmed.slice(1);
-    const len = hex.length;
-    let r = 0,
-      g = 0,
-      b = 0,
-      a = 1;
-
-    if (len === 3 || len === 4) {
-      r = parseInt(hex[0] + hex[0], 16);
-      g = parseInt(hex[1] + hex[1], 16);
-      b = parseInt(hex[2] + hex[2], 16);
-      if (len === 4) a = parseInt(hex[3] + hex[3], 16) / 255;
-    } else if (len === 6 || len === 8) {
-      const num = parseInt(hex, 16);
-      if (len === 6) {
-        r = (num >> 16) & 255;
-        g = (num >> 8) & 255;
-        b = num & 255;
-      } else {
-        r = (num >> 24) & 255;
-        g = (num >> 16) & 255;
-        b = (num >> 8) & 255;
-        a = (num & 255) / 255;
-      }
-    } else {
-      throw new Error(`Invalid Hex length: ${css}`);
-    }
-
+    const { r, g, b, a } = fastParseHex(hex);
     return {
-      ...createColor('rgb', [r / 255, g / 255, b / 255]),
-      alpha: a,
+      ...createColor('rgb', [r * INV_255, g * INV_255, b * INV_255]),
+      alpha: a * INV_255,
     };
   }
 
+  // 2. Functional Path (rgb(), lab(), color(), etc.)
   const openParen = trimmed.indexOf('(');
   const closeParen = trimmed.lastIndexOf(')');
 
   if (openParen !== -1 && closeParen !== -1) {
-    const space = trimmed
-      .slice(0, openParen)
-      .toLowerCase()
-      .replace(/a$/, '') as ColorSpace;
+    let spaceName = trimmed.slice(0, openParen).toLowerCase();
     const content = trimmed.slice(openParen + 1, closeParen);
 
-    const parts = content.split(/[\s,/]+/).filter(Boolean);
-    if (parts.length < 3) throw new Error(`Invalid color: ${css}`);
+    // Filter out empty strings from split
+    const parts = content.split(/[,\s/]+/).filter(Boolean);
 
-    const v0 = parseFloat(parts[0]);
-    const v1 = parseFloat(parts[1]);
-    const v2 = parseFloat(parts[2]);
+    let space: ColorSpace;
+    let offset = 0;
 
-    let alpha = 1;
-    if (parts[3]) {
-      const rawA = parts[3];
-      alpha = rawA.endsWith('%') ? parseFloat(rawA) / 100 : parseFloat(rawA);
+    if (spaceName === 'color') {
+      const profile = parts[0];
+      offset = 1;
+      if (profile === 'srgb-linear') space = 'lrgb';
+      else if (profile === 'xyz' || profile === 'xyz-d65') space = 'xyz65';
+      else if (profile === 'xyz-d50') space = 'xyz50';
+      else space = profile as ColorSpace;
+    } else {
+      // Handle legacy rgba/hsla
+      if (spaceName.length > 3 && spaceName.endsWith('a')) {
+        spaceName = spaceName.slice(0, -1);
+      }
+      space = spaceName as ColorSpace;
     }
 
-    const color = createColor(space, [v0, v1, v2]);
-    const val = color.value;
+    // Parse and normalize values immediately
+    let v0 = Number.parseFloat(parts[offset]);
+    let v1 = Number.parseFloat(parts[offset + 1]);
+    let v2 = Number.parseFloat(parts[offset + 2]);
+    const rawA = parts[offset + 3];
 
-    switch (space) {
-      case 'rgb':
-        val[0] /= 255;
-        val[1] /= 255;
-        val[2] /= 255;
-        break;
-      case 'hsl':
-      case 'hwb':
-        val[1] /= 100;
-        val[2] /= 100;
-        break;
-      case 'lab':
-      case 'lch':
-      case 'oklab':
-      case 'oklch':
-        val[0] /= 100;
-        break;
+    // Space-specific normalization
+    if (space === 'rgb') {
+      v0 *= INV_255;
+      v1 *= INV_255;
+      v2 *= INV_255;
+    } else if (space === 'hsl' || space === 'hwb') {
+      v1 *= INV_100;
+      v2 *= INV_100;
+    } else if (
+      space === 'lab' ||
+      space === 'lch' ||
+      space === 'oklab' ||
+      space === 'oklch'
+    ) {
+      v0 *= INV_100;
+    }
+
+    let alpha = 1;
+    if (rawA !== undefined) {
+      alpha = rawA.endsWith('%')
+        ? Number.parseFloat(rawA) * INV_100
+        : Number.parseFloat(rawA);
     }
 
     return {
-      ...color,
+      ...createColor(space, [v0, v1, v2]),
       alpha: Math.max(0, Math.min(1, alpha)),
     };
   }
 
-  throw new Error(`Unrecognized color format: ${css}`);
+  throw new Error(`Invalid format: ${css}`);
 }

@@ -1,23 +1,29 @@
 export * from './types';
 
-export { convertColor } from './convert';
+export { convertColor, convertHue } from './convert';
 export { parseColor } from './parse';
 export { formatCss } from './format';
 
 export {
+  createMatrix,
+  dropMatrix,
   createColor,
+  dropColor,
+  cloneColor,
   mutateColor,
   deriveColor,
-  cloneColor,
-  updateColor,
-  createBuffer,
+  preallocatePool,
+  clearPool,
 } from './shared';
-
-export { color } from './utils/api';
 
 export { isEqual, getDistance } from './utils/compare';
 
-export { checkContrast, matchContrast } from './utils/contrast';
+export {
+  checkContrast,
+  matchContrast,
+  checkContrastBulk,
+  matchScales,
+} from './utils/contrast';
 
 export { checkGamut, clampColor } from './utils/gamut';
 

@@ -1,46 +1,77 @@
-import type { Color, ColorBuffer } from '../types';
+import type { Color, ColorArray } from '../types';
 import { convertColor } from '../convert';
-import { createBuffer } from '../shared';
+import { createMatrix, dropMatrix } from '../shared';
 
-const COMPARE_SCRATCH_B = createBuffer(new Float32Array(3));
-const DISTANCE_SCRATCH_A = createBuffer(new Float32Array(3));
-const DISTANCE_SCRATCH_B = createBuffer(new Float32Array(3));
+/**
+ * Checks if two colors are perceptually or mathematically equal within a tolerance.
+ */
+export function isEqual(a: Color, b: Color, tolerance = 0.0001): boolean {
+  if (a === b) return true;
 
-export function isEqual(a: Color, b: Color, tolerance = 0): boolean {
-  if (a.value === b.value && a.space === b.space) return true;
+  const alphaA = a.alpha ?? 1;
+  const alphaB = b.alpha ?? 1;
+  if (Math.abs(alphaA - alphaB) > tolerance) return false;
 
-  const valA: ColorBuffer = a.value;
-  let valB: ColorBuffer = b.value;
+  const spaceA = a.space;
+  const spaceB = b.space;
+  const valA = a.value;
 
-  if (a.space !== b.space) {
-    convertColor(b.value, COMPARE_SCRATCH_B, b.space, a.space);
-    valB = COMPARE_SCRATCH_B;
+  // 1. Same space: Direct comparison
+  if (spaceA === spaceB) {
+    const valB = b.value;
+    return (
+      Math.abs(valA[0] - valB[0]) <= tolerance &&
+      Math.abs(valA[1] - valB[1]) <= tolerance &&
+      Math.abs(valA[2] - valB[2]) <= tolerance
+    );
   }
 
-  for (let i = 0; i < 3; i++) {
-    if (Math.abs(valA[i] - valB[i]) > tolerance) return false;
-  }
+  // 2. Different spaces: Convert and compare
+  const tempMatrix = createMatrix(spaceA);
+  convertColor(b.value, tempMatrix, spaceB, spaceA);
 
-  return true;
+  const match =
+    Math.abs(valA[0] - tempMatrix[0]) <= tolerance &&
+    Math.abs(valA[1] - tempMatrix[1]) <= tolerance &&
+    Math.abs(valA[2] - tempMatrix[2]) <= tolerance;
+
+  dropMatrix(tempMatrix);
+  return match;
 }
 
+/**
+ * Calculates the perceptual distance (Delta E) between two colors using Oklab.
+ * Oklab is perceptually linear, making Euclidean distance highly accurate.
+ */
 export function getDistance(a: Color, b: Color): number {
   const spaceA = a.space;
   const spaceB = b.space;
 
-  const labA = spaceA === 'oklab' ? a.value : DISTANCE_SCRATCH_A;
-  if (spaceA !== 'oklab') {
-    convertColor(a.value, DISTANCE_SCRATCH_A, spaceA, 'oklab');
+  let matrixA: ColorArray = a.value;
+  let matrixB: ColorArray = b.value;
+
+  const tempA = spaceA !== 'oklab' ? createMatrix('oklab') : null;
+  const tempB = spaceB !== 'oklab' ? createMatrix('oklab') : null;
+
+  if (tempA) {
+    convertColor(a.value, tempA, spaceA, 'oklab');
+    matrixA = tempA;
   }
 
-  const labB = spaceB === 'oklab' ? b.value : DISTANCE_SCRATCH_B;
-  if (spaceB !== 'oklab') {
-    convertColor(b.value, DISTANCE_SCRATCH_B, spaceB, 'oklab');
+  if (tempB) {
+    convertColor(b.value, tempB, spaceB, 'oklab');
+    matrixB = tempB;
   }
 
-  const dL = labA[0] - labB[0];
-  const da = labA[1] - labB[1];
-  const db = labA[2] - labB[2];
+  const dL = matrixA[0] - matrixB[0];
+  const da = matrixA[1] - matrixB[1];
+  const db = matrixA[2] - matrixB[2];
 
-  return Math.sqrt(dL * dL + da * da + db * db);
+  const distance = Math.sqrt(dL * dL + da * da + db * db);
+
+  // Cleanup pooled matrices
+  if (tempA) dropMatrix(tempA);
+  if (tempB) dropMatrix(tempB);
+
+  return distance;
 }
