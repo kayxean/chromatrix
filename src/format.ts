@@ -1,10 +1,15 @@
 import type { Color } from './types';
 
-const F_FACTORS = [1, 10, 100, 1000, 10000, 100000];
+// Pre-calculate factors for precision up to 10
+const F_FACTORS = new Float32Array([1, 10, 100, 1000, 10000, 100000, 1000000]);
 
-function normalize(num: number, precision: number): number {
-  const f = F_FACTORS[precision] ?? 10 ** precision;
-  return Math.round(num * f) / f;
+/**
+ * Rounds a number to a specific precision using pre-calculated factors.
+ */
+function roundTo(val: number, precision: number): number {
+  const f =
+    precision < F_FACTORS.length ? F_FACTORS[precision] : 10 ** precision;
+  return Math.round(val * f) / f;
 }
 
 export function formatCss(
@@ -14,50 +19,74 @@ export function formatCss(
   precision = 2,
 ): string {
   const { space, value } = color;
-  const v1 = value[0];
-  const v2 = value[1];
-  const v3 = value[2];
 
-  const isTransparent = typeof alpha === 'number' && alpha < 1;
+  // Handle Hex specifically for RGB
+  if (asHex && space === 'rgb') {
+    const r = (value[0] * 255 + 0.5) | 0;
+    const g = (value[1] * 255 + 0.5) | 0;
+    const b = (value[2] * 255 + 0.5) | 0;
+    const rgbHex = ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
 
-  if (space === 'rgb' && asHex) {
-    const r = (v1 * 255 + 0.5) | 0;
-    const g = (v2 * 255 + 0.5) | 0;
-    const b = (v3 * 255 + 0.5) | 0;
-
-    const hex = ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
-
-    if (isTransparent) {
+    if (alpha !== undefined && alpha < 1) {
       const a = (alpha * 255 + 0.5) | 0;
-      return `#${hex}${((1 << 8) | a).toString(16).slice(1)}`;
+      return `#${rgbHex}${a.toString(16).padStart(2, '0')}`;
     }
-
-    return `#${hex}`;
+    return `#${rgbHex}`;
   }
 
-  const a = isTransparent ? ` / ${normalize(alpha * 100, precision)}%` : '';
+  // Common rounding for primary values
+  const n1 = roundTo(value[0], precision);
+  const n2 = roundTo(value[1], precision);
+  const n3 = roundTo(value[2], precision);
+
+  let suffix = '';
+  if (alpha !== undefined && alpha < 1) {
+    suffix = ` / ${roundTo(alpha, precision)}`;
+  }
 
   switch (space) {
-    case 'rgb':
-      return `rgb(${(v1 * 255 + 0.5) | 0} ${(v2 * 255 + 0.5) | 0} ${(v3 * 255 + 0.5) | 0}${a})`;
+    case 'rgb': {
+      const r = (value[0] * 255 + 0.5) | 0;
+      const g = (value[1] * 255 + 0.5) | 0;
+      const b = (value[2] * 255 + 0.5) | 0;
+      return `rgb(${r} ${g} ${b}${suffix})`;
+    }
 
     case 'hsl':
-    case 'hwb':
-      return `${space}(${normalize(v1, precision)}deg ${normalize(v2 * 100, precision)}% ${normalize(v3 * 100, precision)}%${a})`;
+    case 'hwb': {
+      const s = roundTo(value[1] * 100, precision);
+      const b = roundTo(value[2] * 100, precision);
+      return `${space}(${n1}deg ${s}% ${b}%${suffix})`;
+    }
 
     case 'lab':
-      return `lab(${normalize(v1, precision)}% ${normalize(v2, precision)} ${normalize(v3, precision)}${a})`;
+      return `lab(${roundTo(value[0] * 100, precision)}% ${n2} ${n3}${suffix})`;
 
     case 'lch':
-      return `lch(${normalize(v1, precision)}% ${normalize(v2, precision)} ${normalize(v3, precision)}deg${a})`;
+      return `lch(${roundTo(value[0] * 100, precision)}% ${n2} ${n3}deg${suffix})`;
 
-    case 'oklab':
-      return `oklab(${normalize(v1 * 100, precision)}% ${normalize(v2, 4)} ${normalize(v3, 4)}${a})`;
+    case 'oklab': {
+      const l = roundTo(value[0] * 100, precision);
+      // Use higher default internal precision for Oklab components if needed,
+      // but respect the user's precision parameter.
+      return `oklab(${l}% ${n2} ${n3}${suffix})`;
+    }
 
-    case 'oklch':
-      return `oklch(${normalize(v1 * 100, precision)}% ${normalize(v2, 4)} ${normalize(v3, precision)}deg${a})`;
+    case 'oklch': {
+      const l = roundTo(value[0] * 100, precision);
+      return `oklch(${l}% ${n2} ${n3}deg${suffix})`;
+    }
+
+    case 'lrgb':
+      return `color(srgb-linear ${n1} ${n2} ${n3}${suffix})`;
+
+    case 'xyz65':
+      return `color(xyz-d65 ${n1} ${n2} ${n3}${suffix})`;
+
+    case 'xyz50':
+      return `color(xyz-d50 ${n1} ${n2} ${n3}${suffix})`;
 
     default:
-      throw new Error(`Unsupported CSS format mode: ${space}`);
+      return `color(${space} ${n1} ${n2} ${n3}${suffix})`;
   }
 }

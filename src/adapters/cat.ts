@@ -1,75 +1,48 @@
-import type { ColorBuffer, ColorMatrix } from '../types';
-import { createBuffer, createMatrix } from '../shared';
+import type { ColorArray } from '../types';
 
+/**
+ * Pre-calculated Chromatic Adaptation Matrices (CAT)
+ * Computed via: M_inv * diag(Scale) * M
+ */
+const M_CAT_65_TO_50 = new Float32Array([
+  1.0478112, 0.0228866, -0.050127, 0.0295424, 0.9904844, -0.0170491, -0.0092345,
+  0.0150436, 0.7521316,
+]);
+
+const M_CAT_50_TO_65 = new Float32Array([
+  0.9555766, -0.0230393, 0.0631636, -0.0282895, 1.0099416, 0.0210077, 0.0122982,
+  -0.020483, 1.3299098,
+]);
+
+/**
+ * Optimized Matrix-Vector multiplication.
+ * Hardcoded for 3x3 to maximize JIT unrolling.
+ */
 export function multiplyMatrixVector(
-  matrix: ColorMatrix,
-  vector: ColorBuffer,
-  output: ColorBuffer,
+  matrix: Float32Array,
+  vector: ColorArray,
+  output: ColorArray,
 ): void {
-  const v0 = vector[0];
-  const v1 = vector[1];
-  const v2 = vector[2];
+  const v0 = vector[0],
+    v1 = vector[1],
+    v2 = vector[2];
 
-  const r0 = matrix[0];
-  const r1 = matrix[1];
-  const r2 = matrix[2];
-
-  output[0] = r0[0] * v0 + r0[1] * v1 + r0[2] * v2;
-  output[1] = r1[0] * v0 + r1[1] * v1 + r1[2] * v2;
-  output[2] = r2[0] * v0 + r2[1] * v1 + r2[2] * v2;
+  output[0] = matrix[0] * v0 + matrix[1] * v1 + matrix[2] * v2;
+  output[1] = matrix[3] * v0 + matrix[4] * v1 + matrix[5] * v2;
+  output[2] = matrix[6] * v0 + matrix[7] * v1 + matrix[8] * v2;
 }
 
-const M_BRADFORD = createMatrix(
-  [0.8951, 0.2664, -0.1614],
-  [-0.7502, 1.7135, 0.0367],
-  [0.0389, -0.0685, 1.0296],
-);
-
-const M_BRADFORD_INV = createMatrix(
-  [0.98699, -0.14705, 0.15996],
-  [0.43231, 0.51836, 0.04929],
-  [-0.00853, 0.04006, 0.96848],
-);
-
-const WHITE_D65 = createBuffer([0.95047, 1.0, 1.08883]);
-const WHITE_D50 = createBuffer([0.96422, 1.0, 0.82521]);
-
-const lmsD65 = createBuffer(new Float32Array(3));
-const lmsD50 = createBuffer(new Float32Array(3));
-
-multiplyMatrixVector(M_BRADFORD, WHITE_D65, lmsD65);
-multiplyMatrixVector(M_BRADFORD, WHITE_D50, lmsD50);
-
-const SCALE_D65_TO_D50 = createBuffer([
-  lmsD50[0] / lmsD65[0],
-  lmsD50[1] / lmsD65[1],
-  lmsD50[2] / lmsD65[2],
-]);
-
-const SCALE_D50_TO_D65 = createBuffer([
-  lmsD65[0] / lmsD50[0],
-  lmsD65[1] / lmsD50[1],
-  lmsD65[2] / lmsD50[2],
-]);
-
-const lmsScratch = createBuffer(new Float32Array(3));
-
-export function xyz65ToXyz50(input: ColorBuffer, output: ColorBuffer): void {
-  multiplyMatrixVector(M_BRADFORD, input, lmsScratch);
-
-  lmsScratch[0] *= SCALE_D65_TO_D50[0];
-  lmsScratch[1] *= SCALE_D65_TO_D50[1];
-  lmsScratch[2] *= SCALE_D65_TO_D50[2];
-
-  multiplyMatrixVector(M_BRADFORD_INV, lmsScratch, output);
+/**
+ * Converts XYZ D65 to XYZ D50 using the Bradford transform.
+ * Optimized to a single matrix multiplication.
+ */
+export function xyz65ToXyz50(input: ColorArray, output: ColorArray): void {
+  multiplyMatrixVector(M_CAT_65_TO_50, input, output);
 }
 
-export function xyz50ToXyz65(input: ColorBuffer, output: ColorBuffer): void {
-  multiplyMatrixVector(M_BRADFORD, input, lmsScratch);
-
-  lmsScratch[0] *= SCALE_D50_TO_D65[0];
-  lmsScratch[1] *= SCALE_D50_TO_D65[1];
-  lmsScratch[2] *= SCALE_D50_TO_D65[2];
-
-  multiplyMatrixVector(M_BRADFORD_INV, lmsScratch, output);
+/**
+ * Converts XYZ D50 to XYZ D65 using the Bradford transform.
+ */
+export function xyz50ToXyz65(input: ColorArray, output: ColorArray): void {
+  multiplyMatrixVector(M_CAT_50_TO_65, input, output);
 }

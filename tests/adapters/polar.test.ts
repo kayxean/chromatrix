@@ -1,59 +1,97 @@
 import { describe, expect, it } from 'vitest';
-import { labToLch, lchToLab, oklabToOklch } from '~/adapters/polar';
-import { createBuffer } from '~/shared';
+import {
+  labToLch,
+  lchToLab,
+  oklabToOklch,
+  oklchToOklab,
+} from '~/adapters/polar';
+import { createMatrix, dropMatrix } from '~/shared';
 
-describe('Polar Adapter (Cartesian <-> Polar)', () => {
-  it('should calculate Chroma correctly using Pythagorean theorem', () => {
-    const lab = createBuffer([50, 3, 4]);
-    const lch = createBuffer([0, 0, 0]);
-    labToLch(lab, lch);
+describe('Polar Adapters (Lab/Oklab <-> LCH/Oklch)', () => {
+  it('should convert Cartesian to Polar (positive hue)', () => {
+    // Convert Lab (rectangular) to LCH (cylindrical)
+    const input = createMatrix('lab');
+    // Set a=10, b=10: This falls in Quadrant 1 (45 degrees)
+    input.set([50, 10, 10]);
 
-    expect(lch[0]).toBe(50);
-    expect(lch[1]).toBeCloseTo(5, 5);
+    const output = createMatrix('lch');
+    labToLch(input, output);
+
+    // Lightness (L) remains unchanged
+    expect(output[0]).toBe(50);
+    // Chroma (C) is the hypotenuse: sqrt(a^2 + b^2)
+    expect(output[1]).toBeCloseTo(Math.sqrt(200), 6);
+    // Hue (H) is the angle: atan2(b, a) converted to degrees
+    expect(output[2]).toBeCloseTo(45, 6);
+
+    dropMatrix(input);
+    dropMatrix(output);
   });
 
-  it('should calculate Hue angles correctly across quadrants', () => {
-    const output = createBuffer([0, 0, 0]);
+  it('should handle negative hue branch in toPolar', () => {
+    /**
+     * Testing the hue normalization branch:
+     * With a=10, b=-10 (Quadrant 4), atan2 returns -45 degrees.
+     * The logic must add 360 to normalize the angle to the [0, 360) range.
+     */
+    const input = createMatrix('oklab');
+    input.set([60, 10, -10]);
 
-    labToLch(createBuffer([50, 10, 10]), output);
-    expect(output[2]).toBeCloseTo(45, 4);
+    const output = createMatrix('oklch');
+    oklabToOklch(input, output);
 
-    labToLch(createBuffer([50, 10, -10]), output);
-    expect(output[2]).toBeCloseTo(315, 4);
+    expect(output[2]).toBe(315); // -45 + 360
+
+    dropMatrix(input);
+    dropMatrix(output);
   });
 
-  it('should maintain identity for achromatic colors (Chroma = 0)', () => {
-    const lab = createBuffer([75, 0, 0]);
-    const lch = createBuffer([0, 0, 0]);
-    labToLch(lab, lch);
+  it('should round-trip Polar to Cartesian', () => {
+    // Convert LCH back to Lab
+    const original = createMatrix('lch');
+    original.set([70, 25, 180]); // 180 degrees points directly along the negative 'a' axis
 
-    expect(lch[1]).toBe(0);
-    expect(lch[2]).toBe(0);
+    const mid = createMatrix('lab');
+    const result = createMatrix('lch');
+
+    lchToLab(original, mid);
+
+    // Verify intermediate Cartesian values: a = C * cos(H), b = C * sin(H)
+    expect(mid[1]).toBeCloseTo(-25, 6);
+    expect(mid[2]).toBeCloseTo(0, 6);
+
+    labToLch(mid, result);
+
+    // Ensure the round-trip preserves all polar components
+    expect(result[0]).toBeCloseTo(original[0], 6);
+    expect(result[1]).toBeCloseTo(original[1], 6);
+    expect(result[2]).toBeCloseTo(original[2], 6);
+
+    dropMatrix(original);
+    dropMatrix(mid);
+    dropMatrix(result);
   });
 
-  it('should accurately convert LCH back to Lab (Polar to Cartesian)', () => {
-    const originalLch = createBuffer([60, 20, 180]);
-    const lab = createBuffer([0, 0, 0]);
-    const resultLch = createBuffer([0, 0, 0]);
+  it('should correctly map Oklab named aliases', () => {
+    /**
+     * Verifies that the Oklab-specific polar transforms function identically
+     * to the CIELAB ones while maintaining their own space branding.
+     */
+    const input = createMatrix('oklab');
+    input.set([1, 0.1, 0.1]);
+    const output = createMatrix('oklch');
 
-    lchToLab(originalLch, lab);
+    oklabToOklch(input, output);
 
-    expect(lab[1]).toBeCloseTo(-20, 5);
-    expect(lab[2]).toBeCloseTo(0, 5);
+    const back = createMatrix('oklab');
+    oklchToOklab(output, back);
 
-    labToLch(lab, resultLch);
-    expect(resultLch[2]).toBeCloseTo(180, 5);
-  });
+    expect(back[0]).toBeCloseTo(input[0], 6);
+    expect(back[1]).toBeCloseTo(input[1], 6);
+    expect(back[2]).toBeCloseTo(input[2], 6);
 
-  it('should treat OKLab and Lab polar conversions identically', () => {
-    const input = createBuffer([0.5, 0.1, 0.1]);
-    const outLch = createBuffer([0, 0, 0]);
-    const outOklch = createBuffer([0, 0, 0]);
-
-    labToLch(input, outLch);
-    oklabToOklch(input, outOklch);
-
-    expect(outLch[1]).toBe(outOklch[1]);
-    expect(outLch[2]).toBe(outOklch[2]);
+    dropMatrix(input);
+    dropMatrix(output);
+    dropMatrix(back);
   });
 });

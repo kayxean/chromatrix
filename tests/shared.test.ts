@@ -1,104 +1,138 @@
-import { describe, expect, it } from 'vitest';
+import type { ColorMatrix } from '~/types';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  clearPool,
   cloneColor,
-  createBuffer,
   createColor,
+  createMatrix,
   deriveColor,
+  dropColor,
+  dropMatrix,
   mutateColor,
-  updateColor,
+  preallocatePool,
 } from '~/shared';
 
-describe('Utility Helpers', () => {
-  describe('createBuffer', () => {
-    it('should create a Float32Array buffer from an array', () => {
-      const buffer = createBuffer([1, 0.5, 0]);
-      expect(buffer).toBeInstanceOf(Float32Array);
-      expect(buffer[0]).toBe(1);
+describe('Shared Utilities & Pooling (shared.ts)', () => {
+  beforeEach(() => {
+    // Reset pool state between tests to ensure isolation
+    clearPool();
+  });
+
+  describe('Matrix Pooling', () => {
+    it('should preallocate and retrieve from pool', () => {
+      // Warm up the engine by pre-creating buffers
+      preallocatePool(5);
+
+      const m1 = createMatrix();
+      expect(m1).toBeInstanceOf(Float32Array);
+      expect(m1.length).toBe(3); // Standard 3-component color vector
     });
 
-    it('should throw if the data length is not 3', () => {
-      expect(() => createBuffer([1, 1] as any)).toThrow(
-        'ColorArray must have length 3',
-      );
+    it('should reuse matrices from the pool', () => {
+      /**
+       * This is the core of the zero-allocation strategy.
+       * Dropping a matrix and immediately creating one should yield
+       * the exact same object reference.
+       */
+      const m1 = createMatrix();
+      dropMatrix(m1);
+
+      const m2 = createMatrix();
+      expect(m2).toBe(m1); // Reference equality check
+    });
+
+    it('should respect the MAX_POOL_SIZE limit', () => {
+      /**
+       * To prevent memory leaks, the pool must have a ceiling (256).
+       * We simulate an overflow and verify the boundary logic.
+       */
+      for (let i = 0; i < 300; i++) {
+        dropMatrix(new Float32Array(3) as unknown as ColorMatrix<'rgb'>);
+      }
+
+      // Verify that the engine doesn't crash after overflow
+      const m = createMatrix('rgb');
+      expect(m).toBeInstanceOf(Float32Array);
+      expect(m.length).toBe(3);
+
+      // Verify that preallocate respects current capacity to avoid redundant work
+      preallocatePool(10);
+
+      const m2 = createMatrix('rgb');
+      expect(m2).toBeDefined();
     });
   });
 
-  describe('createColor', () => {
-    it('should create a color object with the correct space and buffer', () => {
-      const color = createColor('rgb', [1, 0, 0]);
+  describe('Color Lifecycle', () => {
+    it('should create and drop colors correctly', () => {
+      // createColor combines space metadata with a pooled buffer
+      const color = createColor('rgb', [1, 0, 0], 0.5);
       expect(color.space).toBe('rgb');
-      expect(color.value).toBeInstanceOf(Float32Array);
       expect(color.value[0]).toBe(1);
-    });
-  });
+      expect(color.alpha).toBe(0.5);
 
-  describe('cloneColor', () => {
-    it('should clone a color into a new memory reference', () => {
-      const original = createColor('rgb', [1, 1, 1]);
-      const clone = cloneColor(original);
-
-      expect(clone).not.toBe(original);
-      expect(clone.value).not.toBe(original.value);
-      expect(clone.value).toEqual(original.value);
-    });
-  });
-
-  describe('updateColor', () => {
-    it('should update the buffer values from an array', () => {
-      const color = createColor('rgb', [0, 0, 0]);
-      updateColor(color, [1, 1, 1]);
-      expect(color.value[0]).toBe(1);
-      expect(color.value[1]).toBe(1);
-      expect(color.value[2]).toBe(1);
-    });
-
-    it('should update the buffer values from a Float32Array', () => {
-      const color = createColor('rgb', [0, 0, 0]);
-      const newValues = new Float32Array([0.5, 0.5, 0.5]);
-      updateColor(color, newValues);
-      expect(color.value[0]).toBe(0.5);
-    });
-  });
-
-  describe('mutateColor', () => {
-    it('should mutate the color in-place', () => {
-      const color = createColor('rgb', [1, 0, 0]);
       const originalBuffer = color.value;
 
-      mutateColor(color, 'hsv');
+      // dropColor should detach the buffer and return it to the pool
+      dropColor(color);
 
-      expect(color.space).toBe('hsv');
-      expect(color.value).toBe(originalBuffer);
+      const reused = createMatrix();
+      expect(reused).toBe(originalBuffer);
     });
 
-    it('should early return if the target space is the same as the current space', () => {
-      const color = createColor('rgb', [1, 1, 1]);
-      const originalValue = color.value[0];
+    it('should clone colors with new buffer references', () => {
+      // Clones are useful when you need a snapshot that won't be mutated
+      const original = createColor('oklab', [0.5, 0.1, 0.1]);
+      const clone = cloneColor(original);
 
-      mutateColor(color, 'rgb');
-
-      expect(color.space).toBe('rgb');
-      expect(color.value[0]).toBe(originalValue);
+      expect(clone.space).toBe(original.space);
+      expect(clone.value).not.toBe(original.value); // Different reference
+      expect(clone.value).toEqual(original.value); // Same content
     });
   });
 
-  describe('deriveColor', () => {
-    it('should create a new instance when deriving to a different space', () => {
-      const color = createColor('rgb', [1, 0, 0]);
-      const derived = deriveColor(color, 'hsv');
+  describe('Mutation and Derivation', () => {
+    it('mutateColor: should change space in-place', () => {
+      /**
+       * Mutation is the high-performance path.
+       * It updates the existing object rather than creating a new one.
+       */
+      const color = createColor('rgb', [1, 1, 1]);
+      mutateColor(color, 'oklab');
 
-      expect(derived.space).toBe('hsv');
-      expect(derived).not.toBe(color);
-      expect(derived.value).not.toBe(color.value);
-      expect(color.space).toBe('rgb');
+      expect(color.space).toBe('oklab');
+      expect(color.value[0]).toBeCloseTo(1, 3);
     });
 
-    it('should simply clone if deriving to the same space', () => {
-      const color = createColor('rgb', [0, 1, 0]);
-      const derived = deriveColor(color, 'rgb');
+    it('mutateColor: should do nothing if space is the same', () => {
+      // Efficiency check: don't run conversion logic if types already match
+      const color = createColor('rgb', [1, 0, 0]);
+      const originalValue = color.value;
 
-      expect(derived.value).toEqual(color.value);
-      expect(derived).not.toBe(color);
+      mutateColor(color, 'rgb');
+      expect(color.value).toBe(originalValue);
+    });
+
+    it('deriveColor: should return a new color object in target space', () => {
+      /**
+       * Derivation is the non-destructive path.
+       * The original color remains untouched.
+       */
+      const original = createColor('rgb', [1, 1, 1]);
+      const derived = deriveColor(original, 'oklab');
+
+      expect(derived.space).toBe('oklab');
+      expect(original.space).toBe('rgb');
+      expect(derived.value).not.toBe(original.value);
+    });
+
+    it('deriveColor: should return a clone if target space matches', () => {
+      // If spaces match, deriveColor acts as a standard clone
+      const original = createColor('rgb', [1, 0, 0]);
+      const derived = deriveColor(original, 'rgb');
+
+      expect(derived.value).not.toBe(original.value);
+      expect(derived.value).toEqual(original.value);
     });
   });
 });

@@ -1,116 +1,222 @@
+import type { ColorAdapter, ColorSpace } from '~/types';
 import { describe, expect, it } from 'vitest';
-import { convertColor, convertHue, NATIVE_HUB } from '~/convert';
-import { createBuffer } from '~/shared';
+import { lrgbToRgb } from '~/adapters/gamma';
+import { applyAdapter, convertColor, convertHue } from '~/convert';
+import { createMatrix, dropMatrix } from '~/shared';
 
-describe('Color Converter (Pathfinding & Orchestration)', () => {
-  describe('convertColor', () => {
-    it('should handle identical source and target (Identity short-circuit)', () => {
-      const input = createBuffer([0.5, 0.5, 0.5]);
-      const output = createBuffer([0, 0, 0]);
-      convertColor(input, output, 'rgb', 'rgb');
-      expect(output).toEqual(input);
-    });
+describe('Conversion Engine (convert.ts)', () => {
+  it('should handle the identity path (from === to)', () => {
+    const input = createMatrix('rgb');
+    input.set([1, 0.5, 0]);
+    const output = createMatrix('rgb');
 
-    it('should throw on unsupported source mode', () => {
-      const buf = createBuffer([0, 0, 0]);
-      // @ts-expect-error
-      expect(() => convertColor(buf, buf, 'invalid', 'rgb')).toThrow(
-        'Unsupported source mode: invalid',
-      );
-    });
+    // Simple case: no conversion needed, should perform a buffer set
+    convertColor(input, output, 'rgb', 'rgb');
+    expect(output[0]).toBe(1);
+    expect(output[1]).toBe(0.5);
 
-    it('should throw on unsupported target mode', () => {
-      const buf = createBuffer([0, 0, 0]);
-      // @ts-expect-error
-      expect(() => convertColor(buf, buf, 'rgb', 'invalid')).toThrow(
-        'Unsupported target mode: invalid',
-      );
-    });
+    // Verify in-place identity does nothing and remains stable
+    convertColor(input, input, 'rgb', 'rgb');
+    expect(input[0]).toBe(1);
 
-    it('should use DIRECT routing for sRGB cylindrical spaces', () => {
-      const rgb = createBuffer([1, 0, 0]);
-      const hsv = createBuffer([0, 0, 0]);
-      convertColor(rgb, hsv, 'rgb', 'hsv');
-      expect(hsv[0]).toBe(0);
-      expect(hsv[1]).toBe(1);
-    });
-
-    it('should cross the Hub for complex conversions (HSL to OKLCH)', () => {
-      const hsl = createBuffer([0, 1, 0.5]);
-      const oklch = createBuffer([0, 0, 0]);
-      convertColor(hsl, oklch, 'hsl', 'oklch');
-      expect(oklch[0]).toBeCloseTo(0.628, 2);
-      expect(oklch[1]).toBeGreaterThan(0.2);
-      expect(oklch[2]).toBeCloseTo(29, 0);
-    });
-
-    it('should cross from XYZ65 to XYZ50 (D65 -> D50)', () => {
-      const rgb = createBuffer([1, 1, 1]);
-      const lab = createBuffer([0, 0, 0]);
-      convertColor(rgb, lab, 'rgb', 'lab');
-      expect(lab[0]).toBeCloseTo(100, 1);
-    });
-
-    it('should cross from XYZ50 to XYZ65 (D50 -> D65)', () => {
-      const lab = createBuffer([100, 0, 0]);
-      const rgb = createBuffer([0, 0, 0]);
-      convertColor(lab, rgb, 'lab', 'rgb');
-      expect(rgb[0]).toBeCloseTo(1, 1);
-    });
+    dropMatrix(input);
+    dropMatrix(output);
   });
 
-  describe('convertHue', () => {
-    it('should extract hue from non-polar spaces (rgb -> hsl hue)', () => {
-      const rgb = createBuffer([0, 0, 1]);
-      const output = createBuffer([0, 0, 0]);
-      convertHue(rgb, output, 'rgb');
-      expect(output[0]).toBe(240);
-    });
+  it('should use DIRECT_HUB for same-model shortcuts (RGB -> HSL)', () => {
+    /**
+     * Certain spaces share a common model (sRGB).
+     * The engine should detect this and bypass the XYZ hub for performance.
+     */
+    const rgb = createMatrix('rgb');
+    rgb.set([1, 0, 0]);
+    const hsl = createMatrix('hsl');
 
-    it('should extract hue for Lab', () => {
-      const lab = createBuffer([50, 50, 50]);
-      const output = createBuffer([0, 0, 0]);
-      convertHue(lab, output, 'lab');
-      expect(output[2]).toBeCloseTo(45, 0);
-    });
+    convertColor(rgb, hsl, 'rgb', 'hsl');
 
-    it('should extract hue for Oklab', () => {
-      const oklab = createBuffer([0.4, 0.1, 0.1]);
-      const output = createBuffer([0, 0, 0]);
-      convertHue(oklab, output, 'oklab');
-      expect(output[2]).toBeCloseTo(45, 0);
-    });
+    expect(hsl[0]).toBe(0); // Hue
+    expect(hsl[1]).toBe(1); // Saturation
+    expect(hsl[2]).toBe(0.5); // Lightness
 
-    it('should pass through already polar spaces (e.g., LCH)', () => {
-      const lch = createBuffer([50, 10, 180]);
-      const output = createBuffer([0, 0, 0]);
-      convertHue(lch, output, 'lch');
-      expect(output[2]).toBe(180);
-      expect(output[1]).toBe(10);
-    });
+    dropMatrix(rgb);
+    dropMatrix(hsl);
+  });
 
-    it('should use convertColor fallback in default case', () => {
-      const input = createBuffer([1, 0, 0]);
-      const output = createBuffer([0, 0, 0]);
+  it('should handle complex Hub paths with CAT (Lab to Oklab)', () => {
+    /**
+     * This exercises the full conversion pipeline:
+     * 1. Lab (D50) -> XYZ D50
+     * 2. XYZ D50 -> Bradford CAT -> XYZ D65
+     * 3. XYZ D65 -> Oklab (D65)
+     */
+    const lab = createMatrix('lab');
+    lab.set([50, 20, 10]);
+    const oklab = createMatrix('oklab');
 
-      // @ts-expect-error
-      NATIVE_HUB['mock' as any] = 'xyz65';
+    convertColor(lab, oklab, 'lab', 'oklab');
 
-      try {
-        // @ts-expect-error
-        expect(() => convertHue(input, output, 'mock')).toThrow();
-      } finally {
-        // @ts-expect-error
-        delete NATIVE_HUB.mock;
-      }
-    });
+    // Values should be normalized within standard perceptual bounds
+    expect(oklab[0]).toBeGreaterThan(0);
+    expect(oklab[0]).toBeLessThan(1);
 
-    it('should throw on unsupported hue mode', () => {
-      const buf = createBuffer([0, 0, 0]);
-      // @ts-expect-error
-      expect(() => convertHue(buf, buf, 'invalid')).toThrow(
-        'Unsupported color mode for hue conversion: invalid',
-      );
-    });
+    dropMatrix(lab);
+    dropMatrix(oklab);
+  });
+
+  it('should handle direct spaces as Hubs using valid literals', () => {
+    /**
+     * Verifies the fallback logic when a space is its own hub (e.g., XYZ65).
+     * This ensures the engine doesn't try to find a conversion path to itself.
+     */
+    const xyz = createMatrix('xyz65');
+    xyz.set([0.95047, 1.0, 1.08883]);
+    const rgb = createMatrix('rgb');
+
+    const fromSpace: ColorSpace = 'xyz65';
+    convertColor(xyz, rgb, fromSpace, 'rgb');
+
+    // D65 White point should map back to white in sRGB
+    expect(rgb[0]).toBeCloseTo(1, 3);
+
+    dropMatrix(xyz);
+    dropMatrix(rgb);
+  });
+
+  it('convertColor should handle the D50 to D65 chromatic adaptation path', () => {
+    /**
+     * Path: xyz50 -> CAT -> xyz65
+     * Forces the 'else' branch of the sourceHub === 'xyz65' check.
+     */
+    const xyz50 = createMatrix('xyz50');
+    xyz50.set([0.9642, 1.0, 0.8249]); // D50 White point
+    const xyz65 = createMatrix('xyz65');
+
+    convertColor(xyz50, xyz65, 'xyz50', 'xyz65');
+
+    // Should result in D65 White point
+    expect(xyz65[0]).toBeCloseTo(0.9504, 3);
+    expect(xyz65[2]).toBeCloseTo(1.0888, 3);
+
+    dropMatrix(xyz50);
+    dropMatrix(xyz65);
+  });
+
+  it('convertColor should handle D65 to D50 chromatic adaptation', () => {
+    /**
+     * Path: oklab (D65) -> xyz65 -> CAT -> xyz50 -> lab (D50)
+     * Triggers the (sourceHub === 'xyz65') branch for CAT.
+     */
+    const oklab = createMatrix('oklab');
+    oklab.set([1, 0, 0]); // White
+    const lab = createMatrix('lab');
+
+    convertColor(oklab, lab, 'oklab', 'lab');
+
+    // D65 White oklab [1,0,0] should become D50 White lab [100,0,0]
+    expect(lab[0]).toBeCloseTo(100, 1);
+    dropMatrix(oklab);
+    dropMatrix(lab);
+  });
+
+  it('convertColor should skip hub copy when input and output are the same', () => {
+    /**
+     * Triggers the "else if (input !== output)" bypass for hub assignments.
+     * Uses a space that is its own hub (xyz65) and the same matrix reference.
+     */
+    const xyz = createMatrix('xyz65');
+    xyz.set([0.5, 0.5, 0.5]);
+
+    convertColor(xyz, xyz, 'xyz65', 'xyz65');
+
+    expect(xyz[0]).toBe(0.5);
+    dropMatrix(xyz);
+  });
+
+  it('convertColor should bypass hub-set when source is hub and input is output', () => {
+    /**
+     * from='xyz65' means toHubChain is undefined.
+     * input === output means the (input !== output) branch is skipped.
+     */
+    const xyz = createMatrix('xyz65');
+    xyz.set([0.5, 0.5, 0.5]);
+
+    // Converting xyz65 to oklab in-place
+    convertColor(xyz, xyz, 'xyz65', 'oklab');
+
+    expect(xyz[0]).not.toBe(0.5);
+    dropMatrix(xyz);
+  });
+
+  it('convertHue should map correctly or copy if no polar target exists', () => {
+    /**
+     * Specialized utility for operations like 'color-mix'
+     * that specifically need to isolate the hue component.
+     */
+    const rgb = createMatrix('rgb');
+    rgb.set([1, 0, 0]);
+    const hsl = createMatrix('hsl');
+
+    // Valid polar conversion (RGB -> HSL -> Extract H)
+    convertHue(rgb, hsl, 'rgb');
+    expect(hsl[0]).toBe(0);
+
+    // If the space isn't polar (like XYZ), it should just copy values.
+    const xyz = createMatrix('xyz65');
+    xyz.set([0.5, 0.5, 0.5]);
+    const output = createMatrix('xyz65');
+
+    convertHue(xyz, output, 'xyz65');
+    expect(output[0]).toBe(0.5);
+
+    dropMatrix(rgb);
+    dropMatrix(hsl);
+    dropMatrix(xyz);
+    dropMatrix(output);
+  });
+
+  it('convertHue should handle in-place identity when no polar target exists', () => {
+    /**
+     * Covers the branch where targetPolar is missing AND input === output.
+     * Ensures stability for non-polar in-place operations.
+     */
+    const xyz = createMatrix('xyz65');
+    xyz.set([0.5, 0.5, 0.5]);
+
+    convertHue(xyz, xyz, 'xyz65');
+    expect(xyz[0]).toBe(0.5);
+
+    dropMatrix(xyz);
+  });
+
+  it('applyAdapter should handle empty, single, and multi chains', () => {
+    /**
+     * Tests the low-level adapter sequencer which uses a temporary 'scratchpad'
+     * matrix to handle chains of 3 or more transformations.
+     */
+    const input = createMatrix('rgb');
+    input.set([0.5, 0.5, 0.5]);
+    const output = createMatrix('rgb');
+
+    // Empty chain: different matrices covers the .set() call
+    applyAdapter([], input, output);
+    expect(output[0]).toBe(0.5);
+
+    // Empty chain: same matrix covers the identity/return branch
+    applyAdapter([], input, input);
+    expect(input[0]).toBe(0.5);
+
+    // Single step: applies transformation directly to the output
+    const singleStep: ColorAdapter[] = [lrgbToRgb];
+    applyAdapter(singleStep, input, output);
+    expect(output[0]).not.toBe(0.5);
+
+    // Multi-step (3+): forces scratchpad logic and internal for-loop execution
+    input.set([0.5, 0.5, 0.5]);
+    const multiStep: ColorAdapter[] = [lrgbToRgb, lrgbToRgb, lrgbToRgb];
+    applyAdapter(multiStep, input, output);
+    expect(output[0]).toBeGreaterThan(0);
+
+    dropMatrix(input);
+    dropMatrix(output);
   });
 });
