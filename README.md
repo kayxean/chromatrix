@@ -12,24 +12,27 @@ It uses CIEXYZ (D65/D50) and Bradford CAT to move colors around. I'm told this i
 - **Checks contrast**: Calculates APCA contrast (the modern way) and can force a color to meet a specific target.
 - **Makes palettes**: Generates harmonies, shades, and multi-color scales.
 - **Validates & Fixes**: Checks if a color is "imaginary" (out of gamut) and clamps it back to reality.
-- **Simulates vision**: Shows you how colors look to people with different types of color blindness.
+- **Simulates vision**: Accurate projections into reduced color spaces for CVD (Color Vision Deficiency).
 
 ## How to use it
 
 ### Creating and Mutating
 
-Everything uses a `Color` object. You can mutate it in-place to save memory or derive a new one.
+Everything uses a `Color` object. You can mutate it in-place to save memory or derive a new one. We use a matrix pool to keep things fast, so remember to `dropColor` when you're done with one.
 
 ```typescript
-import { createColor, mutateColor, deriveColor } from './utils';
+import { createColor, mutateColor, deriveColor, dropColor } from './shared';
 
 const red = createColor('rgb', [1, 0, 0]);
 
-// Move it to Oklch in-place (no new objects created)
+// Move it to Oklch in-place (no new buffers created)
 mutateColor(red, 'oklch');
 
 // Or get a new copy in HSL
 const redHsl = deriveColor(red, 'hsl');
+
+// Clean up when finished to return the buffer to the pool
+dropColor(red);
 ```
 
 ### Reading and writing CSS
@@ -49,10 +52,11 @@ const css = formatCss(color);
 
 ### Checking and matching contrast
 
-It uses APCA, which is way more accurate than the old WCAG 2.1 math.
+It uses APCA, which is way more accurate than the old WCAG 2.1 math. It returns a signed Lc value (positive for light bg, negative for dark bg).
 
 ```typescript
-import { checkContrast, matchContrast } from './shared/contrast';
+import { checkContrast, matchContrast } from './utils/contrast';
+import { parseColor } from './parse';
 
 const text = parseColor('#ff0000');
 const bg = parseColor('#000000');
@@ -60,8 +64,8 @@ const bg = parseColor('#000000');
 // Get APCA contrast value (Lc)
 const contrast = checkContrast(text, bg); 
 
-// Adjust text lightness in Oklch until it hits a target of 60
-const newText = matchContrast(text, bg, 60);
+// Adjust text lightness in Oklch until it hits a target of 60 Lc
+const accessibleText = matchContrast(text, bg, 60);
 ```
 
 ### Making things look nice
@@ -69,7 +73,7 @@ const newText = matchContrast(text, bg, 60);
 `createHarmony` for matching, `createShades` for gradients, and `createScales` for interpolation.
 
 ```typescript
-import { createHarmony, createShades, createScales } from './shared/palette';
+import { createHarmony, createShades, createScales } from './utils/palette';
 import { parseColor } from './parse';
 
 const blue = parseColor('#0000ff');
@@ -94,18 +98,18 @@ const scale = createScales([
 
 ### Safety and Comparison
 
-`checkGamut` tells you if your screen can actually show the color. `isEqual` compares colors even if they are in different spaces.
+`checkGamut` tells you if your screen can actually show the color. `isEqual` compares colors even if they are in different spaces using a perceptual tolerance.
 
 ```typescript
-import { checkGamut, clampColor } from './shared/gamut';
-import { isEqual, getDistance } from './shared/compare';
+import { checkGamut, clampColor } from './utils/gamut';
+import { isEqual, getDistance } from './utils/compare';
 
 const color = createColor('rgb', [1.2, -0.1, 0.5]);
 
 const isSafe = checkGamut(color); // false
 clampColor(color); // Fixes it in-place to [1, 0, 0.5]
 
-// Perceptual distance (Delta E OK)
+// Perceptual distance (Delta E OK) using Oklab
 const diff = getDistance(colorA, colorB);
 
 // Check if RGB red is "the same" as HSL red
@@ -114,44 +118,17 @@ const same = isEqual(parseColor('rgb(255, 0, 0)'), parseColor('hsl(0, 100%, 50%)
 
 ### Accessibility Simulation
 
-Accurately projects colors into reduced spaces so you can see what someone with color blindness sees.
+Accurately projects colors into reduced spaces in Linear RGB so you can see what someone with color blindness sees.
 
 ```typescript
-import { simulateDeficiency } from './shared/simulate';
+import { simulateDeficiency } from './utils/simulate';
+import { parseColor } from './parse';
 
 const brand = parseColor('#32cd32');
 
 // How does a person with red-blindness see this?
 const protanopiaView = simulateDeficiency(brand, 'protanopia');
 ```
-
-### Fluent API
-
-If you prefer chaining methods over passing objects around, use the `color()` function. It wraps the utilities into an immutable `ColorApi` object so you can transform colors like a sentence. Unlike the core utils, this doesn't mutate—it always returns a fresh instance.
-
-```typescript
-import { color } from './shared/api';
-
-// Create it from a functional CSS string or raw values
-const red = color('rgb(255, 0, 0)');
-const aqua = color('hsl', [180, 1, 0.5]);
-
-// Chain conversions and formatting
-const glassRed = color('rgb(255, 0, 0)')
-  .to('oklch')
-  .format(0.5, false, 2); 
-  // oklch(0.63 0.26 29.23 / 0.5)
-
-// Update values without touching the original
-const green = red.update([0, 1, 0]);
-// red is still red, green is a new object
-
-// Deep clone or grab the raw data
-const copy = green.clone();
-const data = green.raw(); // { space: 'rgb', value: Float32Array[...] }
-```
-
-It’s a high-level wrapper for the functional utils. It’s the easiest way to write readable color logic without manually managing `Float32Array` buffers at every step.
 
 ## How the math works (The "Hub" thing)
 
@@ -160,4 +137,4 @@ I didn't want to write a thousand different math formulas for every possible con
 -   **The Hubs**: Modern spaces (`rgb`, `oklab`, etc.) go to **CIEXYZ D65**. Older ones (`lab`, `lch`) go to **CIEXYZ D50**.
 -   **The Bridge**: To get between the two hubs, I used the **Bradford CAT**. It’s a translator so the colors don't shift weirdly when they change illuminants.
 
-Basically: `Your Color` -> `Hub` -> `(Bridge if needed)` -> `New Color`. Because it uses `Float32Array` buffers, it does all this math without making the Garbage Collector angry.
+Basically: `Your Color` -> `Hub` -> `(Bridge if needed)` -> `New Color`. Because it uses `Float32Array` pool, it does all this math without making the Garbage Collector angry.
