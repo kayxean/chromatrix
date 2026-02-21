@@ -1,12 +1,8 @@
 import type { ColorArray } from '../types';
 
-// Pre-calculate constants
 const RAD_TO_DEG = 180 / Math.PI;
 const DEG_TO_RAD = Math.PI / 180;
 
-/**
- * Shared logic for Cartesian (L, a, b) to Polar (L, C, H)
- */
 function toPolar(input: ColorArray, output: ColorArray): void {
   const a = input[1];
   const b = input[2];
@@ -16,14 +12,11 @@ function toPolar(input: ColorArray, output: ColorArray): void {
 
   if (hue < 0) hue += 360;
 
-  output[0] = input[0]; // Lightness remains unchanged
+  output[0] = input[0];
   output[1] = chroma;
   output[2] = hue;
 }
 
-/**
- * Shared logic for Polar (L, C, H) to Cartesian (L, a, b)
- */
 function toCartesian(input: ColorArray, output: ColorArray): void {
   const L = input[0];
   const C = input[1];
@@ -34,7 +27,6 @@ function toCartesian(input: ColorArray, output: ColorArray): void {
   output[2] = C * Math.sin(hRad);
 }
 
-// Named exports for API clarity
 export const labToLch = toPolar;
 export const oklabToOklch = toPolar;
 export const lchToLab = toCartesian;

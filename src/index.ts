@@ -34,4 +34,6 @@ export {
   mixColor,
 } from './utils/palette';
 
+export { createPicker, fromPicker, toPicker } from './utils/picker';
+
 export { simulateDeficiency } from './utils/simulate';

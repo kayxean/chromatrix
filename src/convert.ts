@@ -24,10 +24,6 @@ import {
 } from './adapters/srgb';
 import { createMatrix, dropMatrix } from './shared';
 
-/**
- * Maps color spaces to their "Native Hub" white point.
- * This determines if a Chromatic Adaptation Transform (CAT) is needed.
- */
 export const NATIVE_HUB: Partial<Record<ColorSpace, 'xyz50' | 'xyz65'>> = {
   rgb: 'xyz65',
   hsl: 'xyz65',
@@ -40,9 +36,6 @@ export const NATIVE_HUB: Partial<Record<ColorSpace, 'xyz50' | 'xyz65'>> = {
   oklch: 'xyz65',
 };
 
-/**
- * Chains required to move a space into its respective Hub.
- */
 export const TO_HUB: Partial<Record<ColorSpace, ColorAdapter[]>> = {
   rgb: [rgbToLrgb, lrgbToXyz65],
   hsl: [hslToHsv, hsvToRgb, rgbToLrgb, lrgbToXyz65],
@@ -55,9 +48,6 @@ export const TO_HUB: Partial<Record<ColorSpace, ColorAdapter[]>> = {
   oklch: [oklchToOklab, oklabToXyz65],
 };
 
-/**
- * Chains required to move from a Hub to the target space.
- */
 export const FROM_HUB: Partial<Record<ColorSpace, ColorAdapter[]>> = {
   rgb: [xyz65ToLrgb, lrgbToRgb],
   hsl: [xyz65ToLrgb, lrgbToRgb, rgbToHsv, hsvToHsl],
@@ -70,9 +60,6 @@ export const FROM_HUB: Partial<Record<ColorSpace, ColorAdapter[]>> = {
   oklch: [xyz65ToOklab, oklabToOklch],
 };
 
-/**
- * Shortcuts for spaces sharing the same model (e.g., RGB -> HSV).
- */
 export const DIRECT_HUB: Partial<
   Record<ColorSpace, Partial<Record<ColorSpace, ColorAdapter[]>>>
 > = {
@@ -102,10 +89,6 @@ export const DIRECT_HUB: Partial<
   oklch: { oklab: [oklchToOklab] },
 };
 
-/**
- * Applies a chain of adapters.
- * Optimized to use at most one scratchpad for any length of conversion.
- */
 export function applyAdapter(
   chain: ColorAdapter[],
   input: ColorArray,
@@ -122,27 +105,19 @@ export function applyAdapter(
     return;
   }
 
-  // Intermediate steps: create one scratchpad and reuse it
   const scratch = createMatrix('rgb');
 
-  // First step: input -> scratch
   chain[0](input, scratch);
 
-  // Middle steps: scratch -> scratch
   for (let i = 1; i < len - 1; i++) {
     chain[i](scratch, scratch);
   }
 
-  // Last step: scratch -> output
   chain[len - 1](scratch, output);
 
   dropMatrix(scratch);
 }
 
-/**
- * Primary conversion engine.
- * Handles direct paths, Hub-based paths, and Chromatic Adaptation.
- */
 export function convertColor<S extends ColorSpace, X extends ColorSpace>(
   input: ColorArray,
   output: ColorArray,
@@ -154,18 +129,15 @@ export function convertColor<S extends ColorSpace, X extends ColorSpace>(
     return;
   }
 
-  // 1. Check for a Direct Path (e.g., RGB to HSV)
   const directChain = DIRECT_HUB[from]?.[to as ColorSpace];
   if (directChain) {
     applyAdapter(directChain, input, output);
     return;
   }
 
-  // 2. Complex Path Logic
   const sourceHub = NATIVE_HUB[from] ?? (from as 'xyz50' | 'xyz65');
   const targetHub = NATIVE_HUB[to as ColorSpace] ?? (to as 'xyz50' | 'xyz65');
 
-  // Convert Source to its Native Hub (results stored in 'output')
   const toHubChain = TO_HUB[from];
   if (toHubChain) {
     applyAdapter(toHubChain, input, output);
@@ -173,7 +145,6 @@ export function convertColor<S extends ColorSpace, X extends ColorSpace>(
     output.set(input);
   }
 
-  // 3. Chromatic Adaptation (D65 <-> D50)
   if (sourceHub !== targetHub) {
     if (sourceHub === 'xyz65') {
       xyz65ToXyz50(output, output);
@@ -182,7 +153,6 @@ export function convertColor<S extends ColorSpace, X extends ColorSpace>(
     }
   }
 
-  // 4. Convert from Hub to Target (results in 'output')
   const fromHubChain = FROM_HUB[to as ColorSpace];
   if (fromHubChain) {
     applyAdapter(fromHubChain, output, output);
@@ -196,9 +166,6 @@ export const TO_POLAR: Partial<Record<ColorSpace, ColorSpace>> = {
   oklab: 'oklch',
 };
 
-/**
- * Helper to convert a color to its closest polar/cylindrical representation.
- */
 export function convertHue<S extends ColorSpace>(
   input: ColorArray,
   output: ColorArray,

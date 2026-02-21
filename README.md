@@ -1,140 +1,182 @@
 # Color
 
-Type-safe, blazingly-fast, and zero-dependency. Most color tools are either too heavy or too inaccurate, so I made this. It handles complex color space conversions correctly using CIEXYZ hubs, but keeps the footprint small by using `Float32Array` buffers under the hood.
+A small, heavy-duty color engine. Most libraries prioritize ease of use at the cost of accuracy or memory. This one uses `Float32Array` buffers and CIEXYZ hubs to ensure conversions are mathematically sound without trashing your heap.
 
-## What it actually does
+## The Core Logic
 
-It uses CIEXYZ (D65/D50) and Bradford CAT to move colors around. I'm told this is the "correct" way to do it so the colors don't look weird when jumping between spaces like `oklch` and `lab`.
+Color math is messy because different spaces use different reference points. To solve this, every conversion passes through a central hub.
+- **Conversion**: Moves data between `rgb`, `hsl`, `hwb`, `lab`, `lch`, `oklab`, and `oklch`.
+- **Parsing**: Reads CSS strings (hex, functional notation, and modern spaces).
+- **Formatting**: Outputs color objects as standard CSS strings.
+- **Contrast**: Calculates APCA *Lc* values for text and background pairs.
+- **Palettes**: Generates harmonies and scales using perceptual interpolation.
+- **Gamut**: Detects out-of-bounds colors and clamps them to a valid range.
+- **Pickers**: Maps 2D UI coordinates to HSVA values for color selection.
+- **Vision**: Simulates color-blindness by projecting into reduced color spaces.
 
-- **Converts stuff**: Changes colors between `rgb`, `hsl`, `hwb`, `lab`, `lch`, `oklab`, and `oklch`.
-- **Reads CSS**: You give it a string like `#ff0000` or `oklab(59% 0.22 0.12)` and it figures it out.
-- **Writes CSS**: It turns color objects back into strings you can actually use in your CSS.
-- **Checks contrast**: Calculates APCA contrast (the modern way) and can force a color to meet a specific target.
-- **Makes palettes**: Generates harmonies, shades, and multi-color scales.
-- **Validates & Fixes**: Checks if a color is "imaginary" (out of gamut) and clamps it back to reality.
-- **Simulates vision**: Accurate projections into reduced color spaces for CVD (Color Vision Deficiency).
+## Usage
 
-## How to use it
+### Color Conversion
 
-### Creating and Mutating
+Direct transformations are handled through a chain of adapters. The system automatically determines if it can take a direct path or if it needs to route through a CIEXYZ hub.
 
-Everything uses a `Color` object. You can mutate it in-place to save memory or derive a new one. We use a matrix pool to keep things fast, so remember to `dropColor` when you're done with one.
+```ts
+import { convertColor, convertHue } from './convert';
+import { createMatrix, dropMatrix } from './shared';
 
-```typescript
-import { createColor, mutateColor, deriveColor, dropColor } from './shared';
+const input = createMatrix('rgb');
+const output = createMatrix('oklch');
+input.set([1, 0, 0]); 
 
-const red = createColor('rgb', [1, 0, 0]);
+// Routes: RGB -> LRGB -> XYZ65 -> Oklab -> Oklch
+convertColor(input, output, 'rgb', 'oklch');
 
-// Move it to Oklch in-place (no new buffers created)
-mutateColor(red, 'oklch');
+// Quickly move a color to its native polar space (e.g., Lab -> Lch)
+const polar = createMatrix('lch');
+convertHue(input, polar, 'lab');
 
-// Or get a new copy in HSL
-const redHsl = deriveColor(red, 'hsl');
-
-// Clean up when finished to return the buffer to the pool
-dropColor(red);
+dropMatrix(input);
+dropMatrix(output);
+dropMatrix(polar);
 ```
 
-### Reading and writing CSS
+### Matrix Management
 
-`parseColor` gives you the object, `formatCss` gives you the string.
+Everything is built on a `Color` object containing a `Float32Array`. To keep performance high, we use a pool. You can either mutate in-place or derive new copies, but you must manually free them when finished.
 
-```typescript
+```ts
+import { createColor, mutateColor, deriveColor, dropColor } from './shared';
+
+const color = createColor('rgb', [0.8, 0.1, 0.2]);
+
+// In-place conversion to avoid new allocations
+mutateColor(color, 'oklch');
+
+// Create a separate copy in another space
+const copy = deriveColor(color, 'hsl');
+
+// Always return the buffer to the pool
+dropColor(color);
+dropColor(copy);
+```
+
+### CSS Integration
+
+Parsing returns a managed color object. Formatting returns a standard string.
+
+```ts
 import { parseColor } from './parse';
 import { formatCss } from './format';
 
-const color = parseColor('oklab(62% -0.07 -0.15)');
-// color -> { space: 'oklab', value: Float32Array[...] }
-
-const css = formatCss(color);
-// oklab(62% -0.07 -0.15)
+const color = parseColor('oklch(60% 0.15 30)');
+const css = formatCss(color); // "oklch(60% 0.15 30)"
 ```
 
-### Checking and matching contrast
+### Contrast & Accessibility
 
-It uses APCA, which is way more accurate than the old WCAG 2.1 math. It returns a signed Lc value (positive for light bg, negative for dark bg).
+Forget the old WCAG ratio. This uses APCA to calculate a signed *Lc* value based on font weight and background luminance.
 
-```typescript
+```ts
 import { checkContrast, matchContrast } from './utils/contrast';
-import { parseColor } from './parse';
 
-const text = parseColor('#ff0000');
-const bg = parseColor('#000000');
+const text = parseColor('#ffffff');
+const bg = parseColor('#222222');
 
-// Get APCA contrast value (Lc)
-const contrast = checkContrast(text, bg); 
+// Get the Lc value
+const score = checkContrast(text, bg); 
 
-// Adjust text lightness in Oklch until it hits a target of 60 Lc
-const accessibleText = matchContrast(text, bg, 60);
+// Shift text lightness until it meets a target of 75 Lc
+const safeColor = matchContrast(text, bg, 75);
 ```
 
-### Making things look nice
+### Generative Tools
 
-`createHarmony` for matching, `createShades` for gradients, and `createScales` for interpolation.
+Interpolation happens in polar space for smoother, more "natural" color shifts.
 
-```typescript
-import { createHarmony, createShades, createScales } from './utils/palette';
-import { parseColor } from './parse';
+```ts
+import { createHarmony, createScales } from './utils/palette';
 
-const blue = parseColor('#0000ff');
+const base = parseColor('#007bff');
 
-// Get analogous colors (shifts hue in polar space)
-const mix = createHarmony(blue, [{ name: 'analogous', ratios: [-30, 30] }]);
+// Harmony: Generate analogous neighbors
+const neighbors = createHarmony(base, [{ name: 'analogous', ratios: [-30, 30] }]);
 
-// 5 steps from red to black
-const shades = createShades(
+// Scales: Interpolate through multiple points
+const ramp = createScales([
   parseColor('#ff0000'), 
-  parseColor('#000000'), 
-  5
-);
-
-// Smooth scale between Red -> Yellow -> Green
-const scale = createScales([
-  parseColor('#ff0000'),
-  parseColor('#ffff00'),
-  parseColor('#00ff00')
-], 7);
+  parseColor('#0000ff')
+], 5);
 ```
 
-### Safety and Comparison
+### Safety & Comparison
 
-`checkGamut` tells you if your screen can actually show the color. `isEqual` compares colors even if they are in different spaces using a perceptual tolerance.
+Colors that look the same in different spaces are treated as equal through a perceptual tolerance threshold.
 
-```typescript
+```ts
 import { checkGamut, clampColor } from './utils/gamut';
-import { isEqual, getDistance } from './utils/compare';
+import { isEqual } from './utils/compare';
 
-const color = createColor('rgb', [1.2, -0.1, 0.5]);
+const wideColor = parseColor('oklch(90% 0.4 120)');
 
-const isSafe = checkGamut(color); // false
-clampColor(color); // Fixes it in-place to [1, 0, 0.5]
+if (!checkGamut(wideColor)) {
+  clampColor(wideColor); // Moves it to the closest valid RGB edge
+}
 
-// Perceptual distance (Delta E OK) using Oklab
-const diff = getDistance(colorA, colorB);
-
-// Check if RGB red is "the same" as HSL red
-const same = isEqual(parseColor('rgb(255, 0, 0)'), parseColor('hsl(0, 100%, 50%)')); // true
+// Compare different spaces perceptually
+const match = isEqual(parseColor('#f00'), parseColor('hsl(0, 100%, 50%)'));
 ```
 
-### Accessibility Simulation
+### Interactive Pickers
 
-Accurately projects colors into reduced spaces in Linear RGB so you can see what someone with color blindness sees.
+Building a UI requires bridging flat values (like slider percentages) to complex matrices. The `createPicker` utility handles the math and the state sync.
 
-```typescript
-import { simulateDeficiency } from './utils/simulate';
+```tsx
+import { createPicker } from './utils/picker';
 import { parseColor } from './parse';
 
-const brand = parseColor('#32cd32');
+const picker = createPicker(parseColor('#32cd32'));
 
-// How does a person with red-blindness see this?
-const protanopiaView = simulateDeficiency(brand, 'protanopia');
+function ColorPicker() {
+  const [view, setView] = useState(() => picker.getValue());
+  
+  useEffect(() => picker.subscribe(setView), []);
+
+  function handleMove(e) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    // update() handles the coordinate-to-HSV mapping and y-axis inversion
+    picker.update(
+      (e.clientX - rect.left) / rect.width, 
+      (e.clientY - rect.top) / rect.height, 
+      'sv'
+    );
+  }
+
+  return (
+    <div onMouseMove={handleMove} className="picker-container">
+      <div className="cursor" style={{
+        left: `${view.s * 100}%`,
+        top: `${(1 - view.v) * 100}%`
+      }} />
+    </div>
+  );
+}
 ```
 
-## How the math works (The "Hub" thing)
+### Vision Simulation
 
-I didn't want to write a thousand different math formulas for every possible conversion. Instead, everything converts to a "Hub" first (CIEXYZ).
+Simulates how colors appear under Protanopia, Deuteranopia, or Tritanopia by projecting matrices into reduced color spaces.
 
--   **The Hubs**: Modern spaces (`rgb`, `oklab`, etc.) go to **CIEXYZ D65**. Older ones (`lab`, `lch`) go to **CIEXYZ D50**.
--   **The Bridge**: To get between the two hubs, I used the **Bradford CAT**. It’s a translator so the colors don't shift weirdly when they change illuminants.
+```ts
+import { simulateDeficiency } from './utils/simulate';
 
-Basically: `Your Color` -> `Hub` -> `(Bridge if needed)` -> `New Color`. Because it uses `Float32Array` pool, it does all this math without making the Garbage Collector angry.
+const original = parseColor('#ff5500');
+const simulated = simulateDeficiency(original, 'deuteranopia');
+```
+
+## The Math
+
+Rather than writing thousands of individual conversion formulas, this library uses a *Hub* and *Bridge* architecture.
+- **The Hubs**: Modern spaces (`rgb`, `oklab`) target **CIEXYZ D65**. Reference spaces (`lab`, `lch`) target **CIEXYZ D50**.
+- **The Bridge**: When moving between hubs, we use a **Bradford CAT** (Chromatic Adaptation Transform). This prevents the "color shift" usually seen when switching between D50 and D65 standards.
+
+By using a `Float32Array` pool, the library performs these complex matrix multiplications without triggering the garbage collector.

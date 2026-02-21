@@ -4,9 +4,6 @@ import { createColor } from './shared';
 const INV_255 = 1 / 255;
 const INV_100 = 1 / 100;
 
-/**
- * Fast hex parsing using bitwise shifts.
- */
 function fastParseHex(hex: string): {
   r: number;
   g: number;
@@ -54,7 +51,6 @@ function fastParseHex(hex: string): {
 export function parseColor(css: string): Color {
   const trimmed = css.trim();
 
-  // 1. Optimized Hex Path
   if (trimmed[0] === '#') {
     const hex = trimmed.slice(1);
     const { r, g, b, a } = fastParseHex(hex);
@@ -64,7 +60,6 @@ export function parseColor(css: string): Color {
     };
   }
 
-  // 2. Functional Path (rgb(), lab(), color(), etc.)
   const openParen = trimmed.indexOf('(');
   const closeParen = trimmed.lastIndexOf(')');
 
@@ -72,7 +67,6 @@ export function parseColor(css: string): Color {
     let spaceName = trimmed.slice(0, openParen).toLowerCase();
     const content = trimmed.slice(openParen + 1, closeParen);
 
-    // Filter out empty strings from split
     const parts = content.split(/[,\s/]+/).filter(Boolean);
 
     let space: ColorSpace;
@@ -86,20 +80,17 @@ export function parseColor(css: string): Color {
       else if (profile === 'xyz-d50') space = 'xyz50';
       else space = profile as ColorSpace;
     } else {
-      // Handle legacy rgba/hsla
       if (spaceName.length > 3 && spaceName.endsWith('a')) {
         spaceName = spaceName.slice(0, -1);
       }
       space = spaceName as ColorSpace;
     }
 
-    // Parse and normalize values immediately
     let v0 = Number.parseFloat(parts[offset]);
     let v1 = Number.parseFloat(parts[offset + 1]);
     let v2 = Number.parseFloat(parts[offset + 2]);
     const rawA = parts[offset + 3];
 
-    // Space-specific normalization
     if (space === 'rgb') {
       v0 *= INV_255;
       v1 *= INV_255;

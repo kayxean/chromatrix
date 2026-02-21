@@ -3,10 +3,6 @@ import type { ColorArray } from '../types';
 const INV_255 = 1 / 255;
 const INV_60 = 1 / 60;
 
-/**
- * Converts RGB to HSV.
- * Optimizes chroma division by using a reciprocal.
- */
 export function rgbToHsv(input: ColorArray, output: ColorArray): void {
   const r = input[0],
     g = input[1],
@@ -23,7 +19,7 @@ export function rgbToHsv(input: ColorArray, output: ColorArray): void {
   }
 
   if (c !== 0) {
-    const invC = 1 / c; // Only one division for the hue calculation
+    const invC = 1 / c;
     if (v === r) h = (g - b) * invC;
     else if (v === g) h = (b - r) * invC + 2;
     else h = (r - g) * invC + 4;
@@ -37,10 +33,6 @@ export function rgbToHsv(input: ColorArray, output: ColorArray): void {
   output[2] = v;
 }
 
-/**
- * Converts HSV back to RGB.
- * Uses a slightly more streamlined branch approach.
- */
 export function hsvToRgb(input: ColorArray, output: ColorArray): void {
   const h60 = input[0] * INV_60;
   const s = input[1],
@@ -54,13 +46,12 @@ export function hsvToRgb(input: ColorArray, output: ColorArray): void {
   const c = v * s;
   const x = c * (1 - Math.abs((h60 % 2) - 1));
   const m = v - c;
-  const f = Math.floor(h60) % 6; // Ensure f is within 0-5
+  const f = Math.floor(h60) % 6;
 
   let r = 0,
     g = 0,
     b = 0;
 
-  // Optimized switch or if/else for the hue sectors
   if (f === 0) {
     r = c;
     g = x;
@@ -85,9 +76,6 @@ export function hsvToRgb(input: ColorArray, output: ColorArray): void {
   output[1] = g + m;
   output[2] = b + m;
 }
-
-/* HSL / HWB logic is already quite lean,
-   but we'll apply the reciprocal division pattern. */
 
 export function hsvToHsl(input: ColorArray, output: ColorArray): void {
   const h = input[0],
@@ -134,11 +122,8 @@ export function hwbToHsv(input: ColorArray, output: ColorArray): void {
   output[2] = v;
 }
 
-/**
- * Fast Hex conversion using bitwise ops and string padding.
- */
 export function rgbToHex(input: ColorArray, denote = false): string {
-  const r = (input[0] * 255 + 0.5) | 0; // Bitwise round and cast to int
+  const r = (input[0] * 255 + 0.5) | 0;
   const g = (input[1] * 255 + 0.5) | 0;
   const b = (input[2] * 255 + 0.5) | 0;
 
