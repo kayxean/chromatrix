@@ -1,20 +1,15 @@
 import type { ColorArray } from '../types';
 
-// Pre-calculated constants to replace divisions with multiplications
 const INV_12_92 = 1 / 12.92;
 const INV_1_055 = 1 / 1.055;
 const GAMMA_EXP = 2.4;
 const GAMMA_COMP = 1 / 2.4;
 
-/**
- * Converts sRGB (gamma encoded) to Linear RGB.
- */
 export function rgbToLrgb(input: ColorArray, output: ColorArray): void {
   const r = input[0],
     g = input[1],
     b = input[2];
 
-  // Using ** to satisfy Biome, but keeping pre-calculated INV_1_055
   output[0] =
     r <= 0.04045 ? r * INV_12_92 : ((r + 0.055) * INV_1_055) ** GAMMA_EXP;
   output[1] =
@@ -23,15 +18,11 @@ export function rgbToLrgb(input: ColorArray, output: ColorArray): void {
     b <= 0.04045 ? b * INV_12_92 : ((b + 0.055) * INV_1_055) ** GAMMA_EXP;
 }
 
-/**
- * Converts Linear RGB to sRGB (gamma encoded).
- */
 export function lrgbToRgb(input: ColorArray, output: ColorArray): void {
   const lr = input[0],
     lg = input[1],
     lb = input[2];
 
-  // Clamp negatives to 0 to avoid NaN results from fractional exponents
   const cr = lr < 0 ? 0 : lr;
   const cg = lg < 0 ? 0 : lg;
   const cb = lb < 0 ? 0 : lb;

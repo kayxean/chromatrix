@@ -1,11 +1,7 @@
 import type { Color } from './types';
 
-// Pre-calculate factors for precision up to 10
 const F_FACTORS = new Float32Array([1, 10, 100, 1000, 10000, 100000, 1000000]);
 
-/**
- * Rounds a number to a specific precision using pre-calculated factors.
- */
 function roundTo(val: number, precision: number): number {
   const f =
     precision < F_FACTORS.length ? F_FACTORS[precision] : 10 ** precision;
@@ -20,7 +16,6 @@ export function formatCss(
 ): string {
   const { space, value } = color;
 
-  // Handle Hex specifically for RGB
   if (asHex && space === 'rgb') {
     const r = (value[0] * 255 + 0.5) | 0;
     const g = (value[1] * 255 + 0.5) | 0;
@@ -34,7 +29,6 @@ export function formatCss(
     return `#${rgbHex}`;
   }
 
-  // Common rounding for primary values
   const n1 = roundTo(value[0], precision);
   const n2 = roundTo(value[1], precision);
   const n3 = roundTo(value[2], precision);
@@ -67,8 +61,6 @@ export function formatCss(
 
     case 'oklab': {
       const l = roundTo(value[0] * 100, precision);
-      // Use higher default internal precision for Oklab components if needed,
-      // but respect the user's precision parameter.
       return `oklab(${l}% ${n2} ${n3}${suffix})`;
     }
 

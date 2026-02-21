@@ -1,10 +1,6 @@
 import type { Color, ColorSpace } from '../types';
 import { createMatrix } from '../shared';
 
-/**
- * Bounds defined as [min, max] pairs for each channel.
- * Max 360 signals a hue-like circular wrap-around.
- */
 const CLAMP_BOUNDS: Partial<Record<ColorSpace, number[]>> = {
   rgb: [0, 1, 0, 1, 0, 1],
   lrgb: [0, 1, 0, 1, 0, 1],
@@ -35,11 +31,9 @@ export function clampColor<S extends ColorSpace>(
     let val = value[i];
 
     if (max === 360) {
-      // Fast hue wrap-around
       val = val % 360;
       if (val < 0) val += 360;
     } else {
-      // Manual clamp is usually faster than Math.min(Math.max())
       if (val < min) val = min;
       else if (val > max) val = max;
     }
@@ -55,10 +49,6 @@ export function clampColor<S extends ColorSpace>(
   };
 }
 
-/**
- * Checks if a color is within its space's defined gamut.
- * Ignores circular dimensions (hue).
- */
 export function checkGamut(color: Color, tolerance = 0.0001): boolean {
   const { value, space } = color;
   const bounds = CLAMP_BOUNDS[space];
@@ -69,7 +59,6 @@ export function checkGamut(color: Color, tolerance = 0.0001): boolean {
     const min = bounds[i * 2];
     const max = bounds[i * 2 + 1];
 
-    // Skip gamut checks for circular dimensions like Hue
     if (max === 360) continue;
 
     const val = value[i];

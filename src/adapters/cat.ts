@@ -1,9 +1,5 @@
 import type { ColorArray } from '../types';
 
-/**
- * Pre-calculated Chromatic Adaptation Matrices (CAT)
- * Computed via: M_inv * diag(Scale) * M
- */
 const M_CAT_65_TO_50 = new Float32Array([
   1.0478112, 0.0228866, -0.050127, 0.0295424, 0.9904844, -0.0170491, -0.0092345,
   0.0150436, 0.7521316,
@@ -14,10 +10,6 @@ const M_CAT_50_TO_65 = new Float32Array([
   -0.020483, 1.3299098,
 ]);
 
-/**
- * Optimized Matrix-Vector multiplication.
- * Hardcoded for 3x3 to maximize JIT unrolling.
- */
 export function multiplyMatrixVector(
   matrix: Float32Array,
   vector: ColorArray,
@@ -32,17 +24,10 @@ export function multiplyMatrixVector(
   output[2] = matrix[6] * v0 + matrix[7] * v1 + matrix[8] * v2;
 }
 
-/**
- * Converts XYZ D65 to XYZ D50 using the Bradford transform.
- * Optimized to a single matrix multiplication.
- */
 export function xyz65ToXyz50(input: ColorArray, output: ColorArray): void {
   multiplyMatrixVector(M_CAT_65_TO_50, input, output);
 }
 
-/**
- * Converts XYZ D50 to XYZ D65 using the Bradford transform.
- */
 export function xyz50ToXyz65(input: ColorArray, output: ColorArray): void {
   multiplyMatrixVector(M_CAT_50_TO_65, input, output);
 }

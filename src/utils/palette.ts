@@ -2,9 +2,6 @@ import type { Color, ColorSpace } from '../types';
 import { convertColor } from '../convert';
 import { createMatrix, dropMatrix } from '../shared';
 
-/**
- * Generates color harmonies by rotating the hue in a polar space.
- */
 export function createHarmony<S extends ColorSpace>(
   input: Color<S>,
   variants: { name: string; ratios: number[] }[],
@@ -55,9 +52,6 @@ export function createHarmony<S extends ColorSpace>(
   return results;
 }
 
-/**
- * Mixes two colors. Optimized for speed by minimizing branching.
- */
 export function mixColor<S extends ColorSpace>(
   start: Color<S>,
   end: Color<S>,
@@ -101,9 +95,6 @@ export function mixColor<S extends ColorSpace>(
   return { space, value: res, alpha: sA + (eA - sA) * w };
 }
 
-/**
- * Generates a list of colors between start and end.
- */
 export function createShades<S extends ColorSpace>(
   start: Color<S>,
   end: Color<S>,
@@ -126,9 +117,6 @@ export function createShades<S extends ColorSpace>(
   return shades;
 }
 
-/**
- * Generates a multi-stop scale.
- */
 export function createScales<S extends ColorSpace>(
   stops: Color<S>[],
   steps: number,

@@ -2,9 +2,6 @@ import type { Color, ColorArray } from '../types';
 import { convertColor } from '../convert';
 import { createMatrix, dropMatrix } from '../shared';
 
-/**
- * Checks if two colors are perceptually or mathematically equal within a tolerance.
- */
 export function isEqual(a: Color, b: Color, tolerance = 0.0001): boolean {
   if (a === b) return true;
 
@@ -16,7 +13,6 @@ export function isEqual(a: Color, b: Color, tolerance = 0.0001): boolean {
   const spaceB = b.space;
   const valA = a.value;
 
-  // 1. Same space: Direct comparison
   if (spaceA === spaceB) {
     const valB = b.value;
     return (
@@ -26,7 +22,6 @@ export function isEqual(a: Color, b: Color, tolerance = 0.0001): boolean {
     );
   }
 
-  // 2. Different spaces: Convert and compare
   const tempMatrix = createMatrix(spaceA);
   convertColor(b.value, tempMatrix, spaceB, spaceA);
 
@@ -39,10 +34,6 @@ export function isEqual(a: Color, b: Color, tolerance = 0.0001): boolean {
   return match;
 }
 
-/**
- * Calculates the perceptual distance (Delta E) between two colors using Oklab.
- * Oklab is perceptually linear, making Euclidean distance highly accurate.
- */
 export function getDistance(a: Color, b: Color): number {
   const spaceA = a.space;
   const spaceB = b.space;
@@ -69,7 +60,6 @@ export function getDistance(a: Color, b: Color): number {
 
   const distance = Math.sqrt(dL * dL + da * da + db * db);
 
-  // Cleanup pooled matrices
   if (tempA) dropMatrix(tempA);
   if (tempB) dropMatrix(tempB);
 
