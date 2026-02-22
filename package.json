@@ -1,5 +1,24 @@
 {
+  "name": "chromatrix",
+  "version": "1.0.0",
+  "description": "A colorful utility for the web",
   "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": {
+        "import": "./dist/index.d.mts",
+        "require": "./dist/index.d.cts"
+      },
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsdown",
     "check": "biome check --write",

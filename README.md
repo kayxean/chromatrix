@@ -1,4 +1,4 @@
-# Color
+# Chromatrix
 
 A small, heavy-duty color engine. Most libraries prioritize ease of use at the cost of accuracy or memory. This one uses `Float32Array` buffers and CIEXYZ hubs to ensure conversions are mathematically sound without trashing your heap.
 
