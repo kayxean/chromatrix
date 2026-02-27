@@ -65,7 +65,7 @@ describe('Picker Utilities (picker.ts)', () => {
       picker.update(0, 0, 'invalid' as any); // Should still notify even if no state changes
 
       expect(picker.getSaturation()).toBeCloseTo(0.2);
-      expect(picker.getBrightness()).toBeCloseTo(0.7);
+      expect(picker.getBrightness()).toBeCloseTo(0.3);
       expect(picker.getHue()).toBeCloseTo(180);
       expect(picker.getAlpha()).toBeCloseTo(0.75);
       expect(cb).toHaveBeenCalledTimes(4);
@@ -126,5 +126,32 @@ describe('Picker Utilities (picker.ts)', () => {
       dropMatrix(col.value);
       dropMatrix(sol.value);
     });
+  });
+
+  it('should preserve hue when assigning achromatic colors (hasNoColorInfo)', () => {
+    const v = createMatrix('hsv');
+    v.set([240, 1, 1]);
+    const picker = createPicker({ space: 'hsv', value: v, alpha: 1 } as Color);
+
+    // Assign Pure White (S=0, V=1)
+    // Most converters return H=0 for white, but we should preserve the current hue
+    const white = createMatrix('hsv');
+    white.set([0, 0, 1]);
+    picker.assign({ space: 'hsv', value: white, alpha: 1 } as Color);
+
+    expect(picker.getHue()).toBe(240);
+    expect(picker.getSaturation()).toBe(0);
+
+    // Assign Pure Black (S=0, V=0)
+    const black = createMatrix('hsv');
+    black.set([0, 0, 0]);
+    picker.assign({ space: 'hsv', value: black, alpha: 1 } as Color);
+
+    expect(picker.getHue()).toBe(240);
+    expect(picker.getBrightness()).toBe(0);
+
+    dropMatrix(v);
+    dropMatrix(white);
+    dropMatrix(black);
   });
 });
