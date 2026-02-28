@@ -154,4 +154,29 @@ describe('Picker Utilities (picker.ts)', () => {
     dropMatrix(white);
     dropMatrix(black);
   });
+
+  it('should handle color space switching and bail out on identical space', () => {
+    const v = createMatrix('rgb');
+    v.set([1, 0, 0]);
+    const picker = createPicker({ space: 'rgb', value: v, alpha: 1 } as Color);
+    const cb = vi.fn();
+    picker.subscribe(cb);
+
+    // Bail out if the space is already active
+    picker.setSpace('rgb');
+    expect(cb).not.toHaveBeenCalled();
+    expect(picker.getSpace()).toBe('rgb');
+
+    // Update space and notify subscribers
+    picker.setSpace('oklch');
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(picker.getSpace()).toBe('oklch');
+
+    // Ensure the emitted color matrix matches the new target space
+    const emittedColor = cb.mock.calls[0][1];
+    expect(emittedColor.space).toBe('oklch');
+
+    dropMatrix(v);
+    dropMatrix(emittedColor.value);
+  });
 });
