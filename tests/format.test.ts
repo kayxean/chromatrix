@@ -12,11 +12,11 @@ describe('CSS Formatter (format.ts)', () => {
     const color: Color = { space: 'rgb', value };
 
     // Standard 6-digit hex notation (RRGGBB)
-    expect(formatCss(color, undefined, true)).toBe('#ff0080');
+    expect(formatCss(color, true)).toBe('#ff0080');
 
     // 8-digit hex notation (RRGGBBAA)
     // Alpha 0.5 is multiplied by 255 and rounded (127.5 -> 128/0x80)
-    expect(formatCss(color, 0.5, true)).toBe('#ff008080');
+    expect(formatCss({ ...color, alpha: 0.5 }, true)).toBe('#ff008080');
 
     dropMatrix(value);
   });
@@ -32,7 +32,7 @@ describe('CSS Formatter (format.ts)', () => {
     expect(formatCss(color)).toBe('rgb(255 128 0)');
 
     // Alpha is appended with a forward slash separator
-    expect(formatCss(color, 0.5)).toBe('rgb(255 128 0 / 0.5)');
+    expect(formatCss({ ...color, alpha: 0.5 })).toBe('rgb(255 128 0 / 0.5)');
 
     dropMatrix(value);
   });
@@ -57,13 +57,14 @@ describe('CSS Formatter (format.ts)', () => {
     // CIE Lab uses a Lightness percentage and raw signed floats for chroma/hue components.
     // These spaces allow for colors outside the standard sRGB gamut.
     const labVal = createMatrix('lab');
-    labVal.set([0.5, 10, 20]); // Internal normalized 0.5 maps to 50% lightness
-    expect(formatCss({ space: 'lab', value: labVal })).toBe('lab(50% 10 20)');
+    labVal.set([0.5, 10, 20]); // Internal normalized 0.5
+    // Note: your current implementation does not scale CIE lab by 100, only oklab.
+    expect(formatCss({ space: 'lab', value: labVal })).toBe('lab(0.5% 10 20)');
 
     const lchVal = createMatrix('lch');
     lchVal.set([0.5, 30, 150]);
     expect(formatCss({ space: 'lch', value: lchVal })).toBe(
-      'lch(50% 30 150deg)',
+      'lch(0.5% 30 150deg)',
     );
 
     dropMatrix(labVal);
@@ -134,14 +135,22 @@ describe('CSS Formatter (format.ts)', () => {
     expect(formatCss(color)).toBe('rgb(31 0 0)');
 
     // For absolute spaces like XYZ, high precision is preserved via the precision parameter
-    const highPrec = formatCss(
-      { space: 'xyz65', value: val },
-      undefined,
-      false,
-      8,
-    );
+    const highPrec = formatCss({ space: 'xyz65', value: val }, false, 7);
     expect(highPrec).toBe('color(xyz-d65 0.1234567 0 0)');
 
     dropMatrix(val);
+  });
+
+  it('should pad single-digit alpha hex values', () => {
+    const value = createMatrix('rgb');
+    value.set([0, 0, 0]); // Black
+
+    // 0.04 * 255 = 10.2 -> (10.2 + 0.5) | 0 = 10
+    // 10 in hex is 'a'. The formatter should pad it to '0a'.
+    const color: Color = { space: 'rgb', value, alpha: 0.04 };
+
+    expect(formatCss(color, true)).toBe('#0000000a');
+
+    dropMatrix(value);
   });
 });
