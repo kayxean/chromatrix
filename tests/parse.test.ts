@@ -109,5 +109,18 @@ describe('CSS Parser (parse.ts)', () => {
         'Invalid format: not-a-color',
       );
     });
+
+    it('should clamp alpha values between 0 and 1', () => {
+      // Alpha values are constrained to the 0-1 range to prevent out-of-bounds errors.
+      // This handles negative inputs or values exceeding 100% (1.0).
+      const negativeAlpha = parseColor('rgb(255 255 255 / -0.5)');
+      expect(negativeAlpha.alpha).toBe(0);
+
+      const excessiveAlpha = parseColor('rgb(255 255 255 / 1.5)');
+      expect(excessiveAlpha.alpha).toBe(1);
+
+      const excessivePercent = parseColor('rgb(255 255 255 / 120%)');
+      expect(excessivePercent.alpha).toBe(1);
+    });
   });
 });

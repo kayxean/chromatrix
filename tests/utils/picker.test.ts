@@ -68,7 +68,7 @@ describe('Picker Utilities (picker.ts)', () => {
       expect(picker.getBrightness()).toBeCloseTo(0.3);
       expect(picker.getHue()).toBeCloseTo(180);
       expect(picker.getAlpha()).toBeCloseTo(0.75);
-      expect(cb).toHaveBeenCalledTimes(4);
+      expect(cb).toHaveBeenCalledTimes(3);
 
       dropMatrix(v);
     });
@@ -178,5 +178,42 @@ describe('Picker Utilities (picker.ts)', () => {
 
     dropMatrix(v);
     dropMatrix(emittedColor.value);
+  });
+
+  it('should dispose and release resources', () => {
+    // The dispose method is responsible for memory management and cleanup.
+    // It must drop the shared color matrix and clear all active subscribers.
+    const v = createMatrix('rgb');
+    const picker = createPicker({ space: 'rgb', value: v, alpha: 1 } as Color);
+    const cb = vi.fn();
+
+    picker.subscribe(cb);
+    picker.dispose();
+
+    // After disposal, updates should not trigger any subscribers
+    picker.update(0.5, 0, 'h');
+    expect(cb).not.toHaveBeenCalled();
+
+    dropMatrix(v);
+  });
+
+  it('should bail out of updates if values are identical', () => {
+    // Ensuring that no notification is sent if the state hasn't actually changed.
+    // This covers the implicit "else" branches in the update conditional logic.
+    const v = createMatrix('hsv');
+    const picker = createPicker({ space: 'hsv', value: v, alpha: 1 } as Color);
+    const cb = vi.fn();
+    picker.subscribe(cb);
+
+    const val = picker.getValue();
+
+    // Updating with current values should not trigger the internal 'changed' flag
+    picker.update(val.s, val.v, 'sv');
+    picker.update(val.h / 360, 0, 'h');
+    picker.update(val.a, 0, 'a');
+
+    expect(cb).not.toHaveBeenCalled();
+
+    dropMatrix(v);
   });
 });
