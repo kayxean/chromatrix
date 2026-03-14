@@ -1,19 +1,40 @@
 {
-  "name": "chromatrix",
+  "name": "@kayxean/chromatrix",
   "version": "1.0.0",
   "description": "A colorful utility for the web",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
-      "types": {
-        "import": "./dist/index.d.mts",
-        "require": "./dist/index.d.cts"
-      },
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    },
+    "./adapters/*": {
+      "types": "./dist/adapters/*.d.mts",
+      "import": "./dist/adapters/*.mjs"
+    },
+    "./utils/*": {
+      "types": "./dist/utils/*.d.mts",
+      "import": "./dist/utils/*.mjs"
+    },
+    "./convert": {
+      "types": "./dist/convert.d.mts",
+      "import": "./dist/convert.mjs"
+    },
+    "./format": {
+      "types": "./dist/format.d.mts",
+      "import": "./dist/format.mjs"
+    },
+    "./parse": {
+      "types": "./dist/parse.d.mts",
+      "import": "./dist/parse.mjs"
+    },
+    "./shared": {
+      "types": "./dist/shared.d.mts",
+      "import": "./dist/shared.mjs"
+    },
+    "./types": {
+      "types": "./dist/types.d.mts",
+      "import": "./dist/types.mjs"
     }
   },
   "files": [
@@ -29,11 +50,11 @@
     "bench": "vitest bench"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.2",
-    "@types/node": "^25.2.3",
-    "@vitest/coverage-v8": "4.0.18",
-    "tsdown": "0.20.3",
+    "@biomejs/biome": "^2.4.7",
+    "@types/node": "^25.5.0",
+    "@vitest/coverage-v8": "4.1.0",
+    "tsdown": "0.21.2",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.0"
   }
 }
