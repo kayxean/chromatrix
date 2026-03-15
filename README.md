@@ -21,8 +21,8 @@ Color math is messy because different spaces use different reference points. To 
 Direct transformations are handled through a chain of adapters. The system automatically determines if it can take a direct path or if it needs to route through a CIEXYZ hub.
 
 ```ts
-import { convertColor, convertHue } from './convert';
-import { createMatrix, dropMatrix } from './shared';
+import { convertColor, convertHue } from '@kayxean/chromatrix/convert';
+import { createMatrix, dropMatrix } from '@kayxean/chromatrix/shared';
 
 const input = createMatrix('rgb');
 const output = createMatrix('oklch');
@@ -45,7 +45,7 @@ dropMatrix(polar);
 Everything is built on a `Color` object containing a `Float32Array`. To keep performance high, we use a pool. You can either mutate in-place or derive new copies, but you must manually free them when finished.
 
 ```ts
-import { createColor, mutateColor, deriveColor, dropColor } from './shared';
+import { createColor, mutateColor, deriveColor, dropColor } from '@kayxean/chromatrix/shared';
 
 const color = createColor('rgb', [0.8, 0.1, 0.2]);
 
@@ -65,8 +65,8 @@ dropColor(copy);
 Parsing returns a managed color object. Formatting returns a standard string.
 
 ```ts
-import { parseColor } from './parse';
-import { formatCss } from './format';
+import { parseColor } from '@kayxean/chromatrix/parse';
+import { formatCss } from '@kayxean/chromatrix/format';
 
 const color = parseColor('oklch(60% 0.15 30)');
 const css = formatCss(color); // "oklch(60% 0.15 30)"
@@ -77,7 +77,7 @@ const css = formatCss(color); // "oklch(60% 0.15 30)"
 Forget the old WCAG ratio. This uses APCA to calculate a signed *Lc* value based on font weight and background luminance.
 
 ```ts
-import { checkContrast, matchContrast } from './utils/contrast';
+import { checkContrast, matchContrast } from '@kayxean/chromatrix/utils/contrast';
 
 const text = parseColor('#ffffff');
 const bg = parseColor('#222222');
@@ -94,7 +94,7 @@ const safeColor = matchContrast(text, bg, 75);
 Interpolation happens in polar space for smoother, more "natural" color shifts.
 
 ```ts
-import { createHarmony, createScales } from './utils/palette';
+import { createHarmony, createScales } from '@kayxean/chromatrix/utils/palette';
 
 const base = parseColor('#007bff');
 
@@ -113,8 +113,8 @@ const ramp = createScales([
 Colors that look the same in different spaces are treated as equal through a perceptual tolerance threshold.
 
 ```ts
-import { checkGamut, clampColor } from './utils/gamut';
-import { isEqual } from './utils/compare';
+import { checkGamut, clampColor } from '@kayxean/chromatrix/utils/gamut';
+import { isEqual } from '@kayxean/chromatrix/utils/compare';
 
 const wideColor = parseColor('oklch(90% 0.4 120)');
 
@@ -131,8 +131,8 @@ const match = isEqual(parseColor('#f00'), parseColor('hsl(0, 100%, 50%)'));
 Building a UI requires bridging flat values (like slider percentages) to complex matrices. The `createPicker` utility handles the math and the state sync.
 
 ```tsx
-import { createPicker } from './utils/picker';
-import { parseColor } from './parse';
+import { createPicker } from '@kayxean/chromatrix/utils/picker';
+import { parseColor } from '@kayxean/chromatrix/parse';
 
 const picker = createPicker(parseColor('#32cd32'));
 
@@ -167,7 +167,7 @@ function ColorPicker() {
 Simulates how colors appear under Protanopia, Deuteranopia, or Tritanopia by projecting matrices into reduced color spaces.
 
 ```ts
-import { simulateDeficiency } from './utils/simulate';
+import { simulateDeficiency } from '@kayxean/chromatrix/utils/simulate';
 
 const original = parseColor('#ff5500');
 const simulated = simulateDeficiency(original, 'deuteranopia');

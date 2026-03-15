@@ -40,6 +40,11 @@
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kayxean/chromatrix.git"
+  },
+  "homepage": "https://github.com/kayxean/chromatrix#readme",
   "scripts": {
     "build": "tsdown",
     "check": "biome check --write",
