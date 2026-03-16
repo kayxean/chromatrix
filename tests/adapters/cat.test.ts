@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  multiplyMatrixVector,
-  xyz50ToXyz65,
-  xyz65ToXyz50,
-} from '~/adapters/cat';
+import { multiplyMatrixVector, xyz50ToXyz65, xyz65ToXyz50 } from '~/adapters/cat';
 import { createMatrix, dropMatrix } from '~/shared';
 
 describe('CAT Adapters (Bradford Transform)', () => {

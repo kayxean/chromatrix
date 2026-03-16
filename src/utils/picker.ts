@@ -26,10 +26,7 @@ export function toPicker(color: Color): PickerValue {
   return res;
 }
 
-export function fromPicker<S extends ColorSpace>(
-  val: PickerValue,
-  space: S,
-): Color {
+export function fromPicker<S extends ColorSpace>(val: PickerValue, space: S): Color {
   const hsv = createMatrix('hsv');
   hsv.set([val.h, val.s, val.v]);
 

@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  labToLch,
-  lchToLab,
-  oklabToOklch,
-  oklchToOklab,
-} from '~/adapters/polar';
+import { labToLch, lchToLab, oklabToOklch, oklchToOklab } from '~/adapters/polar';
 import { createMatrix, dropMatrix } from '~/shared';
 
 describe('Polar Adapters (Lab/Oklab <-> LCH/Oklch)', () => {

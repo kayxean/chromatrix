@@ -2,13 +2,7 @@ import { bench, describe } from 'vitest';
 import { convertColor } from '~/convert';
 import { formatCss } from '~/format';
 import { parseColor } from '~/parse';
-import {
-  createColor,
-  createMatrix,
-  dropColor,
-  dropMatrix,
-  mutateColor,
-} from '~/shared';
+import { createColor, createMatrix, dropColor, dropMatrix, mutateColor } from '~/shared';
 import { checkContrast } from '~/utils/contrast';
 import { simulateDeficiency } from '~/utils/simulate';
 

@@ -1,27 +1,10 @@
 import type { ColorAdapter, ColorArray, ColorSpace } from './types';
 import { xyz50ToXyz65, xyz65ToXyz50 } from './adapters/cat';
 import { labToXyz50, xyz50ToLab } from './adapters/d50';
-import {
-  lrgbToXyz65,
-  oklabToXyz65,
-  xyz65ToLrgb,
-  xyz65ToOklab,
-} from './adapters/d65';
+import { lrgbToXyz65, oklabToXyz65, xyz65ToLrgb, xyz65ToOklab } from './adapters/d65';
 import { lrgbToRgb, rgbToLrgb } from './adapters/gamma';
-import {
-  labToLch,
-  lchToLab,
-  oklabToOklch,
-  oklchToOklab,
-} from './adapters/polar';
-import {
-  hslToHsv,
-  hsvToHsl,
-  hsvToHwb,
-  hsvToRgb,
-  hwbToHsv,
-  rgbToHsv,
-} from './adapters/srgb';
+import { labToLch, lchToLab, oklabToOklch, oklchToOklab } from './adapters/polar';
+import { hslToHsv, hsvToHsl, hsvToHwb, hsvToRgb, hwbToHsv, rgbToHsv } from './adapters/srgb';
 import { createMatrix, dropMatrix } from './shared';
 
 export const NATIVE_HUB: Partial<Record<ColorSpace, 'xyz50' | 'xyz65'>> = {
@@ -60,40 +43,35 @@ export const FROM_HUB: Partial<Record<ColorSpace, ColorAdapter[]>> = {
   oklch: [xyz65ToOklab, oklabToOklch],
 };
 
-export const DIRECT_HUB: Partial<
-  Record<ColorSpace, Partial<Record<ColorSpace, ColorAdapter[]>>>
-> = {
-  rgb: {
-    hsl: [rgbToHsv, hsvToHsl],
-    hsv: [rgbToHsv],
-    hwb: [rgbToHsv, hsvToHwb],
-    lrgb: [rgbToLrgb],
-  },
-  hsl: {
-    rgb: [hslToHsv, hsvToRgb],
-    hsv: [hslToHsv],
-  },
-  hsv: {
-    rgb: [hsvToRgb],
-    hsl: [hsvToHsl],
-    hwb: [hsvToHwb],
-  },
-  hwb: {
-    rgb: [hwbToHsv, hsvToRgb],
-    hsv: [hwbToHsv],
-  },
-  lab: { lch: [labToLch] },
-  lch: { lab: [lchToLab] },
-  lrgb: { rgb: [lrgbToRgb] },
-  oklab: { oklch: [oklabToOklch] },
-  oklch: { oklab: [oklchToOklab] },
-};
+export const DIRECT_HUB: Partial<Record<ColorSpace, Partial<Record<ColorSpace, ColorAdapter[]>>>> =
+  {
+    rgb: {
+      hsl: [rgbToHsv, hsvToHsl],
+      hsv: [rgbToHsv],
+      hwb: [rgbToHsv, hsvToHwb],
+      lrgb: [rgbToLrgb],
+    },
+    hsl: {
+      rgb: [hslToHsv, hsvToRgb],
+      hsv: [hslToHsv],
+    },
+    hsv: {
+      rgb: [hsvToRgb],
+      hsl: [hsvToHsl],
+      hwb: [hsvToHwb],
+    },
+    hwb: {
+      rgb: [hwbToHsv, hsvToRgb],
+      hsv: [hwbToHsv],
+    },
+    lab: { lch: [labToLch] },
+    lch: { lab: [lchToLab] },
+    lrgb: { rgb: [lrgbToRgb] },
+    oklab: { oklch: [oklabToOklch] },
+    oklch: { oklab: [oklchToOklab] },
+  };
 
-export function applyAdapter(
-  chain: ColorAdapter[],
-  input: ColorArray,
-  output: ColorArray,
-): void {
+export function applyAdapter(chain: ColorAdapter[], input: ColorArray, output: ColorArray): void {
   const len = chain.length;
   if (len === 0) {
     if (input !== output) output.set(input);

@@ -10,12 +10,9 @@ export function rgbToLrgb(input: ColorArray, output: ColorArray): void {
     g = input[1],
     b = input[2];
 
-  output[0] =
-    r <= 0.04045 ? r * INV_12_92 : ((r + 0.055) * INV_1_055) ** GAMMA_EXP;
-  output[1] =
-    g <= 0.04045 ? g * INV_12_92 : ((g + 0.055) * INV_1_055) ** GAMMA_EXP;
-  output[2] =
-    b <= 0.04045 ? b * INV_12_92 : ((b + 0.055) * INV_1_055) ** GAMMA_EXP;
+  output[0] = r <= 0.04045 ? r * INV_12_92 : ((r + 0.055) * INV_1_055) ** GAMMA_EXP;
+  output[1] = g <= 0.04045 ? g * INV_12_92 : ((g + 0.055) * INV_1_055) ** GAMMA_EXP;
+  output[2] = b <= 0.04045 ? b * INV_12_92 : ((b + 0.055) * INV_1_055) ** GAMMA_EXP;
 }
 
 export function lrgbToRgb(input: ColorArray, output: ColorArray): void {

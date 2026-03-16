@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  lrgbToXyz65,
-  oklabToXyz65,
-  xyz65ToLrgb,
-  xyz65ToOklab,
-} from '~/adapters/d65';
+import { lrgbToXyz65, oklabToXyz65, xyz65ToLrgb, xyz65ToOklab } from '~/adapters/d65';
 import { createMatrix, dropMatrix } from '~/shared';
 
 describe('D65 Adapters (LRGB & Oklab)', () => {

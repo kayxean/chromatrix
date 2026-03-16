@@ -105,9 +105,7 @@ describe('CSS Parser (parse.ts)', () => {
 
     it('should throw on invalid formats', () => {
       // Graceful error handling for unsupported strings
-      expect(() => parseColor('not-a-color')).toThrow(
-        'Invalid format: not-a-color',
-      );
+      expect(() => parseColor('not-a-color')).toThrow('Invalid format: not-a-color');
     });
 
     it('should clamp alpha values between 0 and 1', () => {

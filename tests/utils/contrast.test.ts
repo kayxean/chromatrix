@@ -44,10 +44,7 @@ describe('Contrast Utilities (contrast.ts)', () => {
       vText.set([0, 0, 0]);
       vBg.set([1, 1, 1]);
 
-      const res = checkContrast(
-        { space: 'rgb', value: vText },
-        { space: 'rgb', value: vBg },
-      );
+      const res = checkContrast({ space: 'rgb', value: vText }, { space: 'rgb', value: vBg });
       expect(res).toBeGreaterThan(100);
 
       dropMatrix(vText);
@@ -60,10 +57,7 @@ describe('Contrast Utilities (contrast.ts)', () => {
       vText.set([1, 1, 1]);
       vBg.set([0, 0, 0]);
 
-      const res = checkContrast(
-        { space: 'rgb', value: vText },
-        { space: 'rgb', value: vBg },
-      );
+      const res = checkContrast({ space: 'rgb', value: vText }, { space: 'rgb', value: vBg });
       expect(res).toBeLessThan(-100);
 
       dropMatrix(vText);
@@ -159,9 +153,7 @@ describe('Contrast Utilities (contrast.ts)', () => {
 
       expect(scale).toHaveLength(steps);
       for (const color of scale) {
-        expect(Math.abs(checkContrast(color, bg))).toBeGreaterThanOrEqual(
-          target - 1,
-        );
+        expect(Math.abs(checkContrast(color, bg))).toBeGreaterThanOrEqual(target - 1);
       }
 
       dropMatrix(bg.value);

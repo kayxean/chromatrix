@@ -43,12 +43,8 @@ describe('CSS Formatter (format.ts)', () => {
     const hValue = createMatrix('hsl');
     hValue.set([180, 0.5, 0.5]);
 
-    expect(formatCss({ space: 'hsl', value: hValue })).toBe(
-      'hsl(180deg 50% 50%)',
-    );
-    expect(formatCss({ space: 'hwb', value: hValue })).toBe(
-      'hwb(180deg 50% 50%)',
-    );
+    expect(formatCss({ space: 'hsl', value: hValue })).toBe('hsl(180deg 50% 50%)');
+    expect(formatCss({ space: 'hwb', value: hValue })).toBe('hwb(180deg 50% 50%)');
 
     dropMatrix(hValue);
   });
@@ -63,9 +59,7 @@ describe('CSS Formatter (format.ts)', () => {
 
     const lchVal = createMatrix('lch');
     lchVal.set([0.5, 30, 150]);
-    expect(formatCss({ space: 'lch', value: lchVal })).toBe(
-      'lch(0.5% 30 150deg)',
-    );
+    expect(formatCss({ space: 'lch', value: lchVal })).toBe('lch(0.5% 30 150deg)');
 
     dropMatrix(labVal);
     dropMatrix(lchVal);
@@ -76,15 +70,11 @@ describe('CSS Formatter (format.ts)', () => {
     // Lightness is scaled to a percentage while a and b remain as raw floats.
     const okVal = createMatrix('oklab');
     okVal.set([0.6, 0.1, -0.1]);
-    expect(formatCss({ space: 'oklab', value: okVal })).toBe(
-      'oklab(60% 0.1 -0.1)',
-    );
+    expect(formatCss({ space: 'oklab', value: okVal })).toBe('oklab(60% 0.1 -0.1)');
 
     const okchVal = createMatrix('oklch');
     okchVal.set([0.6, 0.2, 270]);
-    expect(formatCss({ space: 'oklch', value: okchVal })).toBe(
-      'oklch(60% 0.2 270deg)',
-    );
+    expect(formatCss({ space: 'oklch', value: okchVal })).toBe('oklch(60% 0.2 270deg)');
 
     dropMatrix(okVal);
     dropMatrix(okchVal);
@@ -97,17 +87,11 @@ describe('CSS Formatter (format.ts)', () => {
     val.set([0.95, 1.0, 1.08]);
 
     // srgb-linear corresponds to gamma-uncorrected sRGB
-    expect(formatCss({ space: 'lrgb', value: val })).toBe(
-      'color(srgb-linear 0.95 1 1.08)',
-    );
+    expect(formatCss({ space: 'lrgb', value: val })).toBe('color(srgb-linear 0.95 1 1.08)');
 
     // XYZ spaces are formatted with their respective white-point illuminant (D65 or D50)
-    expect(formatCss({ space: 'xyz65', value: val })).toBe(
-      'color(xyz-d65 0.95 1 1.08)',
-    );
-    expect(formatCss({ space: 'xyz50', value: val })).toBe(
-      'color(xyz-d50 0.95 1 1.08)',
-    );
+    expect(formatCss({ space: 'xyz65', value: val })).toBe('color(xyz-d65 0.95 1 1.08)');
+    expect(formatCss({ space: 'xyz50', value: val })).toBe('color(xyz-d50 0.95 1 1.08)');
 
     dropMatrix(val);
   });

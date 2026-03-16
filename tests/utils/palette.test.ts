@@ -1,12 +1,7 @@
 import type { Color } from '~/types';
 import { describe, expect, it } from 'vitest';
 import { createMatrix, dropMatrix } from '~/shared';
-import {
-  createHarmony,
-  createScales,
-  createShades,
-  mixColor,
-} from '~/utils/palette';
+import { createHarmony, createScales, createShades, mixColor } from '~/utils/palette';
 
 describe('Palette Utilities (palette.ts)', () => {
   describe('createHarmony', () => {
@@ -18,9 +13,7 @@ describe('Palette Utilities (palette.ts)', () => {
       const color: Color = { space: 'hsl', value: v };
 
       // Complementary harmony is a 180-degree offset.
-      const harmonies = createHarmony(color, [
-        { name: 'complementary', ratios: [180] },
-      ]);
+      const harmonies = createHarmony(color, [{ name: 'complementary', ratios: [180] }]);
 
       expect(harmonies[0].name).toBe('complementary');
       const resultColor = harmonies[0].colors[0];
@@ -40,9 +33,7 @@ describe('Palette Utilities (palette.ts)', () => {
       v.set([0.5, 0.4, 0]);
       const color: Color = { space: 'oklab', value: v };
 
-      const harmonies = createHarmony(color, [
-        { name: 'triadic', ratios: [120, 240] },
-      ]);
+      const harmonies = createHarmony(color, [{ name: 'triadic', ratios: [120, 240] }]);
 
       expect(harmonies[0].colors).toHaveLength(2);
       expect(harmonies[0].colors[0].space).toBe('oklab');
@@ -59,9 +50,7 @@ describe('Palette Utilities (palette.ts)', () => {
       v.set([50, 20, 20]); // A mid-tone brownish-red
       const color: Color = { space: 'lab', value: v };
 
-      const harmonies = createHarmony(color, [
-        { name: 'analogous', ratios: [30] },
-      ]);
+      const harmonies = createHarmony(color, [{ name: 'analogous', ratios: [30] }]);
 
       expect(harmonies[0].colors[0].space).toBe('lab');
       // Verify conversion changed a/b values based on rotation
@@ -77,9 +66,7 @@ describe('Palette Utilities (palette.ts)', () => {
       v.set([10, 1, 0.5]); // 10 degrees (Red/Orange)
       const color: Color = { space: 'hsl', value: v };
 
-      const harmonies = createHarmony(color, [
-        { name: 'negative-rotation', ratios: [-30] },
-      ]);
+      const harmonies = createHarmony(color, [{ name: 'negative-rotation', ratios: [-30] }]);
 
       const resultColor = harmonies[0].colors[0];
       expect(resultColor.value[0]).toBeCloseTo(340);
