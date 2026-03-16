@@ -61,11 +61,7 @@ export function mixColor<S extends ColorSpace>(
   const w = t < 0 ? 0 : t > 1 ? 1 : t;
 
   const hIdx =
-    space === 'hsl' || space === 'hwb'
-      ? 0
-      : space === 'lch' || space === 'oklch'
-        ? 2
-        : -1;
+    space === 'hsl' || space === 'hwb' ? 0 : space === 'lch' || space === 'oklch' ? 2 : -1;
 
   const sV = start.value;
   const eV = end.value;
@@ -117,10 +113,7 @@ export function createShades<S extends ColorSpace>(
   return shades;
 }
 
-export function createScales<S extends ColorSpace>(
-  stops: Color<S>[],
-  steps: number,
-): Color<S>[] {
+export function createScales<S extends ColorSpace>(stops: Color<S>[], steps: number): Color<S>[] {
   if (steps <= 0) return [];
   if (stops.length < 2) {
     return stops.map((s) => {

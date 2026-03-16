@@ -85,20 +85,13 @@ export function parseColor(css: string): Color {
   } else if (space === 'hsl' || space === 'hwb') {
     v1 *= INV_100;
     v2 *= INV_100;
-  } else if (
-    space === 'lab' ||
-    space === 'lch' ||
-    space === 'oklab' ||
-    space === 'oklch'
-  ) {
+  } else if (space === 'lab' || space === 'lch' || space === 'oklab' || space === 'oklch') {
     v0 *= INV_100;
   }
 
   let alpha = 1;
   if (rawA !== undefined) {
-    alpha = rawA.endsWith('%')
-      ? Number.parseFloat(rawA) * INV_100
-      : Number.parseFloat(rawA);
+    alpha = rawA.endsWith('%') ? Number.parseFloat(rawA) * INV_100 : Number.parseFloat(rawA);
   }
 
   const color = createColor(space, [v0, v1, v2]);

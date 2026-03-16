@@ -14,10 +14,7 @@ const CLAMP_BOUNDS: Partial<Record<ColorSpace, number[]>> = {
   xyz65: [0, 1, 0, 1, 0, 1],
 };
 
-export function clampColor<S extends ColorSpace>(
-  color: Color<S>,
-  mutate = true,
-): Color<S> {
+export function clampColor<S extends ColorSpace>(color: Color<S>, mutate = true): Color<S> {
   const { value, space, alpha = 1 } = color;
   const bounds = CLAMP_BOUNDS[space];
 

@@ -48,10 +48,7 @@ export function mutateColor<S extends ColorSpace>(color: Color, to: S): void {
   (color as { space: ColorSpace }).space = to;
 }
 
-export function deriveColor<S extends ColorSpace>(
-  color: Color,
-  to: S,
-): Color<S> {
+export function deriveColor<S extends ColorSpace>(color: Color, to: S): Color<S> {
   if (color.space === (to as ColorSpace)) {
     return cloneColor(color as Color<S>);
   }

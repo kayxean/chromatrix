@@ -18,21 +18,11 @@ export {
 
 export { isEqual, getDistance } from './utils/compare';
 
-export {
-  checkContrast,
-  matchContrast,
-  checkContrastBulk,
-  matchScales,
-} from './utils/contrast';
+export { checkContrast, matchContrast, checkContrastBulk, matchScales } from './utils/contrast';
 
 export { checkGamut, clampColor } from './utils/gamut';
 
-export {
-  createHarmony,
-  createShades,
-  createScales,
-  mixColor,
-} from './utils/palette';
+export { createHarmony, createShades, createScales, mixColor } from './utils/palette';
 
 export { createPicker, fromPicker, toPicker } from './utils/picker';
 

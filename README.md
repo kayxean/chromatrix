@@ -5,16 +5,27 @@ A small, heavy-duty color engine. Most libraries prioritize ease of use at the c
 ## The Core Logic
 
 Color math is messy because different spaces use different reference points. To solve this, every conversion passes through a central hub.
+
 - **Conversion**: Moves data between `rgb`, `hsl`, `hwb`, `lab`, `lch`, `oklab`, and `oklch`.
 - **Parsing**: Reads CSS strings (hex, functional notation, and modern spaces).
 - **Formatting**: Outputs color objects as standard CSS strings.
-- **Contrast**: Calculates APCA *Lc* values for text and background pairs.
+- **Contrast**: Calculates APCA _Lc_ values for text and background pairs.
 - **Palettes**: Generates harmonies and scales using perceptual interpolation.
 - **Gamut**: Detects out-of-bounds colors and clamps them to a valid range.
 - **Pickers**: Maps 2D UI coordinates to HSVA values for color selection.
 - **Vision**: Simulates color-blindness by projecting into reduced color spaces.
 
 ## Usage
+
+| Action       | Command              | Description                                                                |
+| ------------ | -------------------- | -------------------------------------------------------------------------- |
+| Build        | `vp pack`            | Transpiles and bundles the library into `dist/` using the Rolldown engine. |
+| Dev          | `vp pack --watch`    | Rebuilds your color utilities in real-time as you save changes.            |
+| Test         | `vp test`            | Test the Vitest suite using the integrated test runner.                    |
+| Coverage     | `vp test --coverage` | Runs tests and generates a 100% threshold V8 coverage report.              |
+| Benchmark    | `vp test bench`      | Runs performance benchmarks for matrix and color operations.               |
+| Lint         | `vp check`           | Analyzes the codebase for errors and style issues using Oxlint.            |
+| Format & Fix | `vp check --fix`     | Automatically fixes linting errors and formats code via Oxfmt.             |
 
 ### Color Conversion
 
@@ -26,7 +37,7 @@ import { createMatrix, dropMatrix } from '@kayxean/chromatrix/shared';
 
 const input = createMatrix('rgb');
 const output = createMatrix('oklch');
-input.set([1, 0, 0]); 
+input.set([1, 0, 0]);
 
 // Routes: RGB -> LRGB -> XYZ65 -> Oklab -> Oklch
 convertColor(input, output, 'rgb', 'oklch');
@@ -74,7 +85,7 @@ const css = formatCss(color); // "oklch(60% 0.15 30)"
 
 ### Contrast & Accessibility
 
-Forget the old WCAG ratio. This uses APCA to calculate a signed *Lc* value based on font weight and background luminance.
+Forget the old WCAG ratio. This uses APCA to calculate a signed _Lc_ value based on font weight and background luminance.
 
 ```ts
 import { checkContrast, matchContrast } from '@kayxean/chromatrix/utils/contrast';
@@ -83,7 +94,7 @@ const text = parseColor('#ffffff');
 const bg = parseColor('#222222');
 
 // Get the Lc value
-const score = checkContrast(text, bg); 
+const score = checkContrast(text, bg);
 
 // Shift text lightness until it meets a target of 75 Lc
 const safeColor = matchContrast(text, bg, 75);
@@ -102,10 +113,7 @@ const base = parseColor('#007bff');
 const neighbors = createHarmony(base, [{ name: 'analogous', ratios: [-30, 30] }]);
 
 // Scales: Interpolate through multiple points
-const ramp = createScales([
-  parseColor('#ff0000'), 
-  parseColor('#0000ff')
-], 5);
+const ramp = createScales([parseColor('#ff0000'), parseColor('#0000ff')], 5);
 ```
 
 ### Safety & Comparison
@@ -138,25 +146,24 @@ const picker = createPicker(parseColor('#32cd32'));
 
 function ColorPicker() {
   const [view, setView] = useState(() => picker.getValue());
-  
+
   useEffect(() => picker.subscribe(setView), []);
 
   function handleMove(e) {
     const rect = e.currentTarget.getBoundingClientRect();
     // update() handles the coordinate-to-HSV mapping and y-axis inversion
-    picker.update(
-      (e.clientX - rect.left) / rect.width, 
-      (e.clientY - rect.top) / rect.height, 
-      'sv'
-    );
+    picker.update((e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height, 'sv');
   }
 
   return (
     <div onMouseMove={handleMove} className="picker-container">
-      <div className="cursor" style={{
-        left: `${view.s * 100}%`,
-        top: `${(1 - view.v) * 100}%`
-      }} />
+      <div
+        className="cursor"
+        style={{
+          left: `${view.s * 100}%`,
+          top: `${(1 - view.v) * 100}%`,
+        }}
+      />
     </div>
   );
 }
@@ -175,7 +182,8 @@ const simulated = simulateDeficiency(original, 'deuteranopia');
 
 ## The Math
 
-Rather than writing thousands of individual conversion formulas, this library uses a *Hub* and *Bridge* architecture.
+Rather than writing thousands of individual conversion formulas, this library uses a _Hub_ and _Bridge_ architecture.
+
 - **The Hubs**: Modern spaces (`rgb`, `oklab`) target **CIEXYZ D65**. Reference spaces (`lab`, `lch`) target **CIEXYZ D50**.
 - **The Bridge**: When moving between hubs, we use a **Bradford CAT** (Chromatic Adaptation Transform). This prevents the "color shift" usually seen when switching between D50 and D65 standards.
 
