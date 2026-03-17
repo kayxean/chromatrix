@@ -15,9 +15,9 @@ export function multiplyMatrixVector(
   vector: ColorArray,
   output: ColorArray,
 ): void {
-  const v0 = vector[0],
-    v1 = vector[1],
-    v2 = vector[2];
+  const v0 = vector[0];
+  const v1 = vector[1];
+  const v2 = vector[2];
 
   output[0] = matrix[0] * v0 + matrix[1] * v1 + matrix[2] * v2;
   output[1] = matrix[3] * v0 + matrix[4] * v1 + matrix[5] * v2;

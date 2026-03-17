@@ -69,7 +69,7 @@ export function matchContrast<S extends ColorSpace>(
 
   const testCol: Color<'oklch'> = { space: 'oklch', value: testMat };
 
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 24; i++) {
     testMat[0] = (low + high) * 0.5;
     const vt = getSapcV(getLuminanceD65(testCol));
     const Lc = calculateLc(vt, vb);

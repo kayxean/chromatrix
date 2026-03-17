@@ -85,8 +85,12 @@ export function parseColor(css: string): Color {
   } else if (space === 'hsl' || space === 'hwb') {
     v1 *= INV_100;
     v2 *= INV_100;
-  } else if (space === 'lab' || space === 'lch' || space === 'oklab' || space === 'oklch') {
+  } else if (space === 'lab' || space === 'lch') {
     v0 *= INV_100;
+  } else if (space === 'oklab' || space === 'oklch') {
+    v0 *= INV_100;
+    v1 *= INV_100;
+    v2 *= INV_100;
   }
 
   let alpha = 1;
