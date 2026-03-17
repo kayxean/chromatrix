@@ -18,9 +18,9 @@ export function lrgbToXyz65(input: ColorArray, output: ColorArray): void {
 }
 
 export function xyz65ToOklab(input: ColorArray, output: ColorArray): void {
-  const x = input[0],
-    y = input[1],
-    z = input[2];
+  const x = input[0];
+  const y = input[1];
+  const z = input[2];
 
   const l_pre = 0.8189330101 * x + 0.3618667424 * y - 0.1288597137 * z;
   const m_pre = 0.0329845436 * x + 0.9293118715 * y + 0.0361456387 * z;
@@ -36,9 +36,9 @@ export function xyz65ToOklab(input: ColorArray, output: ColorArray): void {
 }
 
 export function oklabToXyz65(input: ColorArray, output: ColorArray): void {
-  const L = input[0],
-    a = input[1],
-    b = input[2];
+  const L = input[0];
+  const a = input[1];
+  const b = input[2];
 
   const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
   const m_ = L - 0.1055613458 * a - 0.0638541728 * b;

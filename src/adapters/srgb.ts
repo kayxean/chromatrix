@@ -4,9 +4,9 @@ const INV_255 = 1 / 255;
 const INV_60 = 1 / 60;
 
 export function rgbToHsv(input: ColorArray, output: ColorArray): void {
-  const r = input[0],
-    g = input[1],
-    b = input[2];
+  const r = input[0];
+  const g = input[1];
+  const b = input[2];
   const v = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   const c = v - min;
@@ -35,8 +35,8 @@ export function rgbToHsv(input: ColorArray, output: ColorArray): void {
 
 export function hsvToRgb(input: ColorArray, output: ColorArray): void {
   const h60 = input[0] * INV_60;
-  const s = input[1],
-    v = input[2];
+  const s = input[1];
+  const v = input[2];
 
   if (s === 0) {
     output[0] = output[1] = output[2] = v;
@@ -48,9 +48,9 @@ export function hsvToRgb(input: ColorArray, output: ColorArray): void {
   const m = v - c;
   const f = Math.floor(h60) % 6;
 
-  let r = 0,
-    g = 0,
-    b = 0;
+  let r = 0;
+  let g = 0;
+  let b = 0;
 
   if (f === 0) {
     r = c;
@@ -78,9 +78,9 @@ export function hsvToRgb(input: ColorArray, output: ColorArray): void {
 }
 
 export function hsvToHsl(input: ColorArray, output: ColorArray): void {
-  const h = input[0],
-    s = input[1],
-    v = input[2];
+  const h = input[0];
+  const s = input[1];
+  const v = input[2];
   const l = v * (1 - s * 0.5);
   let sL = 0;
   if (l > 0 && l < 1) {
@@ -92,9 +92,9 @@ export function hsvToHsl(input: ColorArray, output: ColorArray): void {
 }
 
 export function hslToHsv(input: ColorArray, output: ColorArray): void {
-  const h = input[0],
-    s = input[1],
-    l = input[2];
+  const h = input[0];
+  const s = input[1];
+  const l = input[2];
   const v = l + s * Math.min(l, 1 - l);
   const sV = v === 0 ? 0 : 2 * (1 - l / v);
   output[0] = h;
@@ -103,18 +103,18 @@ export function hslToHsv(input: ColorArray, output: ColorArray): void {
 }
 
 export function hsvToHwb(input: ColorArray, output: ColorArray): void {
-  const h = input[0],
-    s = input[1],
-    v = input[2];
+  const h = input[0];
+  const s = input[1];
+  const v = input[2];
   output[0] = h;
   output[1] = v * (1 - s);
   output[2] = 1 - v;
 }
 
 export function hwbToHsv(input: ColorArray, output: ColorArray): void {
-  const h = input[0],
-    w = input[1],
-    b = input[2];
+  const h = input[0];
+  const w = input[1];
+  const b = input[2];
   const v = 1 - b;
   const s = v === 0 ? 0 : (v - w) / v;
   output[0] = h;
@@ -136,9 +136,9 @@ export function hexToRgb(input: string, output: ColorArray): void {
   let num: number;
 
   if (clean.length === 3) {
-    const r = clean[0],
-      g = clean[1],
-      b = clean[2];
+    const r = clean[0];
+    const g = clean[1];
+    const b = clean[2];
     num = parseInt(r + r + g + g + b + b, 16);
   } else {
     num = parseInt(clean, 16);

@@ -46,5 +46,6 @@ export function simulateDeficiency<S extends ColorSpace>(
 
   dropMatrix(lrgbMat);
 
-  return clampColor({ space, value: resValue, alpha });
+  clampColor({ space, value: resValue, alpha }, true);
+  return { space, value: resValue, alpha };
 }

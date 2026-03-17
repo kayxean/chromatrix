@@ -1,8 +1,17 @@
 {
   "name": "@kayxean/chromatrix",
-  "version": "1.0.1",
-  "description": "A colorful utility for the web",
+  "version": "1.0.2",
+  "private": false,
+  "description": "CIEXYZ-based color engine using Float32Array matrix pooling",
+  "keywords": [
+    "accessibility",
+    "color",
+    "contrast",
+    "conversion",
+    "palette"
+  ],
   "homepage": "https://github.com/kayxean/chromatrix#readme",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/kayxean/chromatrix.git"

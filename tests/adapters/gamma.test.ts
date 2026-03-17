@@ -50,23 +50,22 @@ describe('Gamma Adapters (sRGB Transfer Functions)', () => {
     dropMatrix(result);
   });
 
-  it('should clamp negative linear values to zero', () => {
+  it('should handle negative linear values using extended transfer function', () => {
     /**
-     * Out-of-bounds negative values in Linear RGB are physically impossible
-     * in this model and must be clamped to 0 to avoid NaN results during
-     * fractional exponentiation (e.g., trying to raise a negative to 1/2.4).
+     * Out-of-bounds negative values in Linear RGB can occur during color manipulations.
+     * The extended sRGB transfer function handles negatives by using sign preservation
+     * with absolute value exponentiation: sign(c) * 1.055 * |c|^(1/2.4) - 0.055
      */
     const negativeLrgb = createMatrix('lrgb');
     negativeLrgb.set([-0.1, -0.5, -1.0]);
 
     const result = createMatrix('rgb');
 
-    // Perform inverse gamma with safety clamping
     lrgbToRgb(negativeLrgb, result);
 
-    expect(result[0]).toBe(0);
-    expect(result[1]).toBe(0);
-    expect(result[2]).toBe(0);
+    expect(result[0]).toBeCloseTo(-1.292, 2);
+    expect(result[1]).toBeCloseTo(-6.46, 2);
+    expect(result[2]).toBeCloseTo(-12.92, 2);
 
     dropMatrix(negativeLrgb);
     dropMatrix(result);

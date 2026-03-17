@@ -74,7 +74,9 @@ export function formatCss(color: Color, asHex?: boolean, precision = 2): string 
       return `color(${name} ${roundTo(value[0], precision)} ${roundTo(value[1], precision)} ${roundTo(value[2], precision)}${suffix})`;
     }
 
-    default:
-      return `color(${space} ${roundTo(value[0], precision)} ${roundTo(value[1], precision)} ${roundTo(value[2], precision)}${suffix})`;
+    default: {
+      const spaceStr = String(space);
+      return `color(${spaceStr} ${roundTo(value[0], precision)} ${roundTo(value[1], precision)} ${roundTo(value[2], precision)}${suffix})`;
+    }
   }
 }

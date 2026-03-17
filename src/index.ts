@@ -18,7 +18,13 @@ export {
 
 export { isEqual, getDistance } from './utils/compare';
 
-export { checkContrast, matchContrast, checkContrastBulk, matchScales } from './utils/contrast';
+export {
+  checkContrast,
+  matchContrast,
+  checkContrastBulk,
+  matchScales,
+  getContrastRating,
+} from './utils/contrast';
 
 export { checkGamut, clampColor } from './utils/gamut';
 
