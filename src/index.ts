@@ -33,3 +33,20 @@ export { createHarmony, createShades, createScales, mixColor } from './utils/pal
 export { createPicker, fromPicker, toPicker } from './utils/picker';
 
 export { simulateDeficiency } from './utils/simulate';
+
+export {
+  findClosestName,
+  getExactName,
+  findSimilarNames,
+  parseColorName,
+} from './utils/naming';
+
+export {
+  createLinearGradient,
+  createRadialGradient,
+  createConicGradient,
+  createSmoothGradient,
+  createMultiColorGradient,
+} from './utils/gradient';
+
+export { createTheme, createDualTheme, convertTheme, dropTheme } from './utils/theme';
