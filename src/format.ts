@@ -3,7 +3,8 @@ import type { Color } from './types';
 const F_FACTORS = new Float32Array([1, 10, 100, 1000, 10000, 100000, 1000000]);
 
 function roundTo(val: number, precision: number): number {
-  const f = precision < F_FACTORS.length ? F_FACTORS[precision] : 10 ** precision;
+  const p = precision < 0 ? 0 : precision > 15 ? 15 : precision;
+  const f = p < F_FACTORS.length ? F_FACTORS[p] : 10 ** p;
   return Math.round(val * f) / f;
 }
 
