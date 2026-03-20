@@ -95,6 +95,20 @@ describe('sRGB Adapters (HSV, HSL, HWB, Hex)', () => {
       dropMatrix(hsv);
       dropMatrix(rgb);
     });
+
+    it('should correctly handle negative hue values', () => {
+      const hsv = createMatrix('hsv');
+      const rgb = createMatrix('rgb');
+
+      hsv.set([-30, 0.5, 0.8]);
+      hsvToRgb(hsv, rgb);
+      expect(rgb[0] + rgb[1] + rgb[2]).toBeGreaterThan(0);
+      expect(rgb[0]).toBeGreaterThan(rgb[1]);
+      expect(rgb[0]).toBeGreaterThan(rgb[2]);
+
+      dropMatrix(hsv);
+      dropMatrix(rgb);
+    });
   });
 
   describe('HSL / HWB', () => {
@@ -199,6 +213,21 @@ describe('sRGB Adapters (HSV, HSL, HWB, Hex)', () => {
 
       hexToRgb('00f', rgb);
       expect(rgb[2]).toBe(1);
+
+      dropMatrix(rgb);
+    });
+
+    it('should clamp out-of-range RGB values in hex conversion', () => {
+      const rgb = createMatrix('rgb');
+
+      rgb.set([-0.5, -1, -0.1]);
+      expect(rgbToHex(rgb, true)).toBe('#000000');
+
+      rgb.set([1.5, 2.0, 1.1]);
+      expect(rgbToHex(rgb, true)).toBe('#ffffff');
+
+      rgb.set([-0.5, 0.5, 1.5]);
+      expect(rgbToHex(rgb, true)).toBe('#0080ff');
 
       dropMatrix(rgb);
     });
