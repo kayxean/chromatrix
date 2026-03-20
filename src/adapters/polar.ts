@@ -20,7 +20,10 @@ function toPolar(input: ColorArray, output: ColorArray): void {
 function toCartesian(input: ColorArray, output: ColorArray): void {
   const L = input[0];
   const C = input[1];
-  const hRad = input[2] * DEG_TO_RAD;
+  let h = input[2];
+  if (h < 0) h += 360;
+  h = h % 360;
+  const hRad = h * DEG_TO_RAD;
 
   output[0] = L;
   output[1] = C * Math.cos(hRad);

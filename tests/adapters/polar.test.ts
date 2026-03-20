@@ -67,6 +67,32 @@ describe('Polar Adapters (Lab/Oklab <-> LCH/Oklch)', () => {
     dropMatrix(result);
   });
 
+  it('should normalize hue in toCartesian', () => {
+    const input = createMatrix('lch');
+    const lab = createMatrix('lab');
+    const result = createMatrix('lch');
+
+    input.set([50, 20, -45]);
+    lchToLab(input, lab);
+    labToLch(lab, result);
+    expect(result[2]).toBeCloseTo(315, 5);
+
+    input.set([50, 20, 450]);
+    lchToLab(input, lab);
+    labToLch(lab, result);
+    expect(result[2]).toBeCloseTo(90, 5);
+
+    input.set([50, 20, -400]);
+    lchToLab(input, lab);
+    labToLch(lab, result);
+    expect(result[2]).toBeGreaterThanOrEqual(0);
+    expect(result[2]).toBeLessThan(360);
+
+    dropMatrix(input);
+    dropMatrix(lab);
+    dropMatrix(result);
+  });
+
   it('should correctly map Oklab named aliases', () => {
     /**
      * Verifies that the Oklab-specific polar transforms function identically
