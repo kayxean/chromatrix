@@ -103,7 +103,8 @@ export function checkContrastBulk(
   return colors.map((color) => {
     const vt = getSapcV(getLuminanceD65(color));
     const Lc = calculateLc(vt, vb);
-    const contrast = Math.abs(Lc) < 0.001 ? 0 : Math.round(Lc * 10000) / 100;
+    const res = Math.abs(Lc) < 0.001 ? 0 : Lc * 100;
+    const contrast = Math.round(res * 100) / 100;
 
     return {
       color,

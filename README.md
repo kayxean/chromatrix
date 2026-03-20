@@ -20,11 +20,14 @@ Color math is messy because different spaces use different reference points. To 
 Install via your preferred package manager:
 
 ```bash
+# vite+
+vp add @kayxean/chromatrix
+
 # pnpm
 pnpm add @kayxean/chromatrix
 
 # npm
-npm add @kayxean/chromatrix
+npm install @kayxean/chromatrix
 
 # yarn
 yarn add @kayxean/chromatrix

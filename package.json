@@ -1,6 +1,6 @@
 {
   "name": "@kayxean/chromatrix",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": false,
   "description": "CIEXYZ-based color engine using Float32Array matrix pooling",
   "keywords": [
@@ -53,6 +53,13 @@
       "types": "./dist/types.d.mts",
       "import": "./dist/types.mjs"
     }
+  },
+  "scripts": {
+    "dev": "vp pack --watch",
+    "build": "vp pack",
+    "test": "vp test",
+    "lint": "vp check",
+    "format": "vp check --fix"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
