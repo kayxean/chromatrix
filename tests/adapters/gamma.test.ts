@@ -4,18 +4,15 @@ import { createMatrix, dropMatrix } from '~/shared';
 
 describe('Gamma Adapters (sRGB Transfer Functions)', () => {
   it('should round-trip standard colors (power-curve zone)', () => {
-    // Standard gamut colors typically fall into the non-linear exponential zone
     const original = createMatrix('rgb');
     original.set([0.8, 0.4, 0.2]);
 
     const mid = createMatrix('lrgb');
     const result = createMatrix('rgb');
 
-    // Convert from non-linear sRGB to Linear RGB and back
     rgbToLrgb(original, mid);
     lrgbToRgb(mid, result);
 
-    // Ensure the gamma 2.4 power-curve approximation maintains symmetry
     expect(result[0]).toBeCloseTo(original[0], 6);
     expect(result[1]).toBeCloseTo(original[1], 6);
     expect(result[2]).toBeCloseTo(original[2], 6);
@@ -26,21 +23,15 @@ describe('Gamma Adapters (sRGB Transfer Functions)', () => {
   });
 
   it('should trigger linear slope for very dark colors (linear zone)', () => {
-    /**
-     * The sRGB specification uses a linear "toe" for values <= 0.04045 (encoded).
-     * This prevents the slope of the curve from becoming infinite at zero.
-     */
     const darkRgb = createMatrix('rgb');
     darkRgb.set([0.01, 0.02, 0.03]);
 
     const mid = createMatrix('lrgb');
     const result = createMatrix('rgb');
 
-    // Convert through the linear slope section (divided by 12.92)
     rgbToLrgb(darkRgb, mid);
     lrgbToRgb(mid, result);
 
-    // Verify the linear-to-linear mapping is accurate
     expect(result[0]).toBeCloseTo(darkRgb[0], 6);
     expect(result[1]).toBeCloseTo(darkRgb[1], 6);
     expect(result[2]).toBeCloseTo(darkRgb[2], 6);
@@ -51,11 +42,6 @@ describe('Gamma Adapters (sRGB Transfer Functions)', () => {
   });
 
   it('should handle negative linear values using extended transfer function', () => {
-    /**
-     * Out-of-bounds negative values in Linear RGB can occur during color manipulations.
-     * The extended sRGB transfer function handles negatives by using sign preservation
-     * with absolute value exponentiation: sign(c) * 1.055 * |c|^(1/2.4) - 0.055
-     */
     const negativeLrgb = createMatrix('lrgb');
     negativeLrgb.set([-0.1, -0.5, -1.0]);
 
@@ -75,14 +61,10 @@ describe('Gamma Adapters (sRGB Transfer Functions)', () => {
     const input = createMatrix('rgb');
     const output = createMatrix('lrgb');
 
-    // sRGB and Linear RGB are both normalized so that 0 is black and 1 is white
-
-    // Black point: 0^2.4 = 0
     input.set([0, 0, 0]);
     rgbToLrgb(input, output);
     expect(output[0]).toBe(0);
 
-    // White point: 1^2.4 = 1
     input.set([1, 1, 1]);
     rgbToLrgb(input, output);
     expect(output[0]).toBe(1);

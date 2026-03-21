@@ -12,7 +12,6 @@ describe('Picker Utilities (picker.ts)', () => {
 
       const res = toPicker(color);
 
-      // Use toBeCloseTo to account for Float32 precision loss from matrices
       expect(res.h).toBeCloseTo(180);
       expect(res.s).toBeCloseTo(0.5);
       expect(res.v).toBeCloseTo(0.6);
@@ -42,7 +41,6 @@ describe('Picker Utilities (picker.ts)', () => {
       expect(color.value[2]).toBeCloseTo(1);
       expect(color.alpha).toBeCloseTo(0.5);
 
-      // formPicker allocates a new matrix that must be manually freed
       dropMatrix(color.value);
     });
   });
@@ -58,11 +56,10 @@ describe('Picker Utilities (picker.ts)', () => {
       const cb = vi.fn();
       picker.subscribe(cb);
 
-      // Test SV (Saturation/Value), H (Hue), A (Alpha), and fallback branches
-      picker.update(0.2, 0.3, 'sv'); // v: 1 - 0.3
-      picker.update(0.5, 0, 'h'); // h: 180
-      picker.update(0.75, 0, 'a'); // a: 0.75
-      picker.update(0, 0, 'invalid' as any); // Should still notify even if no state changes
+      picker.update(0.2, 0.3, 'sv');
+      picker.update(0.5, 0, 'h');
+      picker.update(0.75, 0, 'a');
+      picker.update(0, 0, 'invalid' as any);
 
       expect(picker.getSaturation()).toBeCloseTo(0.2);
       expect(picker.getBrightness()).toBeCloseTo(0.3);
@@ -82,7 +79,6 @@ describe('Picker Utilities (picker.ts)', () => {
 
       picker.subscribe(cb);
 
-      // Reference equality or value equality should prevent unnecessary notifications
       picker.assign(color);
       expect(cb).not.toHaveBeenCalled();
 
@@ -104,18 +100,15 @@ describe('Picker Utilities (picker.ts)', () => {
         alpha: 0.5,
       } as Color);
 
-      // getValue should return a clone, not a reference to the internal state
       const val = picker.getValue();
       expect(val).toEqual({ h: 360, s: 1, v: 1, a: 0.5 });
       expect(val).not.toBe((picker as any).val);
 
-      // getColor and getSolid generate fresh Color objects with their own matrices
       const col = picker.getColor();
       const sol = picker.getSolid();
       expect(col.alpha).toBe(0.5);
       expect(sol.alpha).toBe(1);
 
-      // Subscription removal test
       const cb = vi.fn();
       const unsub = picker.subscribe(cb);
       unsub();
@@ -133,8 +126,6 @@ describe('Picker Utilities (picker.ts)', () => {
     v.set([240, 1, 1]);
     const picker = createPicker({ space: 'hsv', value: v, alpha: 1 } as Color);
 
-    // Assign Pure White (S=0, V=1)
-    // Most converters return H=0 for white, but we should preserve the current hue
     const white = createMatrix('hsv');
     white.set([0, 0, 1]);
     picker.assign({ space: 'hsv', value: white, alpha: 1 } as Color);
@@ -142,7 +133,6 @@ describe('Picker Utilities (picker.ts)', () => {
     expect(picker.getHue()).toBe(240);
     expect(picker.getSaturation()).toBe(0);
 
-    // Assign Pure Black (S=0, V=0)
     const black = createMatrix('hsv');
     black.set([0, 0, 0]);
     picker.assign({ space: 'hsv', value: black, alpha: 1 } as Color);
@@ -162,17 +152,14 @@ describe('Picker Utilities (picker.ts)', () => {
     const cb = vi.fn();
     picker.subscribe(cb);
 
-    // Bail out if the space is already active
     picker.setSpace('rgb');
     expect(cb).not.toHaveBeenCalled();
     expect(picker.getSpace()).toBe('rgb');
 
-    // Update space and notify subscribers
     picker.setSpace('oklch');
     expect(cb).toHaveBeenCalledTimes(1);
     expect(picker.getSpace()).toBe('oklch');
 
-    // Ensure the emitted color matrix matches the new target space
     const emittedColor = cb.mock.calls[0][1];
     expect(emittedColor.space).toBe('oklch');
 
@@ -181,8 +168,6 @@ describe('Picker Utilities (picker.ts)', () => {
   });
 
   it('should dispose and release resources', () => {
-    // The dispose method is responsible for memory management and cleanup.
-    // It must drop the shared color matrix and clear all active subscribers.
     const v = createMatrix('rgb');
     const picker = createPicker({ space: 'rgb', value: v, alpha: 1 } as Color);
     const cb = vi.fn();
@@ -190,7 +175,6 @@ describe('Picker Utilities (picker.ts)', () => {
     picker.subscribe(cb);
     picker.dispose();
 
-    // After disposal, updates should not trigger any subscribers
     picker.update(0.5, 0, 'h');
     expect(cb).not.toHaveBeenCalled();
 
@@ -198,8 +182,6 @@ describe('Picker Utilities (picker.ts)', () => {
   });
 
   it('should bail out of updates if values are identical', () => {
-    // Ensuring that no notification is sent if the state hasn't actually changed.
-    // This covers the implicit "else" branches in the update conditional logic.
     const v = createMatrix('hsv');
     const picker = createPicker({ space: 'hsv', value: v, alpha: 1 } as Color);
     const cb = vi.fn();
@@ -207,7 +189,6 @@ describe('Picker Utilities (picker.ts)', () => {
 
     const val = picker.getValue();
 
-    // Updating with current values should not trigger the internal 'changed' flag
     picker.update(val.s, val.v, 'sv');
     picker.update(val.h / 360, 0, 'h');
     picker.update(val.a, 0, 'a');

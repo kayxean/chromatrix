@@ -34,6 +34,16 @@ import { createPicker, fromPicker, toPicker } from '~/utils/picker';
 
 import { simulateDeficiency } from '~/utils/simulate';
 
+import { findClosestName, getExactName, findSimilarNames, parseColorName } from '~/utils/naming';
+
+import {
+  createLinearGradient,
+  createRadialGradient,
+  createConicGradient,
+  createSmoothGradient,
+  createMultiColorGradient,
+} from '~/utils/gradient';
+
 describe('Low-Level Matrix', () => {
   describe('createMatrix', () => {
     it('allocates and sets matrix values', () => {
@@ -366,6 +376,107 @@ describe('Vision Simulation', () => {
       expect(formatCss(simulated)).toBeDefined();
       dropColor(original);
       dropColor(simulated);
+    });
+  });
+});
+
+describe('Color Naming', () => {
+  describe('findClosestName', () => {
+    it('finds the closest CSS named color', () => {
+      const color = parseColor('#ff0000');
+      const result = findClosestName(color);
+      expect(result.name).toBe('red');
+      expect(result.distance).toBeDefined();
+      dropColor(color);
+    });
+  });
+
+  describe('getExactName', () => {
+    it('returns exact match or null', () => {
+      const color = parseColor('#0000ff');
+      const name = getExactName(color);
+      expect(name).toBe('blue');
+      dropColor(color);
+    });
+  });
+
+  describe('findSimilarNames', () => {
+    it('returns similar colors sorted by distance', () => {
+      const color = parseColor('#ff8080');
+      const similar = findSimilarNames(color, 3);
+      expect(similar.length).toBe(3);
+      expect(typeof similar[0].name).toBe('string');
+      dropColor(color);
+    });
+  });
+
+  describe('parseColorName', () => {
+    it('parses CSS color names', () => {
+      const color = parseColorName('red');
+      expect(color).not.toBeNull();
+      dropColor(color!);
+    });
+  });
+});
+
+describe('CSS Gradients', () => {
+  describe('createLinearGradient', () => {
+    it('creates linear gradient string', () => {
+      const red = parseColor('#ff0000');
+      const blue = parseColor('#0000ff');
+      const gradient = createLinearGradient({ stops: [{ color: red }, { color: blue }] });
+      expect(gradient).toContain('linear-gradient');
+      dropColor(red);
+      dropColor(blue);
+    });
+  });
+
+  describe('createRadialGradient', () => {
+    it('creates radial gradient string', () => {
+      const red = parseColor('#ff0000');
+      const blue = parseColor('#0000ff');
+      const gradient = createRadialGradient({
+        shape: 'circle',
+        stops: [{ color: red }, { color: blue }],
+      });
+      expect(gradient).toContain('radial-gradient');
+      dropColor(red);
+      dropColor(blue);
+    });
+  });
+
+  describe('createConicGradient', () => {
+    it('creates conic gradient string', () => {
+      const red = parseColor('#ff0000');
+      const blue = parseColor('#0000ff');
+      const gradient = createConicGradient({ angle: 45, stops: [{ color: red }, { color: blue }] });
+      expect(gradient).toContain('conic-gradient');
+      dropColor(red);
+      dropColor(blue);
+    });
+  });
+
+  describe('createSmoothGradient', () => {
+    it('creates smooth gradient between two colors', () => {
+      const red = parseColor('#ff0000');
+      const blue = parseColor('#0000ff');
+      const gradient = createSmoothGradient(red, blue, 5);
+      expect(gradient).toContain('linear-gradient');
+      dropColor(red);
+      dropColor(blue);
+    });
+  });
+
+  describe('createMultiColorGradient', () => {
+    it('creates gradient from multiple colors', () => {
+      const red = parseColor('#ff0000');
+      const green = parseColor('#00ff00');
+      const blue = parseColor('#0000ff');
+      const gradient = createMultiColorGradient([red, green, blue]);
+      expect(gradient).toContain('linear-gradient');
+      dropColor(red);
+      dropColor(green);
+      dropColor(blue);
     });
   });
 });

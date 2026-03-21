@@ -6,19 +6,15 @@ import { createHarmony, createScales, createShades, mixColor } from '~/utils/pal
 describe('Palette Utilities (palette.ts)', () => {
   describe('createHarmony', () => {
     it('should generate complementary colors by rotating hue', () => {
-      // Harmonic rotations require polar coordinate systems.
-      // This test ensures the base hue is shifted correctly across the wheel.
       const v = createMatrix('hsl');
-      v.set([0, 1, 0.5]); // Pure Red
+      v.set([0, 1, 0.5]);
       const color: Color = { space: 'hsl', value: v };
 
-      // Complementary harmony is a 180-degree offset.
       const harmonies = createHarmony(color, [{ name: 'complementary', ratios: [180] }]);
 
       expect(harmonies[0].name).toBe('complementary');
       const resultColor = harmonies[0].colors[0];
 
-      // Red (0deg) + 180deg = Cyan (180deg)
       expect(resultColor.value[0]).toBe(180);
       expect(resultColor.space).toBe('hsl');
 
@@ -27,8 +23,6 @@ describe('Palette Utilities (palette.ts)', () => {
     });
 
     it('should use Oklch for polar rotation when input is Oklab', () => {
-      // Oklab/LCH use perceptual lightness and chroma.
-      // Rotating in Oklch preserves the perceived intensity of the harmony.
       const v = createMatrix('oklab');
       v.set([0.5, 0.4, 0]);
       const color: Color = { space: 'oklab', value: v };
@@ -45,15 +39,13 @@ describe('Palette Utilities (palette.ts)', () => {
     });
 
     it('should use LCH for polar rotation when input is Lab', () => {
-      // Lab to LCH conversion logic for polar hue rotation
       const v = createMatrix('lab');
-      v.set([50, 20, 20]); // A mid-tone brownish-red
+      v.set([50, 20, 20]);
       const color: Color = { space: 'lab', value: v };
 
       const harmonies = createHarmony(color, [{ name: 'analogous', ratios: [30] }]);
 
       expect(harmonies[0].colors[0].space).toBe('lab');
-      // Verify conversion changed a/b values based on rotation
       expect(harmonies[0].colors[0].value[1]).not.toBe(20);
 
       dropMatrix(v);
@@ -61,9 +53,8 @@ describe('Palette Utilities (palette.ts)', () => {
     });
 
     it('should handle negative hue wrap-around', () => {
-      // Ensures rotations resulting in negative values (10° - 30°) wrap to 340°
       const v = createMatrix('hsl');
-      v.set([10, 1, 0.5]); // 10 degrees (Red/Orange)
+      v.set([10, 1, 0.5]);
       const color: Color = { space: 'hsl', value: v };
 
       const harmonies = createHarmony(color, [{ name: 'negative-rotation', ratios: [-30] }]);
@@ -78,7 +69,6 @@ describe('Palette Utilities (palette.ts)', () => {
 
   describe('mixColor', () => {
     it('should linearly interpolate between two colors', () => {
-      // Standard linear interpolation (lerp) for rectangular color spaces.
       const start = { space: 'rgb' as const, value: createMatrix('rgb') };
       const end = { space: 'rgb' as const, value: createMatrix('rgb') };
       start.value.set([0, 0, 0]);
@@ -95,7 +85,6 @@ describe('Palette Utilities (palette.ts)', () => {
     });
 
     it('should take the shortest path for hue interpolation', () => {
-      // Cylindrical interpolation: 350° to 10° should cross 0°
       const start = { space: 'hsl' as const, value: createMatrix('hsl') };
       const end = { space: 'hsl' as const, value: createMatrix('hsl') };
 
@@ -112,7 +101,6 @@ describe('Palette Utilities (palette.ts)', () => {
     });
 
     it('should interpolate alpha values', () => {
-      // Standard linear weight for opacity regardless of color space
       const start = {
         space: 'rgb' as const,
         value: createMatrix('rgb'),
@@ -133,7 +121,6 @@ describe('Palette Utilities (palette.ts)', () => {
     });
 
     it('should clamp weights outside the 0-1 range', () => {
-      // Weight clamping logic: t < 0 => 0; t > 1 => 1
       const start = { space: 'rgb' as const, value: createMatrix('rgb') };
       const end = { space: 'rgb' as const, value: createMatrix('rgb') };
       start.value.set([0, 0, 0]);
@@ -152,7 +139,6 @@ describe('Palette Utilities (palette.ts)', () => {
     });
 
     it('should correctly identify hue index for LCH and Oklch', () => {
-      // Oklch/LCH hue is located at index 2
       const start = { space: 'oklch' as const, value: createMatrix('oklch') };
       const end = { space: 'oklch' as const, value: createMatrix('oklch') };
 
@@ -168,7 +154,6 @@ describe('Palette Utilities (palette.ts)', () => {
     });
 
     it('should handle large positive hue differences by wrapping backwards', () => {
-      // Hue wrap-around for distances > 180°
       const start = { space: 'hsl' as const, value: createMatrix('hsl') };
       const end = { space: 'hsl' as const, value: createMatrix('hsl') };
 
@@ -184,7 +169,6 @@ describe('Palette Utilities (palette.ts)', () => {
     });
 
     it('should skip hue wrapping when difference is less than 180', () => {
-      // Regular interpolation when distance <= 180°
       const start = { space: 'hsl' as const, value: createMatrix('hsl') };
       const end = { space: 'hsl' as const, value: createMatrix('hsl') };
 
@@ -201,7 +185,6 @@ describe('Palette Utilities (palette.ts)', () => {
     });
 
     it('should ensure hue results are never negative', () => {
-      // Post-interpolation normalization to keep hue in [0, 360) range
       const start = { space: 'hsl' as const, value: createMatrix('hsl') };
       const end = { space: 'hsl' as const, value: createMatrix('hsl') };
 
@@ -219,7 +202,6 @@ describe('Palette Utilities (palette.ts)', () => {
 
   describe('createShades and createScales', () => {
     it('should generate a specific number of steps', () => {
-      // Shades provide fixed-step interpolation between two colors
       const start = { space: 'rgb' as const, value: createMatrix('rgb') };
       const end = { space: 'rgb' as const, value: createMatrix('rgb') };
       start.value.set([0, 0, 0]);
@@ -236,13 +218,12 @@ describe('Palette Utilities (palette.ts)', () => {
     });
 
     it('should handle multi-stop scales correctly', () => {
-      // Scales divide steps across segments defined by multiple stops
       const s1 = { space: 'rgb' as const, value: createMatrix('rgb') };
       const s2 = { space: 'rgb' as const, value: createMatrix('rgb') };
       const s3 = { space: 'rgb' as const, value: createMatrix('rgb') };
-      s1.value.set([1, 0, 0]); // Red
-      s2.value.set([0, 1, 0]); // Green
-      s3.value.set([0, 0, 1]); // Blue
+      s1.value.set([1, 0, 0]);
+      s2.value.set([0, 1, 0]);
+      s3.value.set([0, 0, 1]);
 
       const scale = createScales([s1, s2, s3], 3);
 
@@ -260,10 +241,8 @@ describe('Palette Utilities (palette.ts)', () => {
       const start = { space: 'rgb' as const, value: createMatrix('rgb') };
       const end = { space: 'rgb' as const, value: createMatrix('rgb') };
 
-      // Case: steps <= 0
       expect(createShades(start, end, 0)).toEqual([]);
 
-      // Case: steps === 1 (Clone path)
       const result = createShades(start, end, 1);
       expect(result).toHaveLength(1);
       expect(result[0].value).not.toBe(start.value);
@@ -276,10 +255,8 @@ describe('Palette Utilities (palette.ts)', () => {
     it('should handle scales with zero steps or minimal stops', () => {
       const s1 = { space: 'rgb' as const, value: createMatrix('rgb') };
 
-      // Case: steps <= 0
       expect(createScales([s1], 0)).toEqual([]);
 
-      // Case: stops.length < 2
       const result = createScales([s1], 5);
       expect(result).toHaveLength(1);
       expect(result[0].value).not.toBe(s1.value);

@@ -28,3 +28,27 @@ export type ColorAdapter = (input: ColorArray, output: ColorArray) => void;
 export type ColorMode = 'hex' | Exclude<ColorSpace, 'hsv' | 'lrgb' | 'xyz65' | 'xyz50'>;
 
 export type DeficiencyType = 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia';
+
+export type GradientType = 'linear' | 'radial' | 'conic';
+
+export type GradientStop = {
+  color: Color;
+  position?: number;
+};
+
+export type LinearGradientOptions = {
+  angle?: number;
+  stops: GradientStop[];
+};
+
+export type RadialGradientOptions = {
+  shape?: 'circle' | 'ellipse';
+  position?: string;
+  stops: GradientStop[];
+};
+
+export type ConicGradientOptions = {
+  angle?: number;
+  position?: string;
+  stops: GradientStop[];
+};
