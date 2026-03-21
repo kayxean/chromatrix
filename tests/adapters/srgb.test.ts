@@ -18,21 +18,18 @@ describe('sRGB Adapters (HSV, HSL, HWB, Hex)', () => {
       const hsv = createMatrix('hsv');
       const result = createMatrix('rgb');
 
-      // Sector 0: Red is max (0°-60°)
       rgb.set([1, 0.5, 0]);
       rgbToHsv(rgb, hsv);
       expect(hsv[0]).toBe(30);
       hsvToRgb(hsv, result);
       expect(result[0]).toBeCloseTo(1);
 
-      // Sector 2: Green is max (120°-180°)
       rgb.set([0.1, 0.9, 0.2]);
       rgbToHsv(rgb, hsv);
       expect(hsv[0]).toBeCloseTo(127.5, 1);
       hsvToRgb(hsv, result);
       expect(result[1]).toBeCloseTo(0.9);
 
-      // Sector 4: Blue is max (240°-300°)
       rgb.set([0.1, 0.2, 0.9]);
       rgbToHsv(rgb, hsv);
       expect(hsv[0]).toBeCloseTo(232.5, 1);
@@ -48,23 +45,19 @@ describe('sRGB Adapters (HSV, HSL, HWB, Hex)', () => {
       const rgb = createMatrix('rgb');
       const hsv = createMatrix('hsv');
 
-      // Black: v=0, s=0
       rgb.set([0, 0, 0]);
       rgbToHsv(rgb, hsv);
       expect(hsv[1]).toBe(0);
       expect(hsv[2]).toBe(0);
 
-      // Gray: delta=0, h=0
       rgb.set([0.5, 0.5, 0.5]);
       rgbToHsv(rgb, hsv);
       expect(hsv[0]).toBe(0);
 
-      // Explicit zero delta check
       rgb.set([0.8, 0.8, 0.8]);
       rgbToHsv(rgb, hsv);
       expect(hsv[1]).toBe(0);
 
-      // Wrap: Negative raw hue normalization
       rgb.set([1, 0, 0.1]);
       rgbToHsv(rgb, hsv);
       expect(hsv[0]).toBeGreaterThan(0);
@@ -77,9 +70,6 @@ describe('sRGB Adapters (HSV, HSL, HWB, Hex)', () => {
       const hsv = createMatrix('hsv');
       const rgb = createMatrix('rgb');
 
-      /** * Sector coverage for hsvToRgb:
-       * f=0: 0, f=1: 60, f=2: 120, f=3: 180, f=4: 240, f=5: 300
-       */
       const hues = [0, 60, 120, 180, 240, 300];
       hues.forEach((h) => {
         hsv.set([h, 1, 1]);
@@ -87,7 +77,6 @@ describe('sRGB Adapters (HSV, HSL, HWB, Hex)', () => {
         expect(rgb[0] + rgb[1] + rgb[2]).toBeGreaterThan(0);
       });
 
-      // Greyscale: Saturation 0 early return
       hsv.set([0, 0, 0.5]);
       hsvToRgb(hsv, rgb);
       expect(rgb[0]).toBe(0.5);
@@ -122,7 +111,6 @@ describe('sRGB Adapters (HSV, HSL, HWB, Hex)', () => {
       hslToHsv(hsl, result);
       expect(result[1]).toBeCloseTo(0.5);
 
-      // Grayscale branch (max === min)
       hsv.set([0, 0, 0.5]);
       hsvToHsl(hsv, hsl);
       expect(hsl[1]).toBe(0);
@@ -131,7 +119,6 @@ describe('sRGB Adapters (HSV, HSL, HWB, Hex)', () => {
       hslToHsv(hsl, result);
       expect(result[1]).toBe(0);
 
-      // Boundaries: L=0, L=1
       hsv.set([0, 0, 0]);
       hsvToHsl(hsv, hsl);
       expect(hsl[2]).toBe(0);
@@ -139,7 +126,6 @@ describe('sRGB Adapters (HSV, HSL, HWB, Hex)', () => {
       hsvToHsl(hsv, hsl);
       expect(hsl[2]).toBe(1);
 
-      // Pure black (v === 0)
       hsl.set([0, 0, 0]);
       hslToHsv(hsl, result);
       expect(result[2]).toBe(0);
@@ -159,22 +145,18 @@ describe('sRGB Adapters (HSV, HSL, HWB, Hex)', () => {
       hwbToHsv(hwb, result);
       expect(result[1]).toBeCloseTo(0.3);
 
-      // Achromatic HWB (W + B >= 1)
       hwb.set([0, 0.6, 0.6]);
       hwbToHsv(hwb, result);
       expect(result[1]).toBe(0);
 
-      // W + B normalization branch (> 1)
       hwb.set([0, 0.8, 0.4]);
       hwbToHsv(hwb, result);
       expect(result[1]).toBe(0);
 
-      // Saturation safety branch (s < 0)
       hwb.set([0, 1.1, 0]);
       hwbToHsv(hwb, result);
       expect(result[1]).toBe(0);
 
-      // Pure black (v === 0)
       hwb.set([0, 0, 1]);
       hwbToHsv(hwb, result);
       expect(result[2]).toBe(0);

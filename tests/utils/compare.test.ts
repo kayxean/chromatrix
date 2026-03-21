@@ -23,9 +23,7 @@ describe('Color Comparison Utilities (compare.ts)', () => {
       const a: Color = { space: 'rgb', value: v1 };
       const b: Color = { space: 'rgb', value: v2 };
 
-      // Should be equal with default tolerance (0.0001)
       expect(isEqual(a, b)).toBe(true);
-      // Should be unequal with strict tolerance
       expect(isEqual(a, b, 0.000001)).toBe(false);
 
       dropMatrix(v1);
@@ -36,9 +34,7 @@ describe('Color Comparison Utilities (compare.ts)', () => {
       const vRgb = createMatrix('rgb');
       const vHsl = createMatrix('hsl');
 
-      // White in RGB
       vRgb.set([1, 1, 1]);
-      // White in HSL (any hue, 0% saturation, 100% lightness)
       vHsl.set([0, 0, 1]);
 
       const a: Color = { space: 'rgb', value: vRgb };
@@ -78,7 +74,6 @@ describe('Color Comparison Utilities (compare.ts)', () => {
       const v1 = createMatrix('oklab');
       const v2 = createMatrix('oklab');
 
-      // Distance of 0.1 along the L axis
       v1.set([0.5, 0, 0]);
       v2.set([0.6, 0, 0]);
 
@@ -95,15 +90,12 @@ describe('Color Comparison Utilities (compare.ts)', () => {
       const vRgb = createMatrix('rgb');
       const vOklab = createMatrix('oklab');
 
-      // Black in RGB
       vRgb.set([0, 0, 0]);
-      // White in Oklab (L=1)
       vOklab.set([1, 0, 0]);
 
       const a: Color = { space: 'rgb', value: vRgb };
       const b: Color = { space: 'oklab', value: vOklab };
 
-      // The distance between pure black and pure white in Oklab is exactly 1.0
       expect(getDistance(a, b)).toBeCloseTo(1.0);
 
       dropMatrix(vRgb);
@@ -126,7 +118,6 @@ describe('Color Comparison Utilities (compare.ts)', () => {
       const distRedPink = getDistance(red, pink);
       const distRedBlue = getDistance(red, blue);
 
-      // Red is perceptually closer to Pink than to Blue
       expect(distRedPink).toBeLessThan(distRedBlue);
 
       dropMatrix(redVal);

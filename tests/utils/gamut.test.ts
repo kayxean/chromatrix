@@ -26,11 +26,11 @@ describe('Gamut Utilities (gamut.ts)', () => {
       const color: Color = { space: 'hsl', value: v };
       clampColor(color);
 
-      expect(v[0]).toBe(320); // Negative wrap
+      expect(v[0]).toBe(320);
 
       v.set([400, 0.5, 0.5]);
       clampColor(color);
-      expect(v[0]).toBe(40); // Overflow wrap
+      expect(v[0]).toBe(40);
 
       dropMatrix(v);
     });
@@ -42,8 +42,8 @@ describe('Gamut Utilities (gamut.ts)', () => {
 
       const result = clampColor(color, false);
 
-      expect(v[0]).toBe(2); // Original untouched
-      expect(result.value[0]).toBe(1); // New matrix clamped
+      expect(v[0]).toBe(2);
+      expect(result.value[0]).toBe(1);
       expect(result).not.toBe(color);
 
       dropMatrix(v);
@@ -60,14 +60,13 @@ describe('Gamut Utilities (gamut.ts)', () => {
     });
 
     it('should return a new object for unknown spaces when mutate is false', () => {
-      // Ensures functional purity branch is covered when bounds are missing
       const v = createMatrix('rgb');
       const color = { space: 'unknown' as any, value: v, alpha: 0.8 };
 
       const result = clampColor(color, false);
 
       expect(result).not.toBe(color);
-      expect(result.value).toBe(v); // Value reference remains since no clamping occurs
+      expect(result.value).toBe(v);
 
       dropMatrix(v);
     });
@@ -83,14 +82,14 @@ describe('Gamut Utilities (gamut.ts)', () => {
 
     it('should return false for colors outside gamut bounds', () => {
       const v = createMatrix('oklab');
-      v.set([0.5, 0.8, 0]); // 'a' channel exceeds 0.4
+      v.set([0.5, 0.8, 0]);
       expect(checkGamut({ space: 'oklab', value: v })).toBe(false);
       dropMatrix(v);
     });
 
     it('should ignore circular dimensions (Hue)', () => {
       const v = createMatrix('oklch');
-      v.set([0.5, 0.2, 720]); // Hue is effectively infinite
+      v.set([0.5, 0.2, 720]);
       expect(checkGamut({ space: 'oklch', value: v })).toBe(true);
       dropMatrix(v);
     });
@@ -106,7 +105,6 @@ describe('Gamut Utilities (gamut.ts)', () => {
     });
 
     it('should return true for unknown spaces', () => {
-      // Default to true if the space has no defined clamping bounds
       const v = createMatrix('rgb');
       const color = { space: 'mystical-space' as any, value: v };
 

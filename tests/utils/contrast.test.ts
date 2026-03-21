@@ -15,10 +15,10 @@ describe('Contrast Utilities (contrast.ts)', () => {
     it('should extract correct Y (luminance) from RGB space', () => {
       const v = createMatrix('rgb');
 
-      v.set([1, 1, 1]); // White
+      v.set([1, 1, 1]);
       expect(getLuminanceD65({ space: 'rgb', value: v })).toBeCloseTo(1.0);
 
-      v.set([0, 0, 0]); // Black
+      v.set([0, 0, 0]);
       expect(getLuminanceD65({ space: 'rgb', value: v })).toBe(0);
 
       dropMatrix(v);
@@ -27,8 +27,6 @@ describe('Contrast Utilities (contrast.ts)', () => {
 
   describe('checkContrast (APCA)', () => {
     it('should return 0 when contrast is below the threshold', () => {
-      // White is used here to avoid the precision drift found in mid-tones
-      // when converting through non-linear spaces.
       const v = createMatrix('rgb');
       v.set([1, 1, 1]);
       const col: Color = { space: 'rgb', value: v };
@@ -107,7 +105,6 @@ describe('Contrast Utilities (contrast.ts)', () => {
       const adjusted = matchContrast(text, bg, target);
 
       const finalContrast = Math.abs(checkContrast(adjusted, bg));
-      // Target -1 accounts for binary search precision limits
       expect(finalContrast).toBeGreaterThanOrEqual(target - 1);
 
       dropMatrix(vText);
@@ -123,7 +120,7 @@ describe('Contrast Utilities (contrast.ts)', () => {
 
       const c1 = { space: 'rgb' as const, value: createMatrix('rgb') };
       const c2 = { space: 'rgb' as const, value: createMatrix('rgb') };
-      c1.value.set([1, 1, 1]); // Force zero branch
+      c1.value.set([1, 1, 1]);
       c2.value.set([0, 0, 0]);
 
       const results = checkContrastBulk(bg, [c1, c2]);

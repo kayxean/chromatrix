@@ -5,8 +5,8 @@ import {
   createMultiColorGradient,
   createRadialGradient,
   createSmoothGradient,
-} from '../../src/utils/gradient';
-import { createColor, dropColor } from '../../src/shared';
+} from '~/utils/gradient';
+import { createColor, dropColor } from '~/shared';
 
 describe('gradient', () => {
   describe('createLinearGradient', () => {
@@ -142,6 +142,19 @@ describe('gradient', () => {
   });
 
   describe('createSmoothGradient', () => {
+    it('should handle steps === 1', () => {
+      const red = createColor('rgb', [1, 0, 0]);
+      const blue = createColor('rgb', [0, 0, 1]);
+
+      const gradient = createSmoothGradient(red, blue, 1);
+
+      expect(gradient).toContain('linear-gradient');
+      expect(gradient).toContain('50%');
+
+      dropColor(red);
+      dropColor(blue);
+    });
+
     it('should create smooth linear gradient', () => {
       const red = createColor('rgb', [1, 0, 0]);
       const blue = createColor('rgb', [0, 0, 1]);

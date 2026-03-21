@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  findClosestName,
-  findSimilarNames,
-  getExactName,
-  parseColorName,
-} from '../../src/utils/naming';
-import { createColor, dropColor } from '../../src/shared';
+import { findClosestName, findSimilarNames, getExactName, parseColorName } from '~/utils/naming';
+import { createColor, dropColor } from '~/shared';
 
 describe('naming', () => {
   describe('findClosestName', () => {
