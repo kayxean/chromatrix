@@ -46,7 +46,7 @@ export function hsvToRgb(input: ColorArray, output: ColorArray): void {
   const c = v * s;
   const x = c * (1 - Math.abs((h60 % 2) - 1));
   const m = v - c;
-  const f = Math.floor(h60) % 6;
+  const f = ((Math.floor(h60) % 6) + 6) % 6;
 
   let r = 0;
   let g = 0;
@@ -123,9 +123,9 @@ export function hwbToHsv(input: ColorArray, output: ColorArray): void {
 }
 
 export function rgbToHex(input: ColorArray, denote = false): string {
-  const r = (input[0] * 255 + 0.5) | 0;
-  const g = (input[1] * 255 + 0.5) | 0;
-  const b = (input[2] * 255 + 0.5) | 0;
+  const r = ((input[0] < 0 ? 0 : input[0] > 1 ? 1 : input[0]) * 255 + 0.5) | 0;
+  const g = ((input[1] < 0 ? 0 : input[1] > 1 ? 1 : input[1]) * 255 + 0.5) | 0;
+  const b = ((input[2] < 0 ? 0 : input[2] > 1 ? 1 : input[2]) * 255 + 0.5) | 0;
 
   const hex = ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
   return denote ? `#${hex}` : hex;

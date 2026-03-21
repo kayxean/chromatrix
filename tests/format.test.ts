@@ -137,4 +137,18 @@ describe('CSS Formatter (format.ts)', () => {
 
     dropMatrix(value);
   });
+
+  it('should clamp precision to valid range', () => {
+    const val = createMatrix('xyz65');
+    val.set([0.5, 0.25, 0.75]);
+    const color: Color = { space: 'xyz65', value: val };
+
+    // Negative precision clamps to 0 decimal places
+    expect(formatCss(color, false, -5)).toBe('color(xyz-d65 1 0 1)');
+
+    // Very large precision clamps to 15 decimal places (prevents Infinity)
+    expect(() => formatCss(color, false, 100)).not.toThrow();
+
+    dropMatrix(val);
+  });
 });

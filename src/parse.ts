@@ -3,6 +3,7 @@ import { createColor } from './shared';
 
 const INV_255 = 1 / 255;
 const INV_100 = 1 / 100;
+const SPLIT_RE = /[\s,/]+/;
 
 function parseHex(hex: string): {
   r: number;
@@ -13,7 +14,7 @@ function parseHex(hex: string): {
   const len = hex.length;
 
   if (len !== 3 && len !== 4 && len !== 6 && len !== 8) {
-    throw new Error(`Invalid Hex length: ${len}`);
+    throw new Error(`invalid hex length: ${len}`);
   }
 
   if (len <= 4) {
@@ -38,23 +39,30 @@ function parseHex(hex: string): {
 }
 
 export function parseColor(css: string): Color {
-  const trimmed = css.trim();
+  if (css.length === 0) throw new Error(`empty color string`);
 
-  if (trimmed[0] === '#') {
-    const { r, g, b, a } = parseHex(trimmed.slice(1));
+  const firstChar = css.charCodeAt(0);
+
+  if (firstChar === 35) {
+    const hex = css.length === 4 || css.length === 7 ? css : css.trim();
+    if (hex.length === 0) throw new Error(`empty color string`);
+    const { r, g, b, a } = parseHex(hex.slice(1));
     const color = createColor('rgb', [r * INV_255, g * INV_255, b * INV_255]);
     color.alpha = a * INV_255;
     return color;
   }
 
+  const trimmed = css.trim();
+  if (trimmed.length === 0) throw new Error(`empty color string`);
+
   const openParen = trimmed.indexOf('(');
-  if (openParen === -1) throw new Error(`Invalid format: ${css}`);
+  if (openParen === -1) throw new Error(`invalid format: ${css}`);
 
   const closeParen = trimmed.lastIndexOf(')');
-  let spaceName = trimmed.slice(0, openParen).toLowerCase();
+  const spaceName = trimmed.slice(0, openParen).toLowerCase();
   const content = trimmed.slice(openParen + 1, closeParen);
 
-  const parts = content.split(/[\s,/]+/).filter(Boolean);
+  const parts = content.split(SPLIT_RE);
 
   let space: ColorSpace;
   let offset = 0;
@@ -67,30 +75,55 @@ export function parseColor(css: string): Color {
     else if (profile === 'xyz-d50') space = 'xyz50';
     else space = profile as ColorSpace;
   } else {
-    if (spaceName.length > 3 && spaceName.endsWith('a')) {
-      spaceName = spaceName.slice(0, -1);
-    }
-    space = spaceName as ColorSpace;
+    const baseName =
+      spaceName.length > 3 && spaceName.endsWith('a') ? spaceName.slice(0, -1) : spaceName;
+    space = baseName as ColorSpace;
   }
 
-  let v0 = Number.parseFloat(parts[offset]);
-  let v1 = Number.parseFloat(parts[offset + 1]);
-  let v2 = Number.parseFloat(parts[offset + 2]);
+  let rawV0: number;
+  let rawV1: number;
+  let rawV2: number;
+  if (offset < parts.length) {
+    rawV0 = Number.parseFloat(parts[offset]);
+  } else {
+    rawV0 = NaN;
+  }
+  if (offset + 1 < parts.length) {
+    rawV1 = Number.parseFloat(parts[offset + 1]);
+  } else {
+    rawV1 = NaN;
+  }
+  if (offset + 2 < parts.length) {
+    rawV2 = Number.parseFloat(parts[offset + 2]);
+  } else {
+    rawV2 = NaN;
+  }
+  if (Number.isNaN(rawV0) || Number.isNaN(rawV1) || Number.isNaN(rawV2)) {
+    throw new Error(`invalid color: missing components`);
+  }
   const rawA = parts[offset + 3];
 
+  let v0: number, v1: number, v2: number;
   if (space === 'rgb') {
-    v0 *= INV_255;
-    v1 *= INV_255;
-    v2 *= INV_255;
+    v0 = rawV0 * INV_255;
+    v1 = rawV1 * INV_255;
+    v2 = rawV2 * INV_255;
   } else if (space === 'hsl' || space === 'hwb') {
-    v1 *= INV_100;
-    v2 *= INV_100;
+    v0 = rawV0;
+    v1 = rawV1 * INV_100;
+    v2 = rawV2 * INV_100;
   } else if (space === 'lab' || space === 'lch') {
-    v0 *= INV_100;
+    v0 = rawV0 * INV_100;
+    v1 = rawV1;
+    v2 = rawV2;
   } else if (space === 'oklab' || space === 'oklch') {
-    v0 *= INV_100;
-    v1 *= INV_100;
-    v2 *= INV_100;
+    v0 = rawV0 * INV_100;
+    v1 = rawV1 * INV_100;
+    v2 = rawV2 * INV_100;
+  } else {
+    v0 = rawV0;
+    v1 = rawV1;
+    v2 = rawV2;
   }
 
   let alpha = 1;

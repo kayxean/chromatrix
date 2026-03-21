@@ -28,8 +28,8 @@ describe('CSS Parser (parse.ts)', () => {
 
     it('should throw on invalid hex lengths', () => {
       // Hex strings must be 3, 4, 6, or 8 digits (excluding the #)
-      expect(() => parseColor('#ff')).toThrow('Invalid Hex length: 2');
-      expect(() => parseColor('#ff00000000')).toThrow('Invalid Hex length: 10');
+      expect(() => parseColor('#ff')).toThrow('invalid hex length: 2');
+      expect(() => parseColor('#ff00000000')).toThrow('invalid hex length: 10');
     });
   });
 
@@ -105,7 +105,32 @@ describe('CSS Parser (parse.ts)', () => {
 
     it('should throw on invalid formats', () => {
       // Graceful error handling for unsupported strings
-      expect(() => parseColor('not-a-color')).toThrow('Invalid format: not-a-color');
+      expect(() => parseColor('not-a-color')).toThrow('invalid format: not-a-color');
+    });
+
+    it('should throw on empty strings and missing components', () => {
+      expect(() => parseColor('')).toThrow('empty color string');
+      expect(() => parseColor('   ')).toThrow('empty color string');
+      expect(() => parseColor('rgb(100)')).toThrow('invalid color: missing components');
+      expect(() => parseColor('rgb(100, 50)')).toThrow('invalid color: missing components');
+      expect(() => parseColor('rgb(a b c)')).toThrow('invalid color: missing components');
+      const color = parseColor('rgb(100 50 25)');
+      expect(color.value[0]).toBeCloseTo(100 / 255);
+    });
+
+    it('should throw on invalid individual components', () => {
+      expect(() => parseColor('rgb(a 50 25)')).toThrow('invalid color: missing components');
+      expect(() => parseColor('rgb(100 a 25)')).toThrow('invalid color: missing components');
+    });
+
+    it('should handle color() function with offset > 0', () => {
+      const lrgb = parseColor('color(srgb-linear 0.5 0.2 0.8)');
+      expect(lrgb.space).toBe('lrgb');
+      expect(lrgb.value[0]).toBe(0.5);
+      expect(() => parseColor('color(srgb-linear 0.5)')).toThrow(
+        'invalid color: missing components',
+      );
+      expect(() => parseColor('color(srgb-linear)')).toThrow('invalid color: missing components');
     });
 
     it('should clamp alpha values between 0 and 1', () => {
