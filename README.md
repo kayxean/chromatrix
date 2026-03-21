@@ -14,6 +14,8 @@ Color math is messy because different spaces use different reference points. To 
 - **Gamut**: Detects out-of-bounds colors and clamps them to a valid range.
 - **Pickers**: Maps 2D UI coordinates to HSVA values for color selection.
 - **Vision**: Simulates color-blindness by projecting into reduced color spaces.
+- **Naming**: Finds closest CSS named colors using perceptual distance.
+- **Gradients**: Generates CSS gradient strings from color stops.
 
 ## Usage
 
@@ -128,13 +130,9 @@ dropMatrix(lchArray);
 Forget the old WCAG ratio. This uses APCA to calculate a signed _Lc_ value based on font weight and background luminance.
 
 ```ts
-import {
-  parseColor,
-  checkContrast,
-  matchContrast,
-  createScales,
-  dropColor,
-} from '@kayxean/chromatrix';
+import { checkContrast, matchContrast } from '@kayxean/chromatrix/utils/contrast';
+import { createScales } from '@kayxean/chromatrix/utils/palette';
+import { parseColor, dropColor } from '@kayxean/chromatrix';
 
 const brand = parseColor('#007bff');
 const bg = parseColor('#ffffff');
@@ -156,7 +154,8 @@ dropColor(safeColor);
 Check contrast for multiple colors against a single background efficiently.
 
 ```ts
-import { parseColor, checkContrastBulk, dropColor } from '@kayxean/chromatrix';
+import { checkContrastBulk } from '@kayxean/chromatrix/utils/contrast';
+import { parseColor, dropColor } from '@kayxean/chromatrix';
 
 const bg = parseColor('#333333');
 const colors = [parseColor('#ffffff'), parseColor('#cccccc'), parseColor('#666666')];
@@ -172,7 +171,7 @@ dropColor(bg);
 Get a human-readable readability tier based on the absolute APCA _Lc_ score.
 
 ```ts
-import { getContrastRating } from '@kayxean/chromatrix';
+import { getContrastRating } from '@kayxean/chromatrix/utils/contrast';
 
 getContrastRating(75.2);
 ```
@@ -182,7 +181,8 @@ getContrastRating(75.2);
 Generate a color scale where each step meets a target contrast against a background.
 
 ```ts
-import { parseColor, matchScales, dropColor } from '@kayxean/chromatrix';
+import { matchScales } from '@kayxean/chromatrix/utils/contrast';
+import { parseColor, dropColor } from '@kayxean/chromatrix';
 
 const stops = [parseColor('#007bff'), parseColor('#ffc107')];
 const whiteBg = parseColor('#ffffff');
@@ -201,11 +201,11 @@ Interpolation happens in polar space for smoother, more "natural" color shifts.
 ```ts
 import {
   createHarmony,
-  createScales,
   createShades,
+  createScales,
   mixColor,
-  dropColor,
-} from '@kayxean/chromatrix';
+} from '@kayxean/chromatrix/utils/palette';
+import { parseColor, dropColor } from '@kayxean/chromatrix';
 
 const base = parseColor('#007bff');
 const neighbors = createHarmony(base, [
@@ -235,14 +235,9 @@ dropColor(base);
 Colors that look the same in different spaces are treated as equal through a perceptual tolerance threshold.
 
 ```ts
-import {
-  parseColor,
-  checkGamut,
-  clampColor,
-  isEqual,
-  getDistance,
-  dropColor,
-} from '@kayxean/chromatrix';
+import { checkGamut, clampColor } from '@kayxean/chromatrix/utils/gamut';
+import { isEqual, getDistance } from '@kayxean/chromatrix/utils/compare';
+import { parseColor, dropColor } from '@kayxean/chromatrix';
 
 const wideColor = parseColor('oklch(90% 0.4 120)');
 
@@ -261,7 +256,8 @@ dropColor(wideColor);
 You can also mutate in-place to avoid new allocations.
 
 ```ts
-import { parseColor, clampColor, dropColor } from '@kayxean/chromatrix';
+import { clampColor } from '@kayxean/chromatrix/utils/gamut';
+import { parseColor, dropColor } from '@kayxean/chromatrix';
 
 const mutable = parseColor('oklch(90% 0.4 120)');
 clampColor(mutable, true);
@@ -274,7 +270,8 @@ dropColor(mutable);
 Building a UI requires bridging flat values (like slider percentages) to complex matrices. The `createPicker` utility handles the math and the state sync.
 
 ```ts
-import { createPicker, toPicker, fromPicker, dropColor } from '@kayxean/chromatrix';
+import { createPicker, toPicker, fromPicker } from '@kayxean/chromatrix/utils/picker';
+import { parseColor, dropColor } from '@kayxean/chromatrix';
 
 const picker = createPicker(parseColor('#32cd32'));
 
@@ -294,13 +291,65 @@ dropColor(color);
 Simulates how colors appear under Protanopia, Deuteranopia, or Tritanopia by projecting matrices into reduced color spaces.
 
 ```ts
-import { parseColor, simulateDeficiency, dropColor } from '@kayxean/chromatrix';
+import { simulateDeficiency } from '@kayxean/chromatrix/utils/simulate';
+import { parseColor, dropColor } from '@kayxean/chromatrix';
 
 const original = parseColor('#ff5500');
 const simulated = simulateDeficiency(original, 'deuteranopia');
 
 dropColor(original);
 dropColor(simulated);
+```
+
+## Color Naming
+
+Find the closest CSS named color using perceptual distance.
+
+```ts
+import {
+  findClosestName,
+  getExactName,
+  findSimilarNames,
+  parseColorName,
+} from '@kayxean/chromatrix/utils/naming';
+import { parseColor, dropColor } from '@kayxean/chromatrix';
+
+const color = parseColor('oklch(60% 0.2 120)');
+
+const { name, distance } = findClosestName(color);
+const exact = getExactName(color);
+const similar = findSimilarNames(color, 3);
+const parsed = parseColorName('red');
+
+dropColor(color);
+dropColor(parsed);
+```
+
+## CSS Gradients
+
+Generate CSS gradient strings from color stops.
+
+```ts
+import {
+  createLinearGradient,
+  createRadialGradient,
+  createConicGradient,
+  createSmoothGradient,
+  createMultiColorGradient,
+} from '@kayxean/chromatrix/utils/gradient';
+import { parseColor, dropColor } from '@kayxean/chromatrix';
+
+const red = parseColor('#ff0000');
+const blue = parseColor('#0000ff');
+
+const linear = createLinearGradient({ stops: [{ color: red }, { color: blue }] });
+const radial = createRadialGradient({ shape: 'circle', stops: [{ color: red }, { color: blue }] });
+const conic = createConicGradient({ angle: 45, stops: [{ color: red }, { color: blue }] });
+const smooth = createSmoothGradient(red, blue, 5);
+const multi = createMultiColorGradient([red, parseColor('#00ff00'), blue]);
+
+dropColor(red);
+dropColor(blue);
 ```
 
 ## The Math

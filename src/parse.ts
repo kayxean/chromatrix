@@ -13,6 +13,10 @@ function parseHex(hex: string): {
 } {
   const len = hex.length;
 
+  if (len === 0) {
+    throw new Error(`empty color string`);
+  }
+
   if (len !== 3 && len !== 4 && len !== 6 && len !== 8) {
     throw new Error(`invalid hex length: ${len}`);
   }
@@ -45,7 +49,6 @@ export function parseColor(css: string): Color {
 
   if (firstChar === 35) {
     const hex = css.length === 4 || css.length === 7 ? css : css.trim();
-    if (hex.length === 0) throw new Error(`empty color string`);
     const { r, g, b, a } = parseHex(hex.slice(1));
     const color = createColor('rgb', [r * INV_255, g * INV_255, b * INV_255]);
     color.alpha = a * INV_255;
