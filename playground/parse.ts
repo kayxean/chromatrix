@@ -77,8 +77,7 @@ export function parseColor(css: string): Color {
   if (firstChar === 35) {
     const hex = len === 4 || len === 7 ? css : css.trim();
     const { r, g, b, a } = parseHex(hex.slice(1));
-    const color = createColor('rgb', [r * INV_255, g * INV_255, b * INV_255]);
-    color.alpha = a * INV_255;
+    const color = createColor('rgb', [r * INV_255, g * INV_255, b * INV_255], a * INV_255);
     return color;
   }
 
@@ -155,12 +154,10 @@ export function parseColor(css: string): Color {
     v2 = rawV2;
   }
 
-  let alpha = 1;
-  if (rawA !== undefined) {
-    alpha = rawA.endsWith('%') ? parseNumber(rawA) * INV_100 : parseNumber(rawA);
-  }
+  const alphaVal =
+    rawA !== undefined ? (rawA.endsWith('%') ? parseNumber(rawA) * INV_100 : parseNumber(rawA)) : 1;
 
-  const color = createColor(space, [v0, v1, v2]);
-  color.alpha = alpha < 0 ? 0 : alpha > 1 ? 1 : alpha;
+  const clampedAlpha = alphaVal < 0 ? 0 : alphaVal > 1 ? 1 : alphaVal;
+  const color = createColor(space, [v0, v1, v2], clampedAlpha);
   return color;
 }

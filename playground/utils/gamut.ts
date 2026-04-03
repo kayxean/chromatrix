@@ -1,4 +1,5 @@
 import type { Color, ColorSpace } from '../types';
+import { getSharedBuffer } from '../shared';
 
 const CLAMP_BOUNDS: Partial<Record<ColorSpace, number[]>> = {
   rgb: [0, 1, 0, 1, 0, 1],
@@ -15,8 +16,9 @@ const CLAMP_BOUNDS: Partial<Record<ColorSpace, number[]>> = {
 };
 
 export function clampColor(color: Color): void {
-  const value = color.value;
   const space = color.space;
+  const idx = color.index;
+  const buf = getSharedBuffer();
   const bounds = CLAMP_BOUNDS[space];
 
   if (!bounds) return;
@@ -24,7 +26,7 @@ export function clampColor(color: Color): void {
   for (let i = 0; i < 3; i++) {
     const min = bounds[i * 2];
     const max = bounds[i * 2 + 1];
-    let val = value[i];
+    let val = buf[idx + i];
 
     if (max === 360) {
       val = val % 360;
@@ -33,13 +35,14 @@ export function clampColor(color: Color): void {
       if (val < min) val = min;
       else if (val > max) val = max;
     }
-    value[i] = val;
+    buf[idx + i] = val;
   }
 }
 
 export function checkGamut(color: Color, tolerance = 0.0001): boolean {
-  const value = color.value;
   const space = color.space;
+  const idx = color.index;
+  const buf = getSharedBuffer();
   const bounds = CLAMP_BOUNDS[space];
 
   if (!bounds) return true;
@@ -50,7 +53,7 @@ export function checkGamut(color: Color, tolerance = 0.0001): boolean {
 
     if (max === 360) continue;
 
-    const val = value[i];
+    const val = buf[idx + i];
     if (val < min - tolerance || val > max + tolerance) {
       return false;
     }

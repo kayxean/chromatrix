@@ -7,12 +7,12 @@ export function simulateDeficiency<S extends ColorSpace>(
   color: Color<S>,
   type: DeficiencyType,
 ): Color<S> {
-  const { space, alpha } = color;
+  const { space, alpha, index } = color;
+  const buf = getSharedBuffer();
 
-  const temp = createColor('lrgb', [color.value[0], color.value[1], color.value[2]]);
+  const temp = createColor('lrgb', [buf[index], buf[index + 1], buf[index + 2]]);
   convertColor(temp, 'lrgb');
 
-  const buf = getSharedBuffer();
   const idx = temp.index;
 
   const r = buf[idx];

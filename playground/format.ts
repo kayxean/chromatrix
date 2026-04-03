@@ -1,4 +1,5 @@
 import type { Color } from './types';
+import { getSharedBuffer } from './shared';
 
 const F_FACTORS = new Float32Array([1, 10, 100, 1000, 10000, 100000, 1000000]);
 
@@ -21,7 +22,10 @@ function toHex(r: number, g: number, b: number, a?: number): string {
 }
 
 export function formatCss(color: Color, asHex?: boolean, precision = 2): string {
-  const { space, value, alpha } = color;
+  const { space, alpha } = color;
+  const buf = getSharedBuffer();
+  const idx = color.index;
+  const value = [buf[idx], buf[idx + 1], buf[idx + 2]];
 
   if (asHex && space === 'rgb') {
     const r = (value[0] * 255 + 0.5) | 0;

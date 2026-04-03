@@ -16,8 +16,6 @@ export interface Color<S extends ColorSpace = ColorSpace> extends Disposable {
   readonly index: number;
   alpha: number;
 
-  readonly value: Float32Array;
-
   [Symbol.dispose](): void;
 }
 

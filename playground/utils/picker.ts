@@ -12,13 +12,15 @@ export interface PickerValue {
 export type PickerSubscriber = (val: PickerValue, color: Color) => void;
 
 export function toPicker(color: Color): PickerValue {
-  const hsv = createColor('hsv', [color.value[0], color.value[1], color.value[2]]);
+  const buf = getSharedBuffer();
+  const idx = color.index;
+
+  const hsv = createColor('hsv', [buf[idx], buf[idx + 1], buf[idx + 2]]);
   convertColor(hsv, 'hsv');
 
-  const buf = getSharedBuffer();
-  const idx = hsv.index;
+  const hIdx = hsv.index;
 
-  const res = { h: buf[idx], s: buf[idx + 1], v: buf[idx + 2], a: color.alpha };
+  const res = { h: buf[hIdx], s: buf[hIdx + 1], v: buf[hIdx + 2], a: color.alpha };
 
   dropColor(hsv);
   return res;

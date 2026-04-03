@@ -13,7 +13,8 @@ export function createHarmony<S extends ColorSpace>(
   input: Color<S>,
   variants: { name: string; ratios: number[] }[],
 ): { name: string; colors: Color<S>[] }[] {
-  const { space, alpha } = input;
+  const { space, alpha, index } = input;
+  const buf = getSharedBuffer();
 
   let polarSpace: ColorSpace;
   const hIdx = getHueIndex(space);
@@ -22,12 +23,11 @@ export function createHarmony<S extends ColorSpace>(
   else if (space === 'lch' || space === 'lab') polarSpace = 'lch';
   else polarSpace = 'hsl';
 
-  const polarColor = createColor(polarSpace, [input.value[0], input.value[1], input.value[2]]);
+  const polarColor = createColor(polarSpace, [buf[index], buf[index + 1], buf[index + 2]]);
   const tempInput = createColor(space, [0, 0, 0], alpha);
 
   convertColor(tempInput, polarSpace);
 
-  const buf = getSharedBuffer();
   const pIdx = polarColor.index;
   const baseH = buf[pIdx + hIdx];
 
@@ -67,16 +67,24 @@ export function mixColor<S extends ColorSpace>(
   const w = t <= 0 ? 0 : t >= 1 ? 1 : t;
 
   const hIdx = getHueIndex(space);
+  const buf = getSharedBuffer();
 
-  const sV = start.value;
-  const eV = end.value;
+  const sIdx = start.index;
+  const eIdx = end.index;
 
-  let c0 = sV[0] + (eV[0] - sV[0]) * w;
-  let c1 = sV[1] + (eV[1] - sV[1]) * w;
-  let c2 = sV[2] + (eV[2] - sV[2]) * w;
+  const s0 = buf[sIdx];
+  const s1 = buf[sIdx + 1];
+  const s2 = buf[sIdx + 2];
+  const e0 = buf[eIdx];
+  const e1 = buf[eIdx + 1];
+  const e2 = buf[eIdx + 2];
+
+  let c0 = s0 + (e0 - s0) * w;
+  let c1 = s1 + (e1 - s1) * w;
+  let c2 = s2 + (e2 - s2) * w;
 
   if (hIdx >= 0) {
-    const diff = eV[hIdx] - sV[hIdx];
+    const diff = e2 - s2;
     if (diff > 180) c2 -= 360;
     else if (diff < -180) c2 += 360;
 
@@ -93,7 +101,11 @@ export function createShades<S extends ColorSpace>(
   steps: number,
 ): Color<S>[] {
   if (steps <= 0) return [];
-  if (steps === 1) return [createColor(start.space, start.value, start.alpha)];
+  if (steps === 1) {
+    const buf = getSharedBuffer();
+    const idx = start.index;
+    return [createColor(start.space, [buf[idx], buf[idx + 1], buf[idx + 2]], start.alpha)];
+  }
 
   const shades: Color<S>[] = [];
   const invTotal = 1 / (steps - 1);
@@ -108,10 +120,14 @@ export function createShades<S extends ColorSpace>(
 export function createScales<S extends ColorSpace>(stops: Color<S>[], steps: number): Color<S>[] {
   if (steps <= 0) return [];
   if (stops.length < 2) {
+    const buf = getSharedBuffer();
     const sLen = stops.length;
     const result: Color<S>[] = [];
     for (let i = 0; i < sLen; i++) {
-      result.push(createColor(stops[i].space, stops[i].value, stops[i].alpha));
+      const idx = stops[i].index;
+      result.push(
+        createColor(stops[i].space, [buf[idx], buf[idx + 1], buf[idx + 2]], stops[i].alpha),
+      );
     }
     return result;
   }
