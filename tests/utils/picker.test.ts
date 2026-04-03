@@ -1,4 +1,5 @@
 import type { Color } from '~/types';
+import type { PickerValue } from '~/utils/picker';
 import { describe, expect, it, vi } from 'vitest';
 import { createMatrix, dropMatrix } from '~/shared';
 import { createPicker, fromPicker, toPicker } from '~/utils/picker';
@@ -53,7 +54,7 @@ describe('Picker Utilities (picker.ts)', () => {
         value: v,
         alpha: 1,
       } as Color);
-      const cb = vi.fn();
+      const cb = vi.fn<() => void>();
       picker.subscribe(cb);
 
       picker.update(0.2, 0.3, 'sv');
@@ -75,7 +76,7 @@ describe('Picker Utilities (picker.ts)', () => {
       v.set([0, 1, 1]);
       const color = { space: 'hsv', value: v, alpha: 1 } as Color;
       const picker = createPicker(color);
-      const cb = vi.fn();
+      const cb = vi.fn<() => void>();
 
       picker.subscribe(cb);
 
@@ -109,7 +110,7 @@ describe('Picker Utilities (picker.ts)', () => {
       expect(col.alpha).toBe(0.5);
       expect(sol.alpha).toBe(1);
 
-      const cb = vi.fn();
+      const cb = vi.fn<() => void>();
       const unsub = picker.subscribe(cb);
       unsub();
       picker.update(0, 0, 'h');
@@ -149,7 +150,7 @@ describe('Picker Utilities (picker.ts)', () => {
     const v = createMatrix('rgb');
     v.set([1, 0, 0]);
     const picker = createPicker({ space: 'rgb', value: v, alpha: 1 } as Color);
-    const cb = vi.fn();
+    const cb = vi.fn<(val: PickerValue, color: Color) => void>();
     picker.subscribe(cb);
 
     picker.setSpace('rgb');
@@ -170,7 +171,7 @@ describe('Picker Utilities (picker.ts)', () => {
   it('should dispose and release resources', () => {
     const v = createMatrix('rgb');
     const picker = createPicker({ space: 'rgb', value: v, alpha: 1 } as Color);
-    const cb = vi.fn();
+    const cb = vi.fn<() => void>();
 
     picker.subscribe(cb);
     picker.dispose();
@@ -184,7 +185,7 @@ describe('Picker Utilities (picker.ts)', () => {
   it('should bail out of updates if values are identical', () => {
     const v = createMatrix('hsv');
     const picker = createPicker({ space: 'hsv', value: v, alpha: 1 } as Color);
-    const cb = vi.fn();
+    const cb = vi.fn<() => void>();
     picker.subscribe(cb);
 
     const val = picker.getValue();

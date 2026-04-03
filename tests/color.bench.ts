@@ -1,7 +1,13 @@
 import { bench, describe } from 'vitest';
+import { multiplyMatrixVector, xyz65ToXyz50, xyz50ToXyz65 } from '~/adapters/cat';
+import { xyz50ToLab, labToXyz50 } from '~/adapters/d50';
+import { xyz65ToLrgb, lrgbToXyz65, xyz65ToOklab, oklabToXyz65 } from '~/adapters/d65';
+import { rgbToLrgb, lrgbToRgb } from '~/adapters/gamma';
+import { labToLch, lchToLab, oklabToOklch, oklchToOklab } from '~/adapters/polar';
+import { rgbToHsv, hsvToRgb, hsvToHsl, hslToHsv, hsvToHwb, hwbToHsv } from '~/adapters/srgb';
 import { convertColor, convertHue } from '~/convert';
-import { parseColor } from '~/parse';
 import { formatCss } from '~/format';
+import { parseColor } from '~/parse';
 import {
   createColor,
   createMatrix,
@@ -11,12 +17,6 @@ import {
   mutateColor,
   deriveColor,
 } from '~/shared';
-import { multiplyMatrixVector, xyz65ToXyz50, xyz50ToXyz65 } from '~/adapters/cat';
-import { xyz50ToLab, labToXyz50 } from '~/adapters/d50';
-import { xyz65ToLrgb, lrgbToXyz65, xyz65ToOklab, oklabToXyz65 } from '~/adapters/d65';
-import { rgbToLrgb, lrgbToRgb } from '~/adapters/gamma';
-import { labToLch, lchToLab, oklabToOklch, oklchToOklab } from '~/adapters/polar';
-import { rgbToHsv, hsvToRgb, hsvToHsl, hslToHsv, hsvToHwb, hwbToHsv } from '~/adapters/srgb';
 import { isEqual, getDistance } from '~/utils/compare';
 import {
   checkContrast,
@@ -26,9 +26,6 @@ import {
   matchScales,
 } from '~/utils/contrast';
 import { checkGamut, clampColor } from '~/utils/gamut';
-import { createHarmony, mixColor, createShades, createScales } from '~/utils/palette';
-import { toPicker, fromPicker, createPicker } from '~/utils/picker';
-import { findClosestName, getExactName, findSimilarNames, parseColorName } from '~/utils/naming';
 import {
   createLinearGradient,
   createRadialGradient,
@@ -36,6 +33,9 @@ import {
   createSmoothGradient,
   createMultiColorGradient,
 } from '~/utils/gradient';
+import { findClosestName, getExactName, findSimilarNames, parseColorName } from '~/utils/naming';
+import { createHarmony, mixColor, createShades, createScales } from '~/utils/palette';
+import { toPicker, fromPicker, createPicker } from '~/utils/picker';
 import { simulateDeficiency } from '~/utils/simulate';
 
 const rgb = createMatrix('rgb');

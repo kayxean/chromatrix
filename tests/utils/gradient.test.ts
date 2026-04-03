@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createColor, dropColor } from '~/shared';
 import {
   createConicGradient,
   createLinearGradient,
@@ -6,7 +7,6 @@ import {
   createRadialGradient,
   createSmoothGradient,
 } from '~/utils/gradient';
-import { createColor, dropColor } from '~/shared';
 
 describe('gradient', () => {
   describe('createLinearGradient', () => {
@@ -224,7 +224,7 @@ describe('gradient', () => {
     });
 
     it('should throw for empty array', () => {
-      expect(() => createMultiColorGradient([])).toThrow();
+      expect(() => createMultiColorGradient([])).toThrow('at least two colors are required');
     });
 
     it('should support different gradient types', () => {
