@@ -15,7 +15,8 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
     benchmark: {
-      include: ['tests/**/*.bench.ts'],
+      include: ['playground/benchmarks/**/*.bench.ts'],
+      outputJson: 'playground/benchmarks/results.json',
     },
     environment: 'node',
     globals: true,
@@ -39,6 +40,7 @@ export default defineConfig({
     rules: {
       'oxc/erasing-op': 'off',
     },
+    plugins: ['typescript', 'unicorn', 'oxc', 'vitest'],
   },
 
   fmt: {
@@ -46,6 +48,18 @@ export default defineConfig({
     singleQuote: true,
     semi: true,
     experimentalSortPackageJson: true,
+    sortImports: {
+      groups: [
+        'type',
+        'builtin',
+        'external',
+        ['internal', 'subpath'],
+        ['parent', 'sibling', 'index'],
+        'style',
+        'unknown',
+      ],
+      newlinesBetween: false,
+    },
   },
 
   resolve: {

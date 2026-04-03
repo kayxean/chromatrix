@@ -7,8 +7,8 @@ import type {
   GradientType,
 } from '../types';
 import { formatCss } from '../format';
-import { createShades } from './palette';
 import { dropColor } from '../shared';
+import { createShades } from './palette';
 
 function buildStops(stops: GradientStop[]): string {
   return stops
@@ -71,7 +71,7 @@ export function createMultiColorGradient(
   options?: { angle?: number; shape?: 'circle' | 'ellipse'; position?: string },
 ): string {
   if (colors.length === 0) {
-    throw new Error('At least two colors are required');
+    throw new Error('at least two colors are required');
   }
 
   if (colors.length === 1) {

@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
-
 import { convertColor, convertHue } from '~/convert';
-import { parseColor } from '~/parse';
 import { formatCss } from '~/format';
-
+import { parseColor } from '~/parse';
 import {
   createMatrix,
   dropMatrix,
@@ -15,9 +13,7 @@ import {
   preallocatePool,
   clearPool,
 } from '~/shared';
-
 import { isEqual, getDistance } from '~/utils/compare';
-
 import {
   checkContrast,
   matchContrast,
@@ -25,17 +21,7 @@ import {
   matchScales,
   getContrastRating,
 } from '~/utils/contrast';
-
 import { checkGamut, clampColor } from '~/utils/gamut';
-
-import { createHarmony, createShades, createScales, mixColor } from '~/utils/palette';
-
-import { createPicker, fromPicker, toPicker } from '~/utils/picker';
-
-import { simulateDeficiency } from '~/utils/simulate';
-
-import { findClosestName, getExactName, findSimilarNames, parseColorName } from '~/utils/naming';
-
 import {
   createLinearGradient,
   createRadialGradient,
@@ -43,6 +29,10 @@ import {
   createSmoothGradient,
   createMultiColorGradient,
 } from '~/utils/gradient';
+import { findClosestName, getExactName, findSimilarNames, parseColorName } from '~/utils/naming';
+import { createHarmony, createShades, createScales, mixColor } from '~/utils/palette';
+import { createPicker, fromPicker, toPicker } from '~/utils/picker';
+import { simulateDeficiency } from '~/utils/simulate';
 
 describe('Low-Level Matrix', () => {
   describe('createMatrix', () => {
@@ -58,7 +48,7 @@ describe('Low-Level Matrix', () => {
     it('returns buffer to pool', () => {
       const myMatrix = createMatrix('rgb');
       myMatrix.set([0.9, 0.4, 0.2]);
-      dropMatrix(myMatrix);
+      expect(() => dropMatrix(myMatrix)).not.toThrow();
     });
   });
 
@@ -78,13 +68,13 @@ describe('Low-Level Matrix', () => {
 describe('Pool Management', () => {
   describe('preallocatePool', () => {
     it('warms up buffer pool', () => {
-      preallocatePool(100);
+      expect(() => preallocatePool(100)).not.toThrow();
     });
   });
 
   describe('clearPool', () => {
     it('empties the buffer pool', () => {
-      clearPool();
+      expect(() => clearPool()).not.toThrow();
     });
   });
 });
@@ -101,7 +91,7 @@ describe('Matrix Management', () => {
   describe('dropColor', () => {
     it('returns color buffer to pool', () => {
       const myColor = createColor('hsl', [240, 0.8, 0.6]);
-      dropColor(myColor);
+      expect(() => dropColor(myColor)).not.toThrow();
     });
   });
 
@@ -341,6 +331,7 @@ describe('Interactive Pickers', () => {
   describe('createPicker', () => {
     it('initializes picker state manager', () => {
       const picker = createPicker(parseColor('#32cd32'));
+      expect(picker).toBeDefined();
       picker.update(0.5, 0.8, 'sv');
       picker.update(0.75, 0, 'h');
       picker.dispose();

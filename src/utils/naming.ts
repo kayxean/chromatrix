@@ -1,6 +1,6 @@
 import type { Color } from '../types';
-import { getDistance } from './compare';
 import { createColor } from '../shared';
+import { getDistance } from './compare';
 
 const CSS_COLOR_DATA: Array<[string, [number, number, number]]> = [
   ['aliceblue', [0.941, 0.973, 1]],
