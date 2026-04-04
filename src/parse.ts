@@ -5,7 +5,7 @@ const INV_255 = 1 / 255;
 const INV_100 = 1 / 100;
 const SPLIT_RE = /[\s,/]+/;
 
-function parseHex(hex: string): {
+export function parseHex(hex: string): {
   r: number;
   g: number;
   b: number;
