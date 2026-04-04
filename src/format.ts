@@ -2,13 +2,13 @@ import type { Color } from './types';
 
 const F_FACTORS = new Float32Array([1, 10, 100, 1000, 10000, 100000, 1000000]);
 
-function roundTo(val: number, precision: number): number {
+export function roundTo(val: number, precision: number): number {
   const p = precision < 0 ? 0 : precision > 15 ? 15 : precision;
   const f = p < F_FACTORS.length ? F_FACTORS[p] : 10 ** p;
   return Math.round(val * f) / f;
 }
 
-function toHex(r: number, g: number, b: number, a?: number): string {
+export function formatHex(r: number, g: number, b: number, a?: number): string {
   const hex = ((r << 16) | (g << 8) | b).toString(16);
   const padding = '000000'.slice(0, 6 - hex.length);
 
@@ -28,7 +28,7 @@ export function formatCss(color: Color, asHex?: boolean, precision = 2): string 
     const g = (value[1] * 255 + 0.5) | 0;
     const b = (value[2] * 255 + 0.5) | 0;
     const a = alpha !== undefined ? (alpha * 255 + 0.5) | 0 : undefined;
-    return toHex(r, g, b, a);
+    return formatHex(r, g, b, a);
   }
 
   const hasAlpha = alpha !== undefined && alpha < 1;
