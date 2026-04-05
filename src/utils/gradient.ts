@@ -7,16 +7,26 @@ import type {
   GradientType,
 } from '../types';
 import { formatCss } from '../format';
-import { dropColor } from '../shared';
+import { dropColor } from '../matrix';
 import { createShades } from './palette';
 
 function buildStops(stops: GradientStop[]): string {
-  return stops
-    .map((stop) => {
-      const colorStr = formatCss(stop.color);
-      return stop.position !== undefined ? `${colorStr} ${stop.position}%` : colorStr;
-    })
-    .join(', ');
+  const len = stops.length;
+  if (len === 0) return '';
+
+  let result = '';
+  for (let i = 0; i < len; i++) {
+    const { color, position } = stops[i];
+    const colorStr = formatCss(color);
+
+    result +=
+      position !== undefined
+        ? `${colorStr} ${Number.isInteger(position) ? position : position.toFixed(2)}%`
+        : colorStr;
+
+    if (i < len - 1) result += ', ';
+  }
+  return result;
 }
 
 export function createLinearGradient(options: LinearGradientOptions): string {
@@ -41,28 +51,39 @@ export function createSmoothGradient(
   type: GradientType = 'linear',
   options?: { angle?: number; shape?: 'circle' | 'ellipse'; position?: string },
 ): string {
+  if (steps <= 0) return '';
+
   const shades = createShades(start, end, steps);
-  const stops: GradientStop[] = shades.map((color, i) => ({
-    color,
-    position: steps === 1 ? 50 : (i / (steps - 1)) * 100,
-  }));
 
-  let result: string;
-  if (type === 'linear') {
-    result = createLinearGradient({ angle: options?.angle, stops });
-  } else if (type === 'radial') {
-    result = createRadialGradient({
-      shape: options?.shape,
-      position: options?.position,
-      stops,
-    });
-  } else {
-    result = createConicGradient({ angle: options?.angle, position: options?.position, stops });
+  try {
+    const stops: GradientStop[] = shades.map((color, i) => ({
+      color,
+      position: steps === 1 ? 50 : (i / (steps - 1)) * 100,
+    }));
+
+    switch (type) {
+      case 'linear':
+        return createLinearGradient({ angle: options?.angle ?? 180, stops });
+      case 'radial':
+        return createRadialGradient({
+          shape: options?.shape ?? 'ellipse',
+          position: options?.position ?? 'center',
+          stops,
+        });
+      case 'conic':
+        return createConicGradient({
+          angle: options?.angle ?? 0,
+          position: options?.position ?? 'center',
+          stops,
+        });
+      default:
+        return '';
+    }
+  } finally {
+    for (const color of shades) {
+      dropColor(color);
+    }
   }
-
-  shades.forEach(dropColor);
-
-  return result;
 }
 
 export function createMultiColorGradient(
@@ -70,30 +91,32 @@ export function createMultiColorGradient(
   type: GradientType = 'linear',
   options?: { angle?: number; shape?: 'circle' | 'ellipse'; position?: string },
 ): string {
-  if (colors.length === 0) {
-    throw new Error('at least two colors are required');
-  }
+  const len = colors.length;
 
-  if (colors.length === 1) {
-    return formatCss(colors[0]);
-  }
+  if (len === 0) throw new Error('at least two colors are required');
+  if (len === 1) return formatCss(colors[0]);
 
   const stops: GradientStop[] = colors.map((color, i) => ({
     color,
-    position: (i / (colors.length - 1)) * 100,
+    position: (i / (len - 1)) * 100,
   }));
 
-  if (type === 'linear') {
-    return createLinearGradient({ angle: options?.angle, stops });
+  switch (type) {
+    case 'linear':
+      return createLinearGradient({ angle: options?.angle ?? 180, stops });
+    case 'radial':
+      return createRadialGradient({
+        shape: options?.shape ?? 'ellipse',
+        position: options?.position ?? 'center',
+        stops,
+      });
+    case 'conic':
+      return createConicGradient({
+        angle: options?.angle ?? 0,
+        position: options?.position ?? 'center',
+        stops,
+      });
+    default:
+      return '';
   }
-
-  if (type === 'radial') {
-    return createRadialGradient({
-      shape: options?.shape,
-      position: options?.position,
-      stops,
-    });
-  }
-
-  return createConicGradient({ angle: options?.angle, position: options?.position, stops });
 }

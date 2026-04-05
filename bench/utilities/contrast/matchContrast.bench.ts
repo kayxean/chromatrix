@@ -10,7 +10,7 @@ const BG_COLOR = {
 } as Color<'rgb'>;
 
 describe('matchContrast()', () => {
-  bench('contrast', () => {
+  bench('contrast (match)', () => {
     matchContrast(RED_COLOR, BG_COLOR, 75);
   });
 });

@@ -5,7 +5,7 @@ import { lrgbToXyz65, oklabToXyz65, xyz65ToLrgb, xyz65ToOklab } from './adapters
 import { lrgbToRgb, rgbToLrgb } from './adapters/gamma';
 import { labToLch, lchToLab, oklabToOklch, oklchToOklab } from './adapters/polar';
 import { hslToHsv, hsvToHsl, hsvToHwb, hsvToRgb, hwbToHsv, rgbToHsv } from './adapters/srgb';
-import { createMatrix, dropMatrix } from './shared';
+import { createMatrix, dropMatrix } from './matrix';
 
 export const NATIVE_HUB: Partial<Record<ColorSpace, 'xyz50' | 'xyz65'>> = {
   rgb: 'xyz65',

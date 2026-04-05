@@ -1,6 +1,6 @@
 import type { Color, ColorSpace } from '../types';
 import { convertColor } from '../convert';
-import { createMatrix, dropMatrix } from '../shared';
+import { createMatrix, dropMatrix } from '../matrix';
 
 export interface PickerValue {
   h: number;
@@ -13,33 +13,30 @@ export type PickerSubscriber = (val: PickerValue, color: Color) => void;
 
 export function toPicker(color: Color): PickerValue {
   const hsv = createMatrix('hsv');
-  convertColor(color.value, hsv, color.space, 'hsv');
-
-  const res = {
-    h: hsv[0],
-    s: hsv[1],
-    v: hsv[2],
-    a: color.alpha ?? 1,
-  };
-
-  dropMatrix(hsv);
-  return res;
+  try {
+    convertColor(color.value, hsv, color.space, 'hsv');
+    return {
+      h: hsv[0],
+      s: hsv[1],
+      v: hsv[2],
+      a: color.alpha ?? 1,
+    };
+  } finally {
+    dropMatrix(hsv);
+  }
 }
 
 export function fromPicker<S extends ColorSpace>(val: PickerValue, space: S): Color {
   const hsv = createMatrix('hsv');
-  hsv.set([val.h, val.s, val.v]);
+  hsv[0] = val.h;
+  hsv[1] = val.s;
+  hsv[2] = val.v;
 
   const dest = createMatrix(space);
   convertColor(hsv, dest, 'hsv', space);
-
   dropMatrix(hsv);
 
-  return {
-    space,
-    value: dest,
-    alpha: val.a,
-  };
+  return { space, value: dest, alpha: val.a };
 }
 
 export function createPicker(init: Color, target?: ColorSpace) {
@@ -47,6 +44,7 @@ export function createPicker(init: Color, target?: ColorSpace) {
   let space: ColorSpace = target ?? init.space;
   const subs = new Set<PickerSubscriber>();
 
+  const workerHsv = createMatrix('hsv');
   const sharedColor: Color = {
     space,
     value: createMatrix(space),
@@ -54,21 +52,22 @@ export function createPicker(init: Color, target?: ColorSpace) {
   };
 
   const notify = () => {
-    const hsv = createMatrix('hsv');
-    hsv.set([val.h, val.s, val.v]);
+    workerHsv[0] = val.h;
+    workerHsv[1] = val.s;
+    workerHsv[2] = val.v;
 
-    convertColor(hsv, sharedColor.value, 'hsv', space);
+    convertColor(workerHsv, sharedColor.value, 'hsv', space);
     sharedColor.space = space;
     sharedColor.alpha = val.a;
 
-    const snap: PickerValue = { h: val.h, s: val.s, v: val.v, a: val.a };
+    const snap: PickerValue = { ...val };
 
     for (const fn of subs) {
       fn(snap, sharedColor);
     }
-
-    dropMatrix(hsv);
   };
+
+  notify();
 
   return {
     update: (x: number, y: number, type: 'sv' | 'h' | 'a') => {
@@ -98,7 +97,7 @@ export function createPicker(init: Color, target?: ColorSpace) {
     assign: (next: Color) => {
       const nextVal = toPicker(next);
 
-      const isAchromatic = nextVal.s < 0.01 || nextVal.v < 0.01;
+      const isAchromatic = nextVal.s < 0.001 || nextVal.v < 0.001;
       if (isAchromatic) {
         nextVal.h = val.h;
       }
@@ -123,13 +122,18 @@ export function createPicker(init: Color, target?: ColorSpace) {
 
     subscribe: (fn: PickerSubscriber) => {
       subs.add(fn);
-      return () => {
-        subs.delete(fn);
-      };
+      fn({ ...val }, sharedColor);
+      return () => subs.delete(fn);
     },
 
     setSpace: (nextSpace: ColorSpace) => {
       if (nextSpace === space) return;
+
+      if (nextSpace !== space) {
+        dropMatrix(sharedColor.value);
+        sharedColor.value = createMatrix(nextSpace);
+      }
+
       space = nextSpace;
       notify();
     },
@@ -140,11 +144,10 @@ export function createPicker(init: Color, target?: ColorSpace) {
     getSaturation: () => val.s,
     getBrightness: () => val.v,
     getAlpha: () => val.a,
-
     getSolid: () => fromPicker({ ...val, a: 1 }, space),
     getColor: () => fromPicker(val, space),
-
     dispose: () => {
+      dropMatrix(workerHsv);
       dropMatrix(sharedColor.value);
       subs.clear();
     },

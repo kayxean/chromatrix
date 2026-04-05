@@ -11,7 +11,7 @@ const BG_COLOR = {
 } as Color<'rgb'>;
 
 describe('matchScales()', () => {
-  bench('contrast', () => {
+  bench('contrast (scales)', () => {
     matchScales([RED_COLOR, BLUE_COLOR], BG_COLOR, 60, 5);
   });
 });

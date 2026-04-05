@@ -1,5 +1,5 @@
 import type { Color, ColorSpace } from '../types';
-import { createMatrix } from '../shared';
+import { createMatrix } from '../matrix';
 
 const CLAMP_BOUNDS: Partial<Record<ColorSpace, number[]>> = {
   rgb: [0, 1, 0, 1, 0, 1],
@@ -18,7 +18,12 @@ export function clampColor<S extends ColorSpace>(color: Color<S>, mutate = true)
   const { value, space, alpha = 1 } = color;
   const bounds = CLAMP_BOUNDS[space];
 
-  if (!bounds) return mutate ? color : { ...color, alpha };
+  if (!bounds) {
+    if (mutate) return color;
+    const resValue = createMatrix(space);
+    resValue.set(value);
+    return { space, value: resValue, alpha };
+  }
 
   const resValue = mutate ? value : createMatrix(space);
 

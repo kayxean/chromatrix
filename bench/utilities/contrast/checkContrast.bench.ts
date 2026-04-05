@@ -10,7 +10,7 @@ const BG_COLOR = {
 } as Color<'rgb'>;
 
 describe('checkContrast()', () => {
-  bench('contrast', () => {
+  bench('contrast (check)', () => {
     checkContrast(TEXT_COLOR, BG_COLOR);
   });
 });

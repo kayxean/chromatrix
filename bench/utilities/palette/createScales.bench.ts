@@ -7,7 +7,7 @@ const BLUE_COLOR = { space: 'rgb', value: new Float32Array([0, 0, 1]), alpha: 1 
 const GREEN_COLOR = { space: 'rgb', value: new Float32Array([0, 1, 0]), alpha: 1 } as Color<'rgb'>;
 
 describe('createScales()', () => {
-  bench('palette', () => {
+  bench('palette (scales)', () => {
     createScales([RED_COLOR, BLUE_COLOR, GREEN_COLOR], 5);
   });
 });

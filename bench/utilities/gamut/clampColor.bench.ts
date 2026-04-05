@@ -9,7 +9,7 @@ const WIDE_COLOR = {
 } as Color<'oklch'>;
 
 describe('clampColor()', () => {
-  bench('gamut', () => {
+  bench('gamut (clamp)', () => {
     clampColor(WIDE_COLOR);
   });
 });
