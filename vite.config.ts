@@ -16,7 +16,6 @@ export default defineConfig({
     include: ['test/**/*.test.ts'],
     benchmark: {
       include: ['bench/**/*.bench.ts'],
-      outputJson: 'bench/results.json',
     },
     pool: 'threads',
     environment: 'node',
