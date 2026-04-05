@@ -1,11 +1,11 @@
 import type { Color, ColorSpace } from '../types';
 import { convertColor } from '../convert';
-import { createMatrix, dropMatrix } from '../shared';
+import { createMatrix, dropMatrix } from '../matrix';
 import { createScales } from './palette';
 
 const APCA_SCALE = 1.14;
 const DARK_THRESH = 0.022;
-const DARK_CLAMP = 1414 / 1000;
+const DARK_CLAMP = 1.414;
 
 export function getLuminanceD65(color: Color): number {
   const xyz = createMatrix('xyz65');
@@ -16,13 +16,17 @@ export function getLuminanceD65(color: Color): number {
 }
 
 function getSapcV(y: number): number {
-  return y > DARK_THRESH ? y : y + (DARK_THRESH - y) ** DARK_CLAMP;
+  const offset = Math.pow(DARK_THRESH, DARK_CLAMP);
+  return y > DARK_THRESH ? Math.pow(y, 0.56) : y + Math.pow(DARK_THRESH - y, DARK_CLAMP) - offset;
 }
 
 function calculateLc(v_t: number, v_b: number): number {
-  return v_b > v_t
-    ? (v_b ** 0.56 - v_t ** 0.57) * APCA_SCALE
-    : (v_b ** 0.65 - v_t ** 0.62) * APCA_SCALE;
+  const diff = v_b - v_t;
+  if (Math.abs(diff) < 0.0001) return 0;
+  if (v_b > v_t) {
+    return (Math.pow(v_t, 0.57) - Math.pow(v_b, 0.56)) * APCA_SCALE;
+  }
+  return (Math.pow(v_t, 0.62) - Math.pow(v_b, 0.65)) * APCA_SCALE;
 }
 
 export function checkContrast(text: Color, background: Color): number {

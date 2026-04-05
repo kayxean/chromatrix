@@ -10,11 +10,11 @@ export {
   createColor,
   dropColor,
   cloneColor,
-  mutateColor,
-  deriveColor,
   preallocatePool,
   clearPool,
-} from './shared';
+} from './matrix';
+
+export { mutateColor, deriveColor } from './shared';
 
 export { multiplyMatrixVector, xyz65ToXyz50, xyz50ToXyz65 } from './adapters/cat';
 export { xyz50ToLab, labToXyz50 } from './adapters/d50';

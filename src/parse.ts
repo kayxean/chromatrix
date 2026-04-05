@@ -1,5 +1,5 @@
 import type { Color, ColorSpace } from './types';
-import { createColor } from './shared';
+import { createColor } from './matrix';
 
 const INV_255 = 1 / 255;
 const INV_100 = 1 / 100;

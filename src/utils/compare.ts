@@ -1,6 +1,6 @@
 import type { Color, ColorArray } from '../types';
 import { convertColor } from '../convert';
-import { createMatrix, dropMatrix } from '../shared';
+import { createMatrix, dropMatrix } from '../matrix';
 
 export function isEqual(a: Color, b: Color, tolerance = 0.0001): boolean {
   if (a === b) return true;

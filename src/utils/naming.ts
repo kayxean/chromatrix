@@ -1,5 +1,5 @@
-import type { Color } from '../types';
-import { createColor } from '../shared';
+import type { Color, ColorArray } from '../types';
+import { createColor } from '../matrix';
 import { getDistance } from './compare';
 
 const CSS_COLOR_DATA: Array<[string, [number, number, number]]> = [
@@ -153,19 +153,29 @@ const CSS_COLOR_DATA: Array<[string, [number, number, number]]> = [
   ['yellowgreen', [0.604, 0.804, 0.196]],
 ];
 
-const CSS_COLORS = new Map(CSS_COLOR_DATA);
+const CSS_COLORS_MAP = new Map(CSS_COLOR_DATA);
+
+const NAMED_COLORS_CACHE = CSS_COLOR_DATA.map(([name, rgb]) => ({
+  name,
+  color: {
+    space: 'rgb',
+    value: new Float32Array(rgb) as ColorArray,
+    alpha: 1,
+  } as Color<'rgb'>,
+}));
 
 export function findClosestName(color: Color): { name: string; distance: number } {
   let closestName = 'black';
   let minDistance = Number.POSITIVE_INFINITY;
 
-  for (const [name, rgb] of CSS_COLOR_DATA) {
-    const namedColor = createColor('rgb', rgb);
-    const distance = getDistance(color, namedColor);
+  for (let i = 0; i < NAMED_COLORS_CACHE.length; i++) {
+    const entry = NAMED_COLORS_CACHE[i];
+    const distance = getDistance(color, entry.color);
 
     if (distance < minDistance) {
       minDistance = distance;
-      closestName = name;
+      closestName = entry.name;
+      if (distance === 0) break;
     }
   }
 
@@ -181,21 +191,16 @@ export function findSimilarNames(
   color: Color,
   limit = 5,
 ): Array<{ name: string; distance: number }> {
-  const results: Array<{ name: string; distance: number }> = [];
-
-  for (const [name, rgb] of CSS_COLOR_DATA) {
-    const namedColor = createColor('rgb', rgb);
-    const distance = getDistance(color, namedColor);
-
-    results.push({ name, distance });
-  }
-
-  results.sort((a, b) => a.distance - b.distance);
-  return results.slice(0, limit);
+  return NAMED_COLORS_CACHE.map((entry) => ({
+    name: entry.name,
+    distance: getDistance(color, entry.color),
+  }))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, limit);
 }
 
 export function parseColorName(name: string): Color | null {
-  const rgb = CSS_COLORS.get(name.toLowerCase());
+  const rgb = CSS_COLORS_MAP.get(name.toLowerCase());
   if (!rgb) return null;
   return createColor('rgb', rgb);
 }

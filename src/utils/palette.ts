@@ -1,6 +1,6 @@
 import type { Color, ColorSpace } from '../types';
 import { convertColor } from '../convert';
-import { createMatrix, dropMatrix } from '../shared';
+import { createMatrix, dropMatrix } from '../matrix';
 
 export function createHarmony<S extends ColorSpace>(
   input: Color<S>,
@@ -23,32 +23,35 @@ export function createHarmony<S extends ColorSpace>(
   }
 
   const polarMat = createMatrix(polarSpace);
-  convertColor(value, polarMat, space, polarSpace);
-
-  const baseH = polarMat[hIdx];
   const results: { name: string; colors: Color<S>[] }[] = [];
 
-  for (let i = 0; i < variants.length; i++) {
-    const { name, ratios } = variants[i];
-    const colors: Color<S>[] = [];
+  try {
+    convertColor(value, polarMat, space, polarSpace);
+    const baseH = polarMat[hIdx];
 
-    for (let j = 0; j < ratios.length; j++) {
-      let h = (baseH + ratios[j]) % 360;
-      if (h < 0) h += 360;
+    for (let i = 0; i < variants.length; i++) {
+      const { name, ratios } = variants[i];
+      const colors: Color<S>[] = [];
 
-      const newMat = createMatrix(space);
-      const originalH = polarMat[hIdx];
+      for (let j = 0; j < ratios.length; j++) {
+        let h = (baseH + ratios[j]) % 360;
+        if (h < 0) h += 360;
 
-      polarMat[hIdx] = h;
-      convertColor(polarMat, newMat, polarSpace, space);
-      polarMat[hIdx] = originalH;
+        const newMat = createMatrix(space);
+        const originalH = polarMat[hIdx];
 
-      colors.push({ space, value: newMat, alpha });
+        polarMat[hIdx] = h;
+        convertColor(polarMat, newMat, polarSpace, space);
+        polarMat[hIdx] = originalH;
+
+        colors.push({ space, value: newMat, alpha });
+      }
+      results.push({ name, colors });
     }
-    results.push({ name, colors });
+  } finally {
+    dropMatrix(polarMat);
   }
 
-  dropMatrix(polarMat);
   return results;
 }
 
@@ -68,27 +71,29 @@ export function mixColor<S extends ColorSpace>(
   const res = createMatrix(space);
 
   for (let c = 0; c < 3; c++) {
-    const startVal = sV[c];
-    let endVal = eV[c];
+    const a = sV[c];
+    let b = eV[c];
 
     if (c === hIdx) {
-      const diff = endVal - startVal;
-      if (diff > 180) endVal -= 360;
-      else if (diff < -180) endVal += 360;
+      const diff = b - a;
+      if (diff > 180) b -= 360;
+      else if (diff < -180) b += 360;
 
-      let h = startVal + (endVal - startVal) * w;
-      h %= 360;
-      if (h < 0) h += 360;
-      res[c] = h;
+      const h = a + (b - a) * w;
+      res[c] = ((h % 360) + 360) % 360;
     } else {
-      res[c] = startVal + (endVal - startVal) * w;
+      res[c] = a + (b - a) * w;
     }
   }
 
   const sA = start.alpha ?? 1;
   const eA = end.alpha ?? 1;
 
-  return { space, value: res, alpha: sA + (eA - sA) * w };
+  return {
+    space,
+    value: res,
+    alpha: sA + (eA - sA) * w,
+  };
 }
 
 export function createShades<S extends ColorSpace>(
@@ -97,25 +102,21 @@ export function createShades<S extends ColorSpace>(
   steps: number,
 ): Color<S>[] {
   if (steps <= 0) return [];
+
   if (steps === 1) {
     const val = createMatrix(start.space);
     val.set(start.value);
     return [{ space: start.space, value: val, alpha: start.alpha }];
   }
 
-  const shades: Color<S>[] = [];
-  const invTotal = 1 / (steps - 1);
-
-  for (let i = 0; i < steps; i++) {
-    shades.push(mixColor(start, end, i * invTotal));
-  }
-
-  return shades;
+  return Array.from({ length: steps }, (_, i) => mixColor(start, end, i / (steps - 1)));
 }
 
 export function createScales<S extends ColorSpace>(stops: Color<S>[], steps: number): Color<S>[] {
   if (steps <= 0) return [];
-  if (stops.length < 2) {
+  const stopCount = stops.length;
+
+  if (stopCount < 2) {
     return stops.map((s) => {
       const val = createMatrix(s.space);
       val.set(s.value);
@@ -123,17 +124,14 @@ export function createScales<S extends ColorSpace>(stops: Color<S>[], steps: num
     });
   }
 
-  const scale: Color<S>[] = [];
-  const totalSegments = stops.length - 1;
+  const totalSegments = stopCount - 1;
   const stepInterval = 1 / (steps - 1);
 
-  for (let i = 0; i < steps; i++) {
+  return Array.from({ length: steps }, (_, i) => {
     const segmentRaw = i * stepInterval * totalSegments;
     let idx = segmentRaw | 0;
     if (idx >= totalSegments) idx = totalSegments - 1;
 
-    scale.push(mixColor(stops[idx], stops[idx + 1], segmentRaw - idx));
-  }
-
-  return scale;
+    return mixColor(stops[idx], stops[idx + 1], segmentRaw - idx);
+  });
 }
