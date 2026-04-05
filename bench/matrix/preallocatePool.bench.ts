@@ -1,8 +1,8 @@
 import { bench, describe } from 'vitest';
-import { clearPool, preallocatePool } from '~/shared';
+import { clearPool, preallocatePool } from '~/matrix';
 
 describe('preallocatePool()', () => {
-  bench('matrix', () => {
+  bench('matrix (preallocate)', () => {
     clearPool();
     preallocatePool(50);
   });

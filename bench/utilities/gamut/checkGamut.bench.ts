@@ -9,7 +9,7 @@ const WIDE_COLOR = {
 } as Color<'oklch'>;
 
 describe('checkGamut()', () => {
-  bench('gamut', () => {
+  bench('gamut (check)', () => {
     checkGamut(WIDE_COLOR);
   });
 });

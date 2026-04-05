@@ -1,6 +1,6 @@
 import { bench, describe } from 'vitest';
 import { convertHue } from '~/convert';
-import { createColor, createMatrix, dropColor, dropMatrix } from '~/shared';
+import { createColor, createMatrix, dropColor, dropMatrix } from '~/matrix';
 
 const RGB_COLOR = createColor('rgb', [0.7, 0.1, 0.9]);
 const HSL_COLOR = createColor('hsl', [180, 0.5, 0.5]);

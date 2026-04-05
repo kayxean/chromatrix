@@ -5,7 +5,7 @@ import { getExactName } from '~/utils/naming';
 const RED_COLOR = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>;
 
 describe('getExactName()', () => {
-  bench('naming', () => {
+  bench('naming (exact)', () => {
     getExactName(RED_COLOR);
   });
 });

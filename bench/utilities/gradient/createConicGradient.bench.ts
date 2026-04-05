@@ -6,7 +6,7 @@ const RED_COLOR = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 }
 const BLUE_COLOR = { space: 'rgb', value: new Float32Array([0, 0, 1]), alpha: 1 } as Color<'rgb'>;
 
 describe('createConicGradient()', () => {
-  bench('gradient', () => {
+  bench('gradient (conic)', () => {
     createConicGradient({ angle: 45, stops: [{ color: RED_COLOR }, { color: BLUE_COLOR }] });
   });
 });

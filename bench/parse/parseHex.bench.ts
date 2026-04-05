@@ -2,7 +2,7 @@ import { bench, describe } from 'vitest';
 import { parseHex } from '~/parse';
 
 describe('parseHex()', () => {
-  bench('matrix', () => {
+  bench('parse (hex-internal)', () => {
     parseHex('ff8000');
   });
 });

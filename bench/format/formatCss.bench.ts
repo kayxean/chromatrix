@@ -1,6 +1,6 @@
 import { bench, describe } from 'vitest';
 import { formatCss } from '~/format';
-import { createColor, dropColor } from '~/shared';
+import { createColor, dropColor } from '~/matrix';
 
 const COLOR_OBJ = createColor('rgb', [1, 0.5, 0]);
 const HSL_COLOR = createColor('hsl', [180, 0.5, 0.5]);
