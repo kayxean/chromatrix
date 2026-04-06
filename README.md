@@ -2,21 +2,6 @@
 
 A high-performance, heavy-duty color engine for the web. Designed for accuracy and efficiency, it uses `Float32Array` buffers and CIEXYZ hubs to ensure mathematically sound conversions without the memory overhead of typical object-heavy color libraries.
 
-## The Core Logic
-
-Color math is messy because different spaces use different reference points. To solve this, every conversion passes through a central hub.
-
-- **Conversion**: Moves data between `rgb`, `hsl`, `hwb`, `lab`, `lch`, `oklab`, and `oklch`.
-- **Parsing**: Reads CSS strings (hex, functional notation, and modern spaces).
-- **Formatting**: Outputs color objects as standard CSS strings.
-- **Contrast**: Calculates APCA _Lc_ values for text and background pairs.
-- **Palettes**: Generates harmonies and scales using perceptual interpolation.
-- **Gamut**: Detects out-of-bounds colors and clamps them to a valid range.
-- **Pickers**: Maps 2D UI coordinates to HSVA values for color selection.
-- **Vision**: Simulates color-blindness by projecting into reduced color spaces.
-- **Naming**: Finds closest CSS named colors using perceptual distance.
-- **Gradients**: Generates CSS gradient strings from color stops.
-
 ## Usage
 
 Install via your preferred package manager:
@@ -38,318 +23,227 @@ yarn add @kayxean/chromatrix
 bun add @kayxean/chromatrix
 ```
 
-## Low-Level Matrix
+## Core Library
 
-For animations or bulk processing, use the low-level matrix API to avoid garbage collection. These use a `Float32Array` buffer pool.
+The foundational API, exported from `@kayxean/chromatrix`. Covers buffer management, color space conversion, CSS parsing and formatting, and color object lifecycle. All functions operate on `Float32Array` buffers and managed `Color` objects using a shared pool.
 
-```ts
-import { createMatrix, convertColor, dropMatrix } from '@kayxean/chromatrix';
+### Matrix
 
-const input = createMatrix('rgb');
-const output = createMatrix('oklab');
-input.set([0.7, 0.1, 0.9]);
+Creates, clones, and manages `Float32Array` buffers and `Color` objects from the pool.
 
-convertColor(input, output, 'rgb', 'oklab');
-
-dropMatrix(input);
-dropMatrix(output);
-```
-
-### Pool Management
-
-Warming up the pool improves performance by reducing initial allocations.
+| Function                             | Parameters                                                       | Returns          |
+| ------------------------------------ | ---------------------------------------------------------------- | ---------------- |
+| `createMatrix(space?)`               | `space?: ColorSpace`                                             | `ColorMatrix<S>` |
+| `dropMatrix(arr)`                    | `arr: ColorArray`                                                | `void`           |
+| `createColor(space, values, alpha?)` | `space: S`, `values: [number, number, number]`, `alpha?: number` | `Color<S>`       |
+| `dropColor(color)`                   | `color: Color`                                                   | `void`           |
+| `cloneColor(color)`                  | `color: Color<S>`                                                | `Color<S>`       |
+| `preallocatePool(size)`              | `size: number`                                                   | `void`           |
+| `clearPool()`                        | —                                                                | `void`           |
 
 ```ts
-import { preallocatePool, clearPool } from '@kayxean/chromatrix';
-
-preallocatePool(100);
-
-clearPool();
-```
-
-## Matrix Management
-
-Everything is built on a `Color` object containing a `Float32Array`. To keep performance high, we use a pool. You can either mutate in-place or derive new copies, but you must manually free them when finished.
-
-```ts
-import { createColor, mutateColor, deriveColor, cloneColor, dropColor } from '@kayxean/chromatrix';
-
+const matrix = createMatrix('rgb');
 const color = createColor('rgb', [0.5, 0.2, 0.8]);
-const copy = cloneColor(color);
-
-mutateColor(color, 'oklch');
-
-const converted = deriveColor(color, 'hsl');
-
+dropMatrix(matrix);
 dropColor(color);
-dropColor(copy);
-dropColor(converted);
 ```
 
-## CSS Integration
+### Convert
 
-Parsing returns a managed color object. Formatting returns a standard string.
+Transforms color values between any supported color space.
+
+| Function                                | Parameters                                                    | Returns |
+| --------------------------------------- | ------------------------------------------------------------- | ------- |
+| `convertColor(input, output, from, to)` | `input: ColorArray`, `output: ColorArray`, `from: S`, `to: X` | `void`  |
+| `convertHue(input, output, mode)`       | `input: ColorArray`, `output: ColorArray`, `mode: S`          | `void`  |
 
 ```ts
-import { parseColor, formatCss, dropColor } from '@kayxean/chromatrix';
+convertColor(input, output, 'rgb', 'oklab');
+convertHue(input, output, 'lab');
+```
 
-const color = parseColor('oklch(60% 0.15 30)');
+### Format
+
+Converts `Color` objects to CSS string representations.
+
+| Function                               | Parameters                                                            | Returns  |
+| -------------------------------------- | --------------------------------------------------------------------- | -------- |
+| `formatCss(color, asHex?, precision?)` | `color: Color`, `asHex?: boolean`, `precision?: number` (default `2`) | `string` |
+| `formatHex(r, g, b, a?)`               | `r: number`, `g: number`, `b: number`, `a?: number`                   | `string` |
+| `roundTo(val, precision)`              | `val: number`, `precision: number`                                    | `number` |
+
+```ts
 const css = formatCss(color);
-
 const hex = formatCss(color, true);
-
-dropColor(color);
+const hexStr = formatHex(1, 0, 0);
 ```
 
-## Color Conversion
+### Parse
 
-Direct transformations are handled through a chain of adapters. The system automatically determines if it can take a direct path or if it needs to route through a CIEXYZ hub.
+Reads CSS color strings and hex values into `Color` objects.
+
+| Function          | Parameters    | Returns                                          |
+| ----------------- | ------------- | ------------------------------------------------ |
+| `parseColor(css)` | `css: string` | `Color`                                          |
+| `parseHex(hex)`   | `hex: string` | `{ r: number; g: number; b: number; a: number }` |
 
 ```ts
-import { createMatrix, convertColor, convertHue, dropMatrix } from '@kayxean/chromatrix';
-
-const rgbArray = createMatrix('rgb');
-const oklabArray = createMatrix('oklab');
-rgbArray.set([0.7, 0.1, 0.9]);
-
-convertColor(rgbArray, oklabArray, 'rgb', 'oklab');
-
-const labArray = createMatrix('lab');
-const lchArray = createMatrix('lch');
-labArray.set([50, 20, 30]);
-convertHue(labArray, lchArray, 'lab');
-
-dropMatrix(rgbArray);
-dropMatrix(oklabArray);
-dropMatrix(labArray);
-dropMatrix(lchArray);
+const color = parseColor('oklch(60% 0.15 30)');
+const { r, g, b, a } = parseHex('#ff0000');
 ```
 
-## Contrast & Accessibility
+### Shared
 
-Forget the old WCAG ratio. This uses APCA to calculate a signed _Lc_ value based on font weight and background luminance.
+Mutates or derives `Color` objects across different color spaces.
+
+| Function                 | Parameters              | Returns               |
+| ------------------------ | ----------------------- | --------------------- |
+| `mutateColor(color, to)` | `color: Color`, `to: S` | `void` (in-place)     |
+| `deriveColor(color, to)` | `color: Color`, `to: S` | `Color<S>` (new copy) |
 
 ```ts
-import { checkContrast, matchContrast } from '@kayxean/chromatrix/utils/contrast';
-import { createScales } from '@kayxean/chromatrix/utils/palette';
-import { parseColor, dropColor } from '@kayxean/chromatrix';
-
-const brand = parseColor('#007bff');
-const bg = parseColor('#ffffff');
-
-const score = checkContrast(brand, bg);
-
-const safeColor = matchContrast(brand, bg, 75);
-
-const scale = createScales([brand, bg], 5);
-
-scale.forEach(dropColor);
-dropColor(brand);
-dropColor(bg);
-dropColor(safeColor);
+mutateColor(color, 'oklch');
+const converted = deriveColor(color, 'hsl');
 ```
 
-### Bulk Contrast
+## Utilities
 
-Check contrast for multiple colors against a single background efficiently.
+Higher-level tools, imported from `@kayxean/chromatrix/utils/*`. Built on top of the core API for tasks like contrast checking, palette generation, gamut mapping, vision simulation, and gradient creation. These handle their own color object allocation — remember to `dropColor()` when done.
+
+### Compare
+
+Checks perceptual equality and calculates distance between colors.
+
+| Function                    | Parameters                                                      | Returns   |
+| --------------------------- | --------------------------------------------------------------- | --------- |
+| `isEqual(a, b, tolerance?)` | `a: Color`, `b: Color`, `tolerance?: number` (default `0.0001`) | `boolean` |
+| `getDistance(a, b)`         | `a: Color`, `b: Color`                                          | `number`  |
 
 ```ts
-import { checkContrastBulk } from '@kayxean/chromatrix/utils/contrast';
-import { parseColor, dropColor } from '@kayxean/chromatrix';
-
-const bg = parseColor('#333333');
-const colors = [parseColor('#ffffff'), parseColor('#cccccc'), parseColor('#666666')];
-
-const results = checkContrastBulk(bg, colors);
-
-colors.forEach(dropColor);
-dropColor(bg);
+const match = isEqual(a, b);
+const deltaE = getDistance(a, b);
 ```
 
-### Contrast Rating
+### Contrast
 
-Get a human-readable readability tier based on the absolute APCA _Lc_ score.
+Calculates APCA contrast scores and adjusts colors for readability.
+
+| Function                                                | Parameters                                                                          | Returns                                                                     |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `getLuminanceD65(color)`                                | `color: Color`                                                                      | `number`                                                                    |
+| `checkContrast(text, background)`                       | `text: Color`, `background: Color`                                                  | `number` (APCA Lc score)                                                    |
+| `getContrastRating(contrast)`                           | `contrast: number`                                                                  | `string` (`'platinum' \| 'gold' \| 'silver' \| 'bronze' \| 'ui' \| 'fail'`) |
+| `matchContrast(color, background, targetContrast)`      | `color: Color<S>`, `background: Color`, `targetContrast: number`                    | `Color<S>`                                                                  |
+| `checkContrastBulk(background, colors)`                 | `background: Color`, `colors: Color[]`                                              | `{ color, contrast, rating }[]`                                             |
+| `matchScales(stops, background, targetContrast, steps)` | `stops: Color<S>[]`, `background: Color`, `targetContrast: number`, `steps: number` | `Color<S>[]`                                                                |
 
 ```ts
-import { getContrastRating } from '@kayxean/chromatrix/utils/contrast';
-
-getContrastRating(75.2);
+const score = checkContrast(text, bg);
+const safe = matchContrast(color, bg, 75);
+const rating = getContrastRating(score);
 ```
 
-### Match Scales
+### Gamut
 
-Generate a color scale where each step meets a target contrast against a background.
+Detects out-of-gamut colors and clamps them to valid ranges.
+
+| Function                        | Parameters                                              | Returns    |
+| ------------------------------- | ------------------------------------------------------- | ---------- |
+| `checkGamut(color, tolerance?)` | `color: Color`, `tolerance?: number` (default `0.0001`) | `boolean`  |
+| `clampColor(color, mutate?)`    | `color: Color<S>`, `mutate?: boolean` (default `true`)  | `Color<S>` |
 
 ```ts
-import { matchScales } from '@kayxean/chromatrix/utils/contrast';
-import { parseColor, dropColor } from '@kayxean/chromatrix';
-
-const stops = [parseColor('#007bff'), parseColor('#ffc107')];
-const whiteBg = parseColor('#ffffff');
-
-const adjustedScale = matchScales(stops, whiteBg, 60, 5);
-
-adjustedScale.forEach(dropColor);
-stops.forEach(dropColor);
-dropColor(whiteBg);
+if (!checkGamut(color)) clampColor(color, true);
 ```
 
-## Generative Tools
+### Gradient
 
-Interpolation happens in polar space for smoother, more "natural" color shifts.
+Generates CSS gradient strings from color stops.
 
-```ts
-import {
-  createHarmony,
-  createShades,
-  createScales,
-  mixColor,
-} from '@kayxean/chromatrix/utils/palette';
-import { parseColor, dropColor } from '@kayxean/chromatrix';
-
-const base = parseColor('#007bff');
-const neighbors = createHarmony(base, [
-  { name: 'analogous', ratios: [-30, 30] },
-  { name: 'complementary', ratios: [180] },
-]);
-
-const ramp = createScales([parseColor('#ff0000'), parseColor('#0000ff')], 5);
-
-const start = parseColor('rgb(255 0 0)');
-const end = parseColor('rgb(0 0 255)');
-const shades = createShades(start, end, 5);
-
-const mixed = mixColor(start, end, 0.5);
-
-neighbors.forEach((h) => h.colors.forEach(dropColor));
-ramp.forEach(dropColor);
-shades.forEach(dropColor);
-dropColor(mixed);
-dropColor(start);
-dropColor(end);
-dropColor(base);
-```
-
-## Safety & Comparison
-
-Colors that look the same in different spaces are treated as equal through a perceptual tolerance threshold.
+| Function                                                   | Parameters                                                                              | Returns  |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------- |
+| `createLinearGradient(options)`                            | `LinearGradientOptions`                                                                 | `string` |
+| `createRadialGradient(options)`                            | `RadialGradientOptions`                                                                 | `string` |
+| `createConicGradient(options)`                             | `ConicGradientOptions`                                                                  | `string` |
+| `createSmoothGradient(start, end, steps, type?, options?)` | `start: Color`, `end: Color`, `steps: number`, `type?: GradientType`, `options?: {...}` | `string` |
+| `createMultiColorGradient(colors, type?, options?)`        | `colors: Color[]`, `type?: GradientType`, `options?: {...}`                             | `string` |
 
 ```ts
-import { checkGamut, clampColor } from '@kayxean/chromatrix/utils/gamut';
-import { isEqual, getDistance } from '@kayxean/chromatrix/utils/compare';
-import { parseColor, dropColor } from '@kayxean/chromatrix';
-
-const wideColor = parseColor('oklch(90% 0.4 120)');
-
-if (!checkGamut(wideColor)) {
-  clampColor(wideColor);
-}
-
-const match = isEqual(parseColor('#f00'), parseColor('hsl(0, 100%, 50%)'));
-const distance = getDistance(parseColor('#ff0000'), parseColor('#ffa500'));
-
-dropColor(wideColor);
-```
-
-### Clamp In-Place
-
-You can also mutate in-place to avoid new allocations.
-
-```ts
-import { clampColor } from '@kayxean/chromatrix/utils/gamut';
-import { parseColor, dropColor } from '@kayxean/chromatrix';
-
-const mutable = parseColor('oklch(90% 0.4 120)');
-clampColor(mutable, true);
-
-dropColor(mutable);
-```
-
-## Interactive Pickers
-
-Building a UI requires bridging flat values (like slider percentages) to complex matrices. The `createPicker` utility handles the math and the state sync.
-
-```ts
-import { createPicker, toPicker, fromPicker } from '@kayxean/chromatrix/utils/picker';
-import { parseColor, dropColor } from '@kayxean/chromatrix';
-
-const picker = createPicker(parseColor('#32cd32'));
-
-picker.update(0.5, 0.8, 'sv');
-picker.update(0.75, 0, 'h');
-
-const value = toPicker(parseColor('#ff00ff'));
-
-const color = fromPicker({ h: 120, s: 0.8, v: 0.7, a: 1 }, 'rgb');
-
-picker.dispose();
-dropColor(color);
-```
-
-## Vision Simulation
-
-Simulates how colors appear under Protanopia, Deuteranopia, or Tritanopia by projecting matrices into reduced color spaces.
-
-```ts
-import { simulateDeficiency } from '@kayxean/chromatrix/utils/simulate';
-import { parseColor, dropColor } from '@kayxean/chromatrix';
-
-const original = parseColor('#ff5500');
-const simulated = simulateDeficiency(original, 'deuteranopia');
-
-dropColor(original);
-dropColor(simulated);
-```
-
-## Color Naming
-
-Find the closest CSS named color using perceptual distance.
-
-```ts
-import {
-  findClosestName,
-  getExactName,
-  findSimilarNames,
-  parseColorName,
-} from '@kayxean/chromatrix/utils/naming';
-import { parseColor, dropColor } from '@kayxean/chromatrix';
-
-const color = parseColor('oklch(60% 0.2 120)');
-
-const { name, distance } = findClosestName(color);
-const exact = getExactName(color);
-const similar = findSimilarNames(color, 3);
-const parsed = parseColorName('red');
-
-dropColor(color);
-dropColor(parsed);
-```
-
-## CSS Gradients
-
-Generate CSS gradient strings from color stops.
-
-```ts
-import {
-  createLinearGradient,
-  createRadialGradient,
-  createConicGradient,
-  createSmoothGradient,
-  createMultiColorGradient,
-} from '@kayxean/chromatrix/utils/gradient';
-import { parseColor, dropColor } from '@kayxean/chromatrix';
-
-const red = parseColor('#ff0000');
-const blue = parseColor('#0000ff');
-
-const linear = createLinearGradient({ stops: [{ color: red }, { color: blue }] });
-const radial = createRadialGradient({ shape: 'circle', stops: [{ color: red }, { color: blue }] });
-const conic = createConicGradient({ angle: 45, stops: [{ color: red }, { color: blue }] });
+const linear = createLinearGradient({ stops: [{ color: c1 }, { color: c2 }] });
 const smooth = createSmoothGradient(red, blue, 5);
-const multi = createMultiColorGradient([red, parseColor('#00ff00'), blue]);
+```
 
-dropColor(red);
-dropColor(blue);
+### Naming
+
+Matches colors to CSS named colors by perceptual distance.
+
+| Function                          | Parameters                           | Returns                                |
+| --------------------------------- | ------------------------------------ | -------------------------------------- |
+| `findClosestName(color)`          | `color: Color`                       | `{ name: string, distance: number }`   |
+| `getExactName(color, tolerance?)` | `color: Color`, `tolerance?: number` | `string \| null`                       |
+| `findSimilarNames(color, limit?)` | `color: Color`, `limit?: number`     | `{ name: string, distance: number }[]` |
+| `parseColorName(name)`            | `name: string`                       | `Color \| null`                        |
+
+```ts
+const { name } = findClosestName(color);
+const exact = getExactName(color);
+```
+
+### Palette
+
+Generates color harmonies, scales, shades, and mixes.
+
+| Function                          | Parameters                                                          | Returns                                  |
+| --------------------------------- | ------------------------------------------------------------------- | ---------------------------------------- |
+| `mixColor(start, end, t)`         | `start: Color<S>`, `end: Color<S>`, `t: number`                     | `Color<S>`                               |
+| `createScales(stops, steps)`      | `stops: Color<S>[]`, `steps: number`                                | `Color<S>[]`                             |
+| `createShades(start, end, steps)` | `start: Color<S>`, `end: Color<S>`, `steps: number`                 | `Color<S>[]`                             |
+| `createHarmony(input, variants)`  | `input: Color<S>`, `variants: { name: string, ratios: number[] }[]` | `{ name: string, colors: Color<S>[] }[]` |
+
+```ts
+const mixed = mixColor(start, end, 0.5);
+const ramp = createScales([c1, c2], 5);
+```
+
+### Picker
+
+Maps 2D UI coordinates to color values for interactive selectors.
+
+| Method                        | Parameters                                           | Returns                    |
+| ----------------------------- | ---------------------------------------------------- | -------------------------- |
+| `createPicker(init, target?)` | `init: Color`, `target?: ColorSpace`                 | `PickerInstance`           |
+| `picker.update(x, y, type)`   | `x: number`, `y: number`, `type: 'sv' \| 'h' \| 'a'` | `void`                     |
+| `picker.assign(next)`         | `next: Color`                                        | `void`                     |
+| `picker.subscribe(fn)`        | `fn: PickerSubscriber`                               | `() => void` (unsubscribe) |
+| `picker.setSpace(nextSpace)`  | `nextSpace: ColorSpace`                              | `void`                     |
+| `picker.getValue()`           | —                                                    | `PickerValue`              |
+| `picker.getSpace()`           | —                                                    | `ColorSpace`               |
+| `picker.getHue()`             | —                                                    | `number`                   |
+| `picker.getSaturation()`      | —                                                    | `number`                   |
+| `picker.getBrightness()`      | —                                                    | `number`                   |
+| `picker.getAlpha()`           | —                                                    | `number`                   |
+| `picker.getSolid()`           | —                                                    | `Color`                    |
+| `picker.getColor()`           | —                                                    | `Color`                    |
+| `picker.dispose()`            | —                                                    | `void`                     |
+| `toPicker(color)`             | `color: Color`                                       | `PickerValue`              |
+| `fromPicker(val, space)`      | `val: PickerValue`, `space: S`                       | `Color`                    |
+
+```ts
+const picker = createPicker(color);
+picker.update(0.5, 0.8, 'sv');
+const coords = toPicker(color);
+```
+
+### Simulate
+
+Projects colors into reduced spaces to simulate color vision deficiencies.
+
+| Function                          | Parameters                                          | Returns    |
+| --------------------------------- | --------------------------------------------------- | ---------- |
+| `simulateDeficiency(color, type)` | `color: Color<S>`, `type: DeficiencyType \| 'none'` | `Color<S>` |
+
+```ts
+const simulated = simulateDeficiency(color, 'deuteranopia');
 ```
 
 ## The Math
