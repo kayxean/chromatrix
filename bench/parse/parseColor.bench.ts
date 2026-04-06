@@ -1,45 +1,36 @@
 import { bench, describe } from 'vitest';
 import { parseColor } from '~/parse';
 
-const HEX = '#ff5500';
-const RGB = 'rgb(255 128 0)';
-const HSL = 'hsl(180 50% 50%)';
-const HWB = 'hwb(180 50% 50%)';
-const LAB = 'lab(50% 20 30)';
-const LCH = 'lch(50% 30 120)';
-const OKLAB = 'oklab(50% 0.15 0.1)';
-const OKLCH = 'oklch(60% 0.15 30 / 0.5)';
-
 describe('parseColor()', () => {
   bench('parse (hex)', () => {
-    parseColor(HEX);
+    parseColor('#ff8000');
   });
 
   bench('parse (rgb)', () => {
-    parseColor(RGB);
+    parseColor('rgb(255 128 0)');
   });
 
   bench('parse (hsl)', () => {
-    parseColor(HSL);
+    parseColor('hsl(180deg 50% 50%)');
   });
 
   bench('parse (hwb)', () => {
-    parseColor(HWB);
+    parseColor('hwb(180deg 50% 50%)');
   });
 
   bench('parse (lab)', () => {
-    parseColor(LAB);
+    parseColor('lab(50% 20 30)');
   });
 
   bench('parse (lch)', () => {
-    parseColor(LCH);
+    parseColor('lch(50% 30 120deg)');
   });
 
   bench('parse (oklab)', () => {
-    parseColor(OKLAB);
+    parseColor('oklab(50% 0.15 0.1)');
   });
 
   bench('parse (oklch)', () => {
-    parseColor(OKLCH);
+    parseColor('oklch(60% 0.2 120deg)');
   });
 });

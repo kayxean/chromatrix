@@ -2,52 +2,52 @@ import { bench, describe } from 'vitest';
 import { formatCss } from '~/format';
 import { createColor, dropColor } from '~/matrix';
 
-const COLOR_OBJ = createColor('rgb', [1, 0.5, 0]);
-const HSL_COLOR = createColor('hsl', [180, 0.5, 0.5]);
-const HWB_COLOR = createColor('hwb', [180, 0.5, 0.5]);
-const LAB_COLOR = createColor('lab', [50, 20, 30]);
-const LCH_COLOR = createColor('lch', [50, 30, 120]);
-const OKLAB_COLOR = createColor('oklab', [0.5, 0.15, 0.1]);
-const OKLCH_COLOR = createColor('oklch', [0.6, 0.2, 120]);
+const RGB_ORANGE = createColor('rgb', [1, 0.5, 0]);
+const HSL_TEAL = createColor('hsl', [180, 0.5, 0.5]);
+const HWB_TEAL = createColor('hwb', [180, 0.5, 0.5]);
+const LAB_BLUE = createColor('lab', [50, 20, 30]);
+const LCH_BLUE = createColor('lch', [50, 30, 120]);
+const OKLAB_BLUE = createColor('oklab', [0.5, 0.15, 0.1]);
+const OKLCH_BLUE = createColor('oklch', [0.6, 0.2, 120]);
 
 describe('formatCss()', () => {
-  bench('format (rgb)', () => {
-    formatCss(COLOR_OBJ);
+  bench('format (hex)', () => {
+    formatCss(RGB_ORANGE, true);
   });
 
-  bench('format (hex)', () => {
-    formatCss(COLOR_OBJ, true);
+  bench('format (rgb)', () => {
+    formatCss(RGB_ORANGE);
   });
 
   bench('format (hsl)', () => {
-    formatCss(HSL_COLOR);
+    formatCss(HSL_TEAL);
   });
 
   bench('format (hwb)', () => {
-    formatCss(HWB_COLOR);
+    formatCss(HWB_TEAL);
   });
 
   bench('format (lab)', () => {
-    formatCss(LAB_COLOR);
+    formatCss(LAB_BLUE);
   });
 
   bench('format (lch)', () => {
-    formatCss(LCH_COLOR);
+    formatCss(LCH_BLUE);
   });
 
   bench('format (oklab)', () => {
-    formatCss(OKLAB_COLOR);
+    formatCss(OKLAB_BLUE);
   });
 
   bench('format (oklch)', () => {
-    formatCss(OKLCH_COLOR);
+    formatCss(OKLCH_BLUE);
   });
 });
 
-dropColor(COLOR_OBJ);
-dropColor(HSL_COLOR);
-dropColor(HWB_COLOR);
-dropColor(LAB_COLOR);
-dropColor(LCH_COLOR);
-dropColor(OKLAB_COLOR);
-dropColor(OKLCH_COLOR);
+dropColor(RGB_ORANGE);
+dropColor(HSL_TEAL);
+dropColor(HWB_TEAL);
+dropColor(LAB_BLUE);
+dropColor(LCH_BLUE);
+dropColor(OKLAB_BLUE);
+dropColor(OKLCH_BLUE);
