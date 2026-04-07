@@ -1,14 +1,11 @@
-import type { Color } from '~/types';
 import { describe, expect, it } from 'vitest';
 import { dropColor } from '~/matrix';
 import { createScales } from '~/utils/palette';
+import { createMockColor } from '../../factory';
 
 describe('createScales()', () => {
   it('should create a smooth interpolation between multiple stops', () => {
-    const colors = [
-      { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>,
-      { space: 'rgb', value: new Float32Array([0, 0, 1]), alpha: 1 } as Color<'rgb'>,
-    ];
+    const colors = [createMockColor('rgb', [1, 0, 0]), createMockColor('rgb', [0, 0, 1])];
     const steps = 5;
     const result = createScales(colors, steps);
     expect(result).toHaveLength(steps);
@@ -21,9 +18,9 @@ describe('createScales()', () => {
 
   it('should handle more than two color stops (multi-segment)', () => {
     const colors = [
-      { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>,
-      { space: 'rgb', value: new Float32Array([0, 1, 0]), alpha: 1 } as Color<'rgb'>,
-      { space: 'rgb', value: new Float32Array([0, 0, 1]), alpha: 1 } as Color<'rgb'>,
+      createMockColor('rgb', [1, 0, 0]),
+      createMockColor('rgb', [0, 1, 0]),
+      createMockColor('rgb', [0, 0, 1]),
     ];
     const result = createScales(colors, 3);
     expect(result[0].value[0]).toBe(1);
@@ -33,7 +30,7 @@ describe('createScales()', () => {
   });
 
   it('should return a copy of the stop if only one is provided', () => {
-    const colors = [{ space: 'rgb', value: new Float32Array([1, 1, 1]), alpha: 1 } as Color<'rgb'>];
+    const colors = [createMockColor('rgb', [1, 1, 1])];
     const result = createScales(colors, 3);
     expect(result).toHaveLength(1);
     expect(result[0].value).not.toBe(colors[0].value);
@@ -41,10 +38,7 @@ describe('createScales()', () => {
   });
 
   it('should return an empty array for zero steps', () => {
-    const colors = [
-      { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>,
-      { space: 'rgb', value: new Float32Array([0, 0, 1]), alpha: 1 } as Color<'rgb'>,
-    ];
+    const colors = [createMockColor('rgb', [1, 0, 0]), createMockColor('rgb', [0, 0, 1])];
     expect(createScales(colors, 0)).toEqual([]);
   });
 });

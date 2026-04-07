@@ -1,11 +1,11 @@
-import type { Color } from '~/types';
 import { describe, expect, it } from 'vitest';
 import { createSmoothGradient } from '~/utils/gradient';
+import { createMockColor } from '../../factory';
 
 describe('createSmoothGradient()', () => {
   it('should create a linear smooth gradient with exactly 5 stops', () => {
-    const c1 = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>;
-    const c2 = { space: 'rgb', value: new Float32Array([0, 0, 1]), alpha: 1 } as Color<'rgb'>;
+    const c1 = createMockColor('rgb', [1, 0, 0]);
+    const c2 = createMockColor('rgb', [0, 0, 1]);
     const result = createSmoothGradient(c1, c2, 5);
     expect(result).toContain('linear-gradient(180deg');
     expect(result).toContain('0%');
@@ -18,15 +18,15 @@ describe('createSmoothGradient()', () => {
   });
 
   it('should handle a single step (50% position)', () => {
-    const c1 = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>;
-    const c2 = { space: 'rgb', value: new Float32Array([0, 0, 1]), alpha: 1 } as Color<'rgb'>;
+    const c1 = createMockColor('rgb', [1, 0, 0]);
+    const c2 = createMockColor('rgb', [0, 0, 1]);
     const result = createSmoothGradient(c1, c2, 1);
     expect(result).toContain('50%');
   });
 
   it('should support radial smooth gradients with options', () => {
-    const c1 = { space: 'rgb', value: new Float32Array([0, 0, 0]), alpha: 1 } as Color<'rgb'>;
-    const c2 = { space: 'rgb', value: new Float32Array([1, 1, 1]), alpha: 1 } as Color<'rgb'>;
+    const c1 = createMockColor('rgb', [0, 0, 0]);
+    const c2 = createMockColor('rgb', [1, 1, 1]);
     const result = createSmoothGradient(c1, c2, 3, 'radial', {
       shape: 'circle',
       position: 'center',
@@ -38,8 +38,8 @@ describe('createSmoothGradient()', () => {
   });
 
   it('should return an empty string for zero or negative steps', () => {
-    const c1 = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>;
-    const c2 = { space: 'rgb', value: new Float32Array([0, 0, 1]), alpha: 1 } as Color<'rgb'>;
+    const c1 = createMockColor('rgb', [1, 0, 0]);
+    const c2 = createMockColor('rgb', [0, 0, 1]);
     expect(createSmoothGradient(c1, c2, 0)).toBe('');
   });
 });

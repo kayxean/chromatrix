@@ -3,14 +3,11 @@ import type { PickerValue } from '~/utils/picker';
 import { describe, expect, it, vi } from 'vitest';
 import { dropColor } from '~/matrix';
 import { createPicker } from '~/utils/picker';
+import { createMockColor } from '../../factory';
 
 describe('createPicker()', () => {
   it('should initialize with correct HSV values from an RGB color', () => {
-    const color = {
-      space: 'rgb',
-      value: new Float32Array([1, 0, 0]),
-      alpha: 1,
-    } as Color<'rgb'>;
+    const color = createMockColor('rgb', [1, 0, 0]);
     const picker = createPicker(color);
     expect(picker.getHue()).toBe(0);
     expect(picker.getSaturation()).toBe(1);
@@ -19,7 +16,7 @@ describe('createPicker()', () => {
   });
 
   it('should notify subscribers when values change', () => {
-    const color = { space: 'rgb', value: new Float32Array([1, 1, 1]), alpha: 1 } as Color<'rgb'>;
+    const color = createMockColor('rgb', [1, 1, 1]);
     const picker = createPicker(color);
     const callback = vi.fn<(val: PickerValue, color: Color) => void>();
     picker.subscribe(callback);
@@ -34,10 +31,10 @@ describe('createPicker()', () => {
   });
 
   it('should preserve hue during achromatic assignments', () => {
-    const red = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>;
+    const red = createMockColor('rgb', [1, 0, 0]);
     const picker = createPicker(red);
     picker.update(0.5, 0, 'h');
-    const black = { space: 'rgb', value: new Float32Array([0, 0, 0]), alpha: 1 } as Color<'rgb'>;
+    const black = createMockColor('rgb', [0, 0, 0]);
     picker.assign(black);
     expect(picker.getHue()).toBe(180);
     expect(picker.getBrightness()).toBe(0);
@@ -45,7 +42,7 @@ describe('createPicker()', () => {
   });
 
   it('should create fresh pooled colors via getSolid and getColor', () => {
-    const color = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 0.5 } as Color<'rgb'>;
+    const color = createMockColor('rgb', [1, 0, 0], 0.5);
     const picker = createPicker(color);
     const solid = picker.getSolid();
     const current = picker.getColor();

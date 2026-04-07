@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { clearPool, createColor } from '~/matrix';
 import { mutateColor } from '~/shared';
-import { expectColorCloseTo } from '../expect';
+import { expectColorCloseTo } from '../factory';
 
 describe('mutateColor()', () => {
   beforeEach(() => {

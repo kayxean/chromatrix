@@ -1,14 +1,11 @@
-import type { Color } from '~/types';
 import { describe, expect, it } from 'vitest';
 import { checkContrastBulk } from '~/utils/contrast';
+import { createMockColor } from '../../factory';
 
 describe('checkContrastBulk()', () => {
   it('should return an array of contrast objects with correct scores and ratings', () => {
-    const bg = { space: 'rgb', value: new Float32Array([0, 0, 0]), alpha: 1 } as Color<'rgb'>;
-    const fg = [
-      { space: 'rgb', value: new Float32Array([1, 1, 1]), alpha: 1 } as Color<'rgb'>,
-      { space: 'rgb', value: new Float32Array([0.5, 0.5, 0.5]), alpha: 1 } as Color<'rgb'>,
-    ];
+    const bg = createMockColor('rgb', [0, 0, 0]);
+    const fg = [createMockColor('rgb', [1, 1, 1]), createMockColor('rgb', [0.5, 0.5, 0.5])];
 
     const result = checkContrastBulk(bg, fg);
     expect(result).toHaveLength(2);
@@ -25,7 +22,7 @@ describe('checkContrastBulk()', () => {
   });
 
   it('should return empty array when provided no foreground colors', () => {
-    const bg = { space: 'rgb', value: new Float32Array([0, 0, 0]), alpha: 1 } as Color<'rgb'>;
+    const bg = createMockColor('rgb', [0, 0, 0]);
     const result = checkContrastBulk(bg, []);
     expect(result).toEqual([]);
   });
