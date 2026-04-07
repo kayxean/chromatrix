@@ -1,14 +1,31 @@
-import type {
-  Color,
-  GradientStop,
-  LinearGradientOptions,
-  RadialGradientOptions,
-  ConicGradientOptions,
-  GradientType,
-} from '../types';
+import type { Color } from '../types';
 import { formatCss } from '../format';
 import { dropColor } from '../matrix';
 import { createShades } from './palette';
+
+export type GradientType = 'linear' | 'radial' | 'conic';
+
+export type GradientStop = {
+  color: Color;
+  position?: number;
+};
+
+export type LinearGradientOptions = {
+  angle?: number;
+  stops: GradientStop[];
+};
+
+export type RadialGradientOptions = {
+  shape?: 'circle' | 'ellipse';
+  position?: string;
+  stops: GradientStop[];
+};
+
+export type ConicGradientOptions = {
+  angle?: number;
+  position?: string;
+  stops: GradientStop[];
+};
 
 function buildStops(stops: GradientStop[]): string {
   const len = stops.length;
