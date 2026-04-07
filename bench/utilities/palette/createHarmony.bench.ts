@@ -1,19 +1,10 @@
-import type { Color } from '~/types';
 import { bench, describe } from 'vitest';
 import { dropColor } from '~/matrix';
 import { createHarmony } from '~/utils/palette';
+import { createMockColor } from '../../factory';
 
-const RGB_RED = {
-  space: 'rgb',
-  value: new Float32Array([1, 0, 0]),
-  alpha: 1,
-} as Color<'rgb'>;
-
-const HSL_RED = {
-  space: 'hsl',
-  value: new Float32Array([350, 100, 50]),
-  alpha: 1,
-} as Color<'hsl'>;
+const RGB_RED = createMockColor('rgb', [1, 0, 0]);
+const HSL_RED = createMockColor('hsl', [350, 100, 50]);
 
 const VARIANTS = [
   { name: 'analogous', ratios: [-30, 30] },

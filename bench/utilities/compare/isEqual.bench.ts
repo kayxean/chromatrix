@@ -1,19 +1,11 @@
-import type { Color } from '~/types';
 import { bench, describe } from 'vitest';
 import { isEqual } from '~/utils/compare';
+import { createMockColor } from '../../factory';
 
-const RGB_RED = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>;
-const RGB_RED_ALPHA = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 0.5 } as Color<'rgb'>;
-const RGB_RED_NEAR = {
-  space: 'rgb',
-  value: new Float32Array([1, 0.005, 0]),
-  alpha: 1,
-} as Color<'rgb'>;
-const OKLAB_RED = {
-  space: 'oklab',
-  value: new Float32Array([0.6279, 0.2248, 0.1258]),
-  alpha: 1,
-} as Color<'oklab'>;
+const RGB_RED = createMockColor('rgb', [1, 0, 0]);
+const RGB_RED_ALPHA = createMockColor('rgb', [1, 0, 0], 0.5);
+const RGB_RED_NEAR = createMockColor('rgb', [1, 0.005, 0]);
+const OKLAB_RED = createMockColor('oklab', [0.6279, 0.2248, 0.1258]);
 
 describe('isEqual()', () => {
   bench('compare (equal-same-reference)', () => {

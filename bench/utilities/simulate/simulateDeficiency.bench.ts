@@ -1,47 +1,38 @@
-import type { Color } from '~/types';
 import { bench, describe } from 'vitest';
 import { dropColor } from '~/matrix';
 import { simulateDeficiency } from '~/utils/simulate';
+import { createMockColor } from '../../factory';
 
-const LRGB_RED = {
-  space: 'lrgb',
-  value: new Float32Array([1, 0, 0]),
-  alpha: 1,
-} as Color<'lrgb'>;
-
-const RGB_RED = {
-  space: 'rgb',
-  value: new Float32Array([1, 0, 0]),
-  alpha: 1,
-} as Color<'rgb'>;
+const LRGB_RED = createMockColor('lrgb', [1, 0, 0]);
+const RGB_RED = createMockColor('rgb', [1, 0, 0]);
 
 describe('simulateDeficiency()', () => {
-  bench('simulate (protanopia-lrgb)', () => {
+  bench('simulate (deficiency-protanopia)', () => {
     const result = simulateDeficiency(LRGB_RED, 'protanopia');
     dropColor(result);
   });
 
-  bench('simulate (deuteranopia-lrgb)', () => {
+  bench('simulate (deficiency-deuteranopia)', () => {
     const result = simulateDeficiency(LRGB_RED, 'deuteranopia');
     dropColor(result);
   });
 
-  bench('simulate (tritanopia-lrgb)', () => {
+  bench('simulate (deficiency-tritanopia)', () => {
     const result = simulateDeficiency(LRGB_RED, 'tritanopia');
     dropColor(result);
   });
 
-  bench('simulate (achromatopsia-lrgb)', () => {
+  bench('simulate (deficiency-achromatopsia)', () => {
     const result = simulateDeficiency(LRGB_RED, 'achromatopsia');
     dropColor(result);
   });
 
-  bench('simulate (conversion-overhead-srgb)', () => {
+  bench('simulate (deficiency-srgb)', () => {
     const result = simulateDeficiency(RGB_RED, 'protanopia');
     dropColor(result);
   });
 
-  bench('simulate (none-passthrough)', () => {
+  bench('simulate (deficiency-none)', () => {
     // @ts-ignore
     const result = simulateDeficiency(LRGB_RED, 'none');
     dropColor(result);

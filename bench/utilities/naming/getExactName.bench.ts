@@ -1,18 +1,10 @@
-import type { Color } from '~/types';
 import { bench, describe } from 'vitest';
 import { getExactName } from '~/utils/naming';
+import { createMockColor } from '../../factory';
 
-const RGB_RED = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>;
-const RGB_NEAR_RED = {
-  space: 'rgb',
-  value: new Float32Array([0.9999, 0, 0]),
-  alpha: 1,
-} as Color<'rgb'>;
-const RGB_UNNAMED = {
-  space: 'rgb',
-  value: new Float32Array([0.123, 0.456, 0.789]),
-  alpha: 1,
-} as Color<'rgb'>;
+const RGB_RED = createMockColor('rgb', [1, 0, 0]);
+const RGB_NEAR_RED = createMockColor('rgb', [0.9999, 0, 0]);
+const RGB_UNNAMED = createMockColor('rgb', [0.123, 0.456, 0.789]);
 
 describe('getExactName()', () => {
   bench('naming (exact-match)', () => {

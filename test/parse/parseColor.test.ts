@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseColor } from '~/parse';
-import { expectColorCloseTo } from '../expect';
+import { expectColorCloseTo } from '../factory';
 
 describe('parseColor()', () => {
   it('should parse HEX', () => {

@@ -1,10 +1,10 @@
-import type { Color } from '~/types';
 import { bench, describe } from 'vitest';
 import { mutateColor } from '~/shared';
+import { createMockColor } from '../factory';
 
-const RGB_WHITE = { space: 'rgb', value: new Float32Array([1, 1, 1]), alpha: 1 } as Color<'rgb'>;
-const RGB_RED = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>;
-const RGB_RED_ALPHA = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 0.5 } as Color<'rgb'>;
+const RGB_WHITE = createMockColor('rgb', [1, 1, 1]);
+const RGB_RED = createMockColor('rgb', [1, 0, 0]);
+const RGB_RED_ALPHA = createMockColor('rgb', [1, 0, 0], 0.5);
 
 describe('mutateColor()', () => {
   bench('mutate (rgb-to-oklab)', () => {

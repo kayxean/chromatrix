@@ -1,11 +1,11 @@
-import type { ColorArray } from '~/types';
 import { bench, describe } from 'vitest';
 import { hslToHsv } from '~/adapters/srgb';
+import { createMockArray, createMockOutput } from '../../factory';
 
-const INPUT = new Float32Array([180, 0.5, 0.5]) as ColorArray;
-const ZEROS = new Float32Array([0, 0, 0]) as ColorArray;
-const NEGATIVES = new Float32Array([-180, -0.5, -0.5]) as ColorArray;
-const OUTPUT = new Float32Array(3) as ColorArray;
+const INPUT = createMockArray([180, 0.5, 0.5]);
+const ZEROS = createMockArray([0, 0, 0]);
+const NEGATIVES = createMockArray([-180, -0.5, -0.5]);
+const OUTPUT = createMockOutput();
 
 describe('hslToHsv()', () => {
   bench('adapters (hsl-to-hsv)', () => {

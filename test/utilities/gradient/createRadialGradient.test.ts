@@ -1,16 +1,16 @@
-import type { Color } from '~/types';
 import { describe, expect, it } from 'vitest';
 import { createRadialGradient } from '~/utils/gradient';
+import { createMockColor } from '../../factory';
 
 describe('createRadialGradient()', () => {
   it('should create a valid radial-gradient CSS string', () => {
     const stops = [
       {
-        color: { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>,
+        color: createMockColor('rgb', [1, 0, 0]),
         position: 0,
       },
       {
-        color: { space: 'rgb', value: new Float32Array([0, 0, 1]), alpha: 1 } as Color<'rgb'>,
+        color: createMockColor('rgb', [0, 0, 1]),
         position: 100,
       },
     ];
@@ -25,17 +25,15 @@ describe('createRadialGradient()', () => {
   });
 
   it('should use default values for shape and position if not provided', () => {
-    const stops = [
-      { color: { space: 'rgb', value: new Float32Array([0, 0, 0]), alpha: 1 } as Color<'rgb'> },
-    ];
+    const stops = [{ color: createMockColor('rgb', [0, 0, 0]) }];
     const result = createRadialGradient({ stops });
     expect(result).toContain('radial-gradient(ellipse at center');
   });
 
   it('should handle stops without explicit positions', () => {
     const stops = [
-      { color: { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'> },
-      { color: { space: 'rgb', value: new Float32Array([0, 0, 1]), alpha: 1 } as Color<'rgb'> },
+      { color: createMockColor('rgb', [1, 0, 0]) },
+      { color: createMockColor('rgb', [0, 0, 1]) },
     ];
     const result = createRadialGradient({ stops });
     expect(result).toMatch(/rgb\(255 0 0\), rgb\(0 0 255\)/);

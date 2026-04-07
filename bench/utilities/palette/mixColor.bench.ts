@@ -10,7 +10,11 @@ const RGB_BLUE_ALPHA = {
   alpha: 0,
 } as Color<'rgb'>;
 const HSL_RED = { space: 'hsl', value: new Float32Array([350, 100, 50]), alpha: 1 } as Color<'hsl'>;
-const HSL_ORANGE = { space: 'hsl', value: new Float32Array([10, 100, 50]), alpha: 1 } as Color<'hsl'>;
+const HSL_ORANGE = {
+  space: 'hsl',
+  value: new Float32Array([10, 100, 50]),
+  alpha: 1,
+} as Color<'hsl'>;
 
 describe('mixColor()', () => {
   bench('palette (mix-rgb-linear)', () => {

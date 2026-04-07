@@ -1,11 +1,11 @@
-import type { Color } from '~/types';
 import { describe, expect, it } from 'vitest';
 import { matchContrast, checkContrast } from '~/utils/contrast';
+import { createMockColor } from '../../factory';
 
 describe('matchContrast()', () => {
   it('should lighten a dark color to meet target contrast on a black background', () => {
-    const fg = { space: 'rgb', value: new Float32Array([0.5, 0, 0]), alpha: 1 } as Color<'rgb'>;
-    const bg = { space: 'rgb', value: new Float32Array([0, 0, 0]), alpha: 1 } as Color<'rgb'>;
+    const fg = createMockColor('rgb', [0.5, 0, 0]);
+    const bg = createMockColor('rgb', [0, 0, 0]);
     const target = 60;
     const result = matchContrast(fg, bg, target);
     const finalContrast = checkContrast(result, bg);
@@ -15,8 +15,8 @@ describe('matchContrast()', () => {
   });
 
   it('should darken a light color to meet target contrast on a white background', () => {
-    const fg = { space: 'rgb', value: new Float32Array([0.8, 0.8, 1]), alpha: 1 } as Color<'rgb'>;
-    const bg = { space: 'rgb', value: new Float32Array([1, 1, 1]), alpha: 1 } as Color<'rgb'>;
+    const fg = createMockColor('rgb', [0.8, 0.8, 1]);
+    const bg = createMockColor('rgb', [1, 1, 1]);
     const target = 75;
     const result = matchContrast(fg, bg, target);
     const finalContrast = checkContrast(result, bg);
@@ -25,8 +25,8 @@ describe('matchContrast()', () => {
   });
 
   it('should preserve the original alpha', () => {
-    const fg = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 0.5 } as Color<'rgb'>;
-    const bg = { space: 'rgb', value: new Float32Array([0, 0, 0]), alpha: 1 } as Color<'rgb'>;
+    const fg = createMockColor('rgb', [1, 0, 0], 0.5);
+    const bg = createMockColor('rgb', [0, 0, 0]);
     const result = matchContrast(fg, bg, 60);
     expect(result.alpha).toBe(0.5);
   });
