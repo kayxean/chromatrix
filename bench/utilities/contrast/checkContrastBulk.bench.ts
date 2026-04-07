@@ -1,12 +1,12 @@
-import type { Color } from '~/types';
 import { bench, describe } from 'vitest';
 import { checkContrastBulk } from '~/utils/contrast';
+import { createMockColor } from '../../factory';
 
-const RGB_BLACK = { space: 'rgb', value: new Float32Array([0, 0, 0]), alpha: 1 } as Color<'rgb'>;
-const RGB_WHITE = { space: 'rgb', value: new Float32Array([1, 1, 1]), alpha: 1 } as Color<'rgb'>;
-const RGB_GRAY = { space: 'rgb', value: new Float32Array([0.5, 0.5, 0.5]), alpha: 1 } as Color<'rgb'>;
-const RGB_RED = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>;
-const RGB_BLUE = { space: 'rgb', value: new Float32Array([0, 0, 1]), alpha: 1 } as Color<'rgb'>;
+const RGB_BLACK = createMockColor('rgb', [0, 0, 0]);
+const RGB_WHITE = createMockColor('rgb', [1, 1, 1]);
+const RGB_GRAY = createMockColor('rgb', [0.5, 0.5, 0.5]);
+const RGB_RED = createMockColor('rgb', [1, 0, 0]);
+const RGB_BLUE = createMockColor('rgb', [0, 0, 1]);
 
 describe('checkContrastBulk()', () => {
   bench('contrast (bulk)', () => {

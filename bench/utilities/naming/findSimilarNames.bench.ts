@@ -1,14 +1,10 @@
-import type { Color } from '~/types';
 import { bench, describe } from 'vitest';
 import { findSimilarNames } from '~/utils/naming';
+import { createMockColor } from '../../factory';
 
-const RGB_RED = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>;
-const RGB_LAVENDER = {
-  space: 'rgb',
-  value: new Float32Array([0.5, 0.5, 0.8]),
-  alpha: 1,
-} as Color<'rgb'>;
-const RGB_GREEN = { space: 'rgb', value: new Float32Array([0, 1, 0]), alpha: 1 } as Color<'rgb'>;
+const RGB_RED = createMockColor('rgb', [1, 0, 0]);
+const RGB_LAVENDER = createMockColor('rgb', [0.5, 0.5, 0.8]);
+const RGB_GREEN = createMockColor('rgb', [0, 1, 0]);
 
 describe('findSimilarNames()', () => {
   bench('naming (similar-small-limit)', () => {

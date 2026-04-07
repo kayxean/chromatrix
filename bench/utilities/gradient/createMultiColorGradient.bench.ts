@@ -24,6 +24,14 @@ describe('createMultiColorGradient()', () => {
   });
 
   bench('gradient (multi-large-set)', () => {
-    createMultiColorGradient([RGB_RED, RGB_GREEN, RGB_BLUE, RGB_WHITE, RGB_RED, RGB_GREEN, RGB_BLUE]);
+    createMultiColorGradient([
+      RGB_RED,
+      RGB_GREEN,
+      RGB_BLUE,
+      RGB_WHITE,
+      RGB_RED,
+      RGB_GREEN,
+      RGB_BLUE,
+    ]);
   });
 });

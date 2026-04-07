@@ -1,19 +1,10 @@
-import type { Color } from '~/types';
 import { bench, describe } from 'vitest';
 import { dropColor } from '~/matrix';
 import { createShades } from '~/utils/palette';
+import { createMockColor } from '../../factory';
 
-const RGB_RED_OPAQUE = {
-  space: 'rgb',
-  value: new Float32Array([1, 0, 0]),
-  alpha: 1,
-} as Color<'rgb'>;
-
-const RGB_BLUE_ALPHA = {
-  space: 'rgb',
-  value: new Float32Array([0, 0, 1]),
-  alpha: 0,
-} as Color<'rgb'>;
+const RGB_RED_OPAQUE = createMockColor('rgb', [1, 0, 0], 1);
+const RGB_BLUE_ALPHA = createMockColor('rgb', [0, 0, 1], 0);
 
 describe('createShades()', () => {
   bench('palette (shades-5-steps)', () => {

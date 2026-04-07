@@ -1,11 +1,11 @@
-import type { ColorArray } from '~/types';
 import { bench, describe } from 'vitest';
 import { xyz50ToLab } from '~/adapters/d50';
+import { createMockArray, createMockOutput } from '../../factory';
 
-const INPUT = new Float32Array([0.96422, 1.0, 0.82521]) as ColorArray;
-const ZEROS = new Float32Array([0, 0, 0]) as ColorArray;
-const NEGATIVES = new Float32Array([-0.96422, -1.0, -0.82521]) as ColorArray;
-const OUTPUT = new Float32Array(3) as ColorArray;
+const INPUT = createMockArray([0.96422, 1.0, 0.82521]);
+const ZEROS = createMockArray([0, 0, 0]);
+const NEGATIVES = createMockArray([-0.96422, -1.0, -0.82521]);
+const OUTPUT = createMockOutput();
 
 describe('xyz50ToLab()', () => {
   bench('adapters (xyz50-to-lab)', () => {

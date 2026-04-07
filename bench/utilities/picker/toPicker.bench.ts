@@ -1,30 +1,11 @@
-import type { Color } from '~/types';
 import { bench, describe } from 'vitest';
 import { toPicker } from '~/utils/picker';
+import { createMockColor } from '../../factory';
 
-const RGB_RED = {
-  space: 'rgb',
-  value: new Float32Array([1, 0, 0]),
-  alpha: 1,
-} as Color<'rgb'>;
-
-const RGB_GREEN_ALPHA = {
-  space: 'rgb',
-  value: new Float32Array([0, 1, 0]),
-  alpha: 0.5,
-} as Color<'rgb'>;
-
-const OKLCH_BLACK = {
-  space: 'oklch',
-  value: new Float32Array([0, 0, 0]),
-  alpha: 1,
-} as Color<'oklch'>;
-
-const HSL_WHITE = {
-  space: 'hsl',
-  value: new Float32Array([0, 0, 100]),
-  alpha: 1,
-} as Color<'hsl'>;
+const RGB_RED = createMockColor('rgb', [1, 0, 0]);
+const RGB_GREEN_ALPHA = createMockColor('rgb', [0, 1, 0], 0.5);
+const OKLCH_BLACK = createMockColor('oklch', [0, 0, 0]);
+const HSL_WHITE = createMockColor('hsl', [0, 0, 100]);
 
 describe('toPicker()', () => {
   bench('picker (to-rgb)', () => {

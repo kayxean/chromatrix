@@ -1,13 +1,13 @@
-import type { ColorArray } from '~/types';
 import { bench, describe } from 'vitest';
 import { multiplyMatrixVector } from '~/adapters/cat';
+import { createMockArray, createMockOutput } from '../../factory';
 
-const MATRIX = new Float32Array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-const IDENTITY = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
-const INPUT_ONES = new Float32Array([1, 1, 1]) as ColorArray;
-const INPUT_ZEROS = new Float32Array([0, 0, 0]) as ColorArray;
-const INPUT_VALS = new Float32Array([1, 2, 3]) as ColorArray;
-const OUTPUT = new Float32Array(3) as ColorArray;
+const MATRIX = createMockArray([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+const IDENTITY = createMockArray([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+const INPUT_ONES = createMockArray([1, 1, 1]);
+const INPUT_ZEROS = createMockArray([0, 0, 0]);
+const INPUT_VALS = createMockArray([1, 2, 3]);
+const OUTPUT = createMockOutput();
 
 describe('multiplyMatrixVector()', () => {
   bench('adapters (matrix-multiply)', () => {

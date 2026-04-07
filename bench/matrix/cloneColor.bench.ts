@@ -1,14 +1,10 @@
-import type { Color } from '~/types';
 import { bench, describe } from 'vitest';
 import { cloneColor } from '~/matrix';
+import { createMockColor } from '../factory';
 
-const OKLAB_BLUE = {
-  space: 'oklab',
-  value: new Float32Array([0.5, 0.1, 0.1]),
-  alpha: 1,
-} as Color<'oklab'>;
-const RGB_RED_ALPHA = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 0.5 } as Color<'rgb'>;
-const RGB_RED_OPAQUE = { space: 'rgb', value: new Float32Array([1, 0, 0]), alpha: 1 } as Color<'rgb'>;
+const OKLAB_BLUE = createMockColor('oklab', [0.5, 0.1, 0.1]);
+const RGB_RED_ALPHA = createMockColor('rgb', [1, 0, 0], 0.5);
+const RGB_RED_OPAQUE = createMockColor('rgb', [1, 0, 0]);
 
 describe('cloneColor()', () => {
   bench('matrix (clone-color-oklab)', () => {
