@@ -71,7 +71,7 @@ export function matchContrast<S extends ColorSpace>(
   testMat[1] = chroma;
   testMat[2] = hue;
 
-  const testCol: Color<'oklch'> = { space: 'oklch', value: testMat };
+  const testCol: Color<'oklch'> = { space: 'oklch', value: testMat, alpha: color.alpha };
 
   for (let i = 0; i < 24; i++) {
     testMat[0] = (low + high) * 0.5;

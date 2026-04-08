@@ -7,27 +7,21 @@ function toPolar(input: ColorArray, output: ColorArray): void {
   const a = input[1];
   const b = input[2];
 
-  const chroma = Math.sqrt(a * a + b * b);
-  let hue = Math.atan2(b, a) * RAD_TO_DEG;
-
-  if (hue < 0) hue += 360;
+  const hueRaw = Math.atan2(b, a) * RAD_TO_DEG;
 
   output[0] = input[0];
-  output[1] = chroma;
-  output[2] = hue;
+  output[1] = Math.sqrt(a * a + b * b);
+  output[2] = hueRaw < 0 ? hueRaw + 360 : hueRaw;
 }
 
 function toCartesian(input: ColorArray, output: ColorArray): void {
-  const L = input[0];
-  const C = input[1];
-  let h = input[2];
-  if (h < 0) h += 360;
-  h = h % 360;
-  const hRad = h * DEG_TO_RAD;
+  const h = input[2];
+  const hRad = (h >= 0 && h < 360 ? h : ((h % 360) + 360) % 360) * DEG_TO_RAD;
 
-  output[0] = L;
-  output[1] = C * Math.cos(hRad);
-  output[2] = C * Math.sin(hRad);
+  const chroma = input[1];
+  output[0] = input[0];
+  output[1] = chroma * Math.cos(hRad);
+  output[2] = chroma * Math.sin(hRad);
 }
 
 export const labToLch = toPolar;

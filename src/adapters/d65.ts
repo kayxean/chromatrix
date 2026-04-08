@@ -1,20 +1,23 @@
 import type { ColorArray } from '../types';
-import { multiplyMatrixVector } from './cat';
-
-const M_SRGB = new Float32Array([
-  0.4124564, 0.3575761, 0.1804375, 0.2126729, 0.7151522, 0.072175, 0.0193339, 0.119192, 0.9503041,
-]);
-
-const M_SRGB_INV = new Float32Array([
-  3.2404542, -1.5371385, -0.4985314, -0.969266, 1.876, 0.041556, 0.0556434, -0.2040259, 1.0572252,
-]);
 
 export function xyz65ToLrgb(input: ColorArray, output: ColorArray): void {
-  multiplyMatrixVector(M_SRGB_INV, input, output);
+  const x = input[0];
+  const y = input[1];
+  const z = input[2];
+
+  output[0] = 3.2404542 * x - 1.5371385 * y - 0.4985314 * z;
+  output[1] = -0.969266 * x + 1.876 * y + 0.041556 * z;
+  output[2] = 0.0556434 * x - 0.2040259 * y + 1.0572252 * z;
 }
 
 export function lrgbToXyz65(input: ColorArray, output: ColorArray): void {
-  multiplyMatrixVector(M_SRGB, input, output);
+  const r = input[0];
+  const g = input[1];
+  const b = input[2];
+
+  output[0] = 0.4124564 * r + 0.3575761 * g + 0.1804375 * b;
+  output[1] = 0.2126729 * r + 0.7151522 * g + 0.072175 * b;
+  output[2] = 0.0193339 * r + 0.119192 * g + 0.9503041 * b;
 }
 
 export function xyz65ToOklab(input: ColorArray, output: ColorArray): void {
