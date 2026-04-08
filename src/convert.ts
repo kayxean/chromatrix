@@ -54,6 +54,7 @@ export const DIRECT_HUB: Partial<Record<ColorSpace, Partial<Record<ColorSpace, C
     hsl: {
       rgb: [hslToHsv, hsvToRgb],
       hsv: [hslToHsv],
+      hwb: [hslToHsv, hsvToHwb],
     },
     hsv: {
       rgb: [hsvToRgb],
@@ -63,6 +64,7 @@ export const DIRECT_HUB: Partial<Record<ColorSpace, Partial<Record<ColorSpace, C
     hwb: {
       rgb: [hwbToHsv, hsvToRgb],
       hsv: [hwbToHsv],
+      hsl: [hwbToHsv, hsvToHsl],
     },
     lab: { lch: [labToLch] },
     lch: { lab: [lchToLab] },
@@ -71,31 +73,6 @@ export const DIRECT_HUB: Partial<Record<ColorSpace, Partial<Record<ColorSpace, C
     oklch: { oklab: [oklchToOklab] },
   };
 
-export function applyAdapter(chain: ColorAdapter[], input: ColorArray, output: ColorArray): void {
-  const len = chain.length;
-  if (len === 0) {
-    if (input !== output) output.set(input);
-    return;
-  }
-
-  if (len === 1) {
-    chain[0](input, output);
-    return;
-  }
-
-  const scratch = createMatrix('rgb');
-
-  chain[0](input, scratch);
-
-  for (let i = 1; i < len - 1; i++) {
-    chain[i](scratch, scratch);
-  }
-
-  chain[len - 1](scratch, output);
-
-  dropMatrix(scratch);
-}
-
 export function convertColor<S extends ColorSpace, X extends ColorSpace>(
   input: ColorArray,
   output: ColorArray,
@@ -103,22 +80,48 @@ export function convertColor<S extends ColorSpace, X extends ColorSpace>(
   to: X,
 ): void {
   if (from === (to as string)) {
-    if (input !== output) output.set(input);
+    if (input !== output) {
+      output.set(input);
+    }
     return;
   }
 
   const directChain = DIRECT_HUB[from]?.[to as ColorSpace];
   if (directChain) {
-    applyAdapter(directChain, input, output);
+    const len = directChain.length;
+    if (len === 1) {
+      directChain[0](input, output);
+    } else {
+      const scratch = createMatrix('rgb');
+      directChain[0](input, scratch);
+      for (let i = 1; i < len - 1; i++) {
+        directChain[i](scratch, scratch);
+      }
+      directChain[len - 1](scratch, output);
+      dropMatrix(scratch);
+    }
     return;
   }
 
   const sourceHub = NATIVE_HUB[from] ?? (from as 'xyz50' | 'xyz65');
   const targetHub = NATIVE_HUB[to as ColorSpace] ?? (to as 'xyz50' | 'xyz65');
-
   const toHubChain = TO_HUB[from];
+  const fromHubChain = FROM_HUB[to as ColorSpace];
+
+  let scratch: ColorArray | null = null;
+
   if (toHubChain) {
-    applyAdapter(toHubChain, input, output);
+    const len = toHubChain.length;
+    if (len === 1) {
+      toHubChain[0](input, output);
+    } else {
+      scratch = createMatrix('rgb');
+      toHubChain[0](input, scratch);
+      for (let i = 1; i < len - 1; i++) {
+        toHubChain[i](scratch, scratch);
+      }
+      toHubChain[len - 1](scratch, output);
+    }
   } else if (input !== output) {
     output.set(input);
   }
@@ -131,9 +134,24 @@ export function convertColor<S extends ColorSpace, X extends ColorSpace>(
     }
   }
 
-  const fromHubChain = FROM_HUB[to as ColorSpace];
   if (fromHubChain) {
-    applyAdapter(fromHubChain, output, output);
+    const len = fromHubChain.length;
+    if (len === 1) {
+      fromHubChain[0](output, output);
+    } else {
+      if (!scratch) {
+        scratch = createMatrix('rgb');
+      }
+      fromHubChain[0](output, scratch);
+      for (let i = 1; i < len - 1; i++) {
+        fromHubChain[i](scratch, scratch);
+      }
+      fromHubChain[len - 1](scratch, output);
+    }
+  }
+
+  if (scratch) {
+    dropMatrix(scratch);
   }
 }
 
