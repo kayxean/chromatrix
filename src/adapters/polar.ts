@@ -1,27 +1,24 @@
 import type { ColorArray } from '../types';
 
-const RAD_TO_DEG = 180 / Math.PI;
-const DEG_TO_RAD = Math.PI / 180;
+const TO_DEG = 180 / Math.PI;
+const TO_RAD = Math.PI / 180;
 
 function toPolar(input: ColorArray, output: ColorArray): void {
   const a = input[1];
   const b = input[2];
-
-  const hueRaw = Math.atan2(b, a) * RAD_TO_DEG;
-
+  const h = Math.atan2(b, a) * TO_DEG;
   output[0] = input[0];
   output[1] = Math.sqrt(a * a + b * b);
-  output[2] = hueRaw < 0 ? hueRaw + 360 : hueRaw;
+  output[2] = h < 0 ? h + 360 : h;
 }
 
 function toCartesian(input: ColorArray, output: ColorArray): void {
   const h = input[2];
-  const hRad = (h >= 0 && h < 360 ? h : ((h % 360) + 360) % 360) * DEG_TO_RAD;
-
-  const chroma = input[1];
+  const r = (h >= 0 && h < 360 ? h : ((h % 360) + 360) % 360) * TO_RAD;
+  const c = input[1];
   output[0] = input[0];
-  output[1] = chroma * Math.cos(hRad);
-  output[2] = chroma * Math.sin(hRad);
+  output[1] = c * Math.cos(r);
+  output[2] = c * Math.sin(r);
 }
 
 export const labToLch = toPolar;

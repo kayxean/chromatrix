@@ -6,7 +6,7 @@ import { hslToHsv, hsvToHsl, hsvToRgb, rgbToHsv, hsvToHwb } from '../adapters/sr
 export const HSL: ColorHub<'hsl'> = {
   id: 'hsl',
   hub: 'xyz65',
-  polar: 'hsv',
+  polar: 'hsl',
   toHub: (input, output) => {
     hslToHsv(input, output);
     hsvToRgb(output, output);
