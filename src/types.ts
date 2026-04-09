@@ -33,5 +33,5 @@ export type ColorHub<S extends ColorSpace = ColorSpace> = {
   readonly polar: ColorSpace | undefined;
   readonly toHub: ColorAdapter;
   readonly fromHub: ColorAdapter;
-  readonly direct?: Partial<{ [K in ColorSpace]: ColorAdapter }>;
+  readonly direct?: Partial<{ [X in ColorSpace]: ColorAdapter }>;
 };

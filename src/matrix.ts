@@ -1,26 +1,26 @@
 import type { Color, ColorArray, ColorMatrix, ColorSpace } from './types';
 
-const POOL_SIZE = 2048;
-const SENTINEL = new Float32Array(3);
+const MAX_CELLS = 2048;
+const DEAD_CELL = new Float32Array(3);
 
-const pool: Float32Array[] = Array.from({ length: POOL_SIZE }, () => new Float32Array(3));
-let poolPtr: number = POOL_SIZE - 1;
+const CELL_CACHE: Float32Array[] = Array.from({ length: MAX_CELLS }, () => new Float32Array(3));
+let HEAD: number = MAX_CELLS - 1;
 
 export function createMatrix<S extends ColorSpace>(_space?: S): ColorMatrix<S> {
-  const ptr = poolPtr;
-  if (ptr < 0) return SENTINEL as ColorMatrix<S>;
+  const current = HEAD;
+  if (current < 0) return DEAD_CELL as ColorMatrix<S>;
 
-  const res = pool[ptr];
-  poolPtr = ptr - 1;
-  return res as ColorMatrix<S>;
+  const cell = CELL_CACHE[current];
+  HEAD = current - 1;
+  return cell as ColorMatrix<S>;
 }
 
 export function dropMatrix(arr: ColorArray): void {
-  const ptr = poolPtr;
-  if (ptr < 2047) {
-    const next = ptr + 1;
-    pool[next] = arr as Float32Array;
-    poolPtr = next;
+  const current = HEAD;
+  if (current < 2047) {
+    const next = current + 1;
+    CELL_CACHE[next] = arr as Float32Array;
+    HEAD = next;
   }
 }
 
@@ -29,64 +29,64 @@ export function createColor<S extends ColorSpace>(
   values: [number, number, number] | Float32Array | ColorArray,
   alpha = 1,
 ): Color<S> {
-  const ptr = poolPtr;
-  let value: Float32Array;
+  const current = HEAD;
+  let data: Float32Array;
 
-  if (ptr < 0) {
-    value = SENTINEL;
+  if (current < 0) {
+    data = DEAD_CELL;
   } else {
-    value = pool[ptr];
-    poolPtr = ptr - 1;
+    data = CELL_CACHE[current];
+    HEAD = current - 1;
   }
 
-  value[0] = values[0];
-  value[1] = values[1];
-  value[2] = values[2];
+  data[0] = values[0];
+  data[1] = values[1];
+  data[2] = values[2];
 
-  return { space, value: value as ColorMatrix<S>, alpha };
+  return { space, value: data as ColorMatrix<S>, alpha };
 }
 
 export function dropColor(color: Color): void {
-  const ptr = poolPtr;
-  if (ptr < 2047) {
-    const next = ptr + 1;
-    pool[next] = color.value as Float32Array;
-    poolPtr = next;
+  const current = HEAD;
+  if (current < 2047) {
+    const next = current + 1;
+    CELL_CACHE[next] = color.value as Float32Array;
+    HEAD = next;
   }
 }
 
 export function cloneColor<S extends ColorSpace>(color: Color<S>): Color<S> {
-  const ptr = poolPtr;
+  const current = HEAD;
   const src = color.value as Float32Array;
-  let res: Float32Array;
+  let dst: Float32Array;
 
-  if (ptr < 0) {
-    res = SENTINEL;
+  if (current < 0) {
+    dst = DEAD_CELL;
   } else {
-    res = pool[ptr];
-    poolPtr = ptr - 1;
+    dst = CELL_CACHE[current];
+    HEAD = current - 1;
   }
 
-  res[0] = src[0];
-  res[1] = src[1];
-  res[2] = src[2];
+  dst[0] = src[0];
+  dst[1] = src[1];
+  dst[2] = src[2];
 
   return {
     space: color.space,
-    value: res as ColorMatrix<S>,
+    value: dst as ColorMatrix<S>,
     alpha: color.alpha,
   };
 }
 
-export function preallocatePool(size: number): void {
-  const target = size > 2048 ? 2048 : size;
-  poolPtr = target - 1;
+export function mountMatrix(size: number): void {
+  const capped = size > 2048 ? 2048 : size;
+  HEAD = capped - 1;
 }
 
-export function clearPool(): void {
-  poolPtr = -1;
+export function clearMatrix(): void {
+  HEAD = -1;
 }
 
-export function poolSize(): number {
-  return poolPtr + 1;
+export function countMatrix(): number {
+  return HEAD + 1;
 }

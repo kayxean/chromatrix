@@ -25,13 +25,13 @@ export function xyz65ToOklab(input: ColorArray, output: ColorArray): void {
   const y = input[1];
   const z = input[2];
 
-  const l_pre = 0.8189330101 * x + 0.3618667424 * y - 0.1288597137 * z;
-  const m_pre = 0.0329845436 * x + 0.9293118715 * y + 0.0361456387 * z;
-  const s_pre = 0.0482003018 * x + 0.2643662691 * y + 0.633851707 * z;
+  const l_ = 0.8189330101 * x + 0.3618667424 * y - 0.1288597137 * z;
+  const m_ = 0.0329845436 * x + 0.9293118715 * y + 0.0361456387 * z;
+  const s_ = 0.0482003018 * x + 0.2643662691 * y + 0.633851707 * z;
 
-  const l = Math.cbrt(l_pre);
-  const m = Math.cbrt(m_pre);
-  const s = Math.cbrt(s_pre);
+  const l = Math.cbrt(l_);
+  const m = Math.cbrt(m_);
+  const s = Math.cbrt(s_);
 
   output[0] = 0.2104542553 * l + 0.7936177046 * m - 0.0040704681 * s;
   output[1] = 1.9779984951 * l - 2.4285921822 * m + 0.4505936871 * s;
@@ -47,11 +47,11 @@ export function oklabToXyz65(input: ColorArray, output: ColorArray): void {
   const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
   const s_ = L - 0.0894841775 * a - 1.291485548 * b;
 
-  const l3 = l_ * l_ * l_;
-  const m3 = m_ * m_ * m_;
-  const s3 = s_ * s_ * s_;
+  const l = l_ * l_ * l_;
+  const m = m_ * m_ * m_;
+  const s = s_ * s_ * s_;
 
-  output[0] = 1.2270138511 * l3 - 0.5577999807 * m3 + 0.281256149 * s3;
-  output[1] = -0.0405801784 * l3 + 1.1122568696 * m3 - 0.0716766787 * s3;
-  output[2] = -0.0763812845 * l3 - 0.4214819784 * m3 + 1.5861632204 * s3;
+  output[0] = 1.2270138511 * l - 0.5577999807 * m + 0.281256149 * s;
+  output[1] = -0.0405801784 * l + 1.1122568696 * m - 0.0716766787 * s;
+  output[2] = -0.0763812845 * l - 0.4214819784 * m + 1.5861632204 * s;
 }

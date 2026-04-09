@@ -1,19 +1,17 @@
 import type { ColorArray } from '../types';
 
-const INV_12_92 = 1 / 12.92;
-const INV_1_055 = 1 / 1.055;
-const GAMMA_EXP = 2.4;
-const GAMMA_COMP = 1 / 2.4;
+const INV_12 = 1 / 12.92;
+const INV_055 = 1 / 1.055;
+const EXP = 2.4;
+const INV_EXP = 1 / 2.4;
 
-const RGB_TO_LINEAR_LUT = new Float32Array(1024);
-const LINEAR_TO_RGB_LUT = new Float32Array(1024);
+const TO_LIN = new Float32Array(1024);
+const TO_RGB = new Float32Array(1024);
 
 for (let i = 0; i < 1024; i++) {
-  const c = i / 1023;
-  RGB_TO_LINEAR_LUT[i] =
-    c <= 0.04045 ? c * INV_12_92 : Math.pow((c + 0.055) * INV_1_055, GAMMA_EXP);
-
-  LINEAR_TO_RGB_LUT[i] = c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, GAMMA_COMP) - 0.055;
+  const n = i / 1023;
+  TO_LIN[i] = n <= 0.04045 ? n * INV_12 : Math.pow((n + 0.055) * INV_055, EXP);
+  TO_RGB[i] = n <= 0.0031308 ? n * 12.92 : 1.055 * Math.pow(n, INV_EXP) - 0.055;
 }
 
 export function rgbToLrgb(input: ColorArray, output: ColorArray): void {
@@ -23,49 +21,49 @@ export function rgbToLrgb(input: ColorArray, output: ColorArray): void {
 
   output[0] =
     r >= 0 && r <= 1
-      ? RGB_TO_LINEAR_LUT[(r * 1023 + 0.5) | 0]
+      ? TO_LIN[(r * 1023 + 0.5) | 0]
       : r > 0.04045
-        ? Math.pow((r + 0.055) * INV_1_055, GAMMA_EXP)
-        : r * INV_12_92;
+        ? Math.pow((r + 0.055) * INV_055, EXP)
+        : r * INV_12;
 
   output[1] =
     g >= 0 && g <= 1
-      ? RGB_TO_LINEAR_LUT[(g * 1023 + 0.5) | 0]
+      ? TO_LIN[(g * 1023 + 0.5) | 0]
       : g > 0.04045
-        ? Math.pow((g + 0.055) * INV_1_055, GAMMA_EXP)
-        : g * INV_12_92;
+        ? Math.pow((g + 0.055) * INV_055, EXP)
+        : g * INV_12;
 
   output[2] =
     b >= 0 && b <= 1
-      ? RGB_TO_LINEAR_LUT[(b * 1023 + 0.5) | 0]
+      ? TO_LIN[(b * 1023 + 0.5) | 0]
       : b > 0.04045
-        ? Math.pow((b + 0.055) * INV_1_055, GAMMA_EXP)
-        : b * INV_12_92;
+        ? Math.pow((b + 0.055) * INV_055, EXP)
+        : b * INV_12;
 }
 
 export function lrgbToRgb(input: ColorArray, output: ColorArray): void {
-  const lr = input[0];
-  const lg = input[1];
-  const lb = input[2];
+  const r = input[0];
+  const g = input[1];
+  const b = input[2];
 
   output[0] =
-    lr >= 0 && lr <= 1
-      ? LINEAR_TO_RGB_LUT[(lr * 1023 + 0.5) | 0]
-      : lr > 0.0031308
-        ? 1.055 * Math.pow(Math.abs(lr), GAMMA_COMP) - 0.055
-        : lr * 12.92;
+    r >= 0 && r <= 1
+      ? TO_RGB[(r * 1023 + 0.5) | 0]
+      : r > 0.0031308
+        ? 1.055 * Math.pow(Math.abs(r), INV_EXP) - 0.055
+        : r * 12.92;
 
   output[1] =
-    lg >= 0 && lg <= 1
-      ? LINEAR_TO_RGB_LUT[(lg * 1023 + 0.5) | 0]
-      : lg > 0.0031308
-        ? 1.055 * Math.pow(Math.abs(lg), GAMMA_COMP) - 0.055
-        : lg * 12.92;
+    g >= 0 && g <= 1
+      ? TO_RGB[(g * 1023 + 0.5) | 0]
+      : g > 0.0031308
+        ? 1.055 * Math.pow(Math.abs(g), INV_EXP) - 0.055
+        : g * 12.92;
 
   output[2] =
-    lb >= 0 && lb <= 1
-      ? LINEAR_TO_RGB_LUT[(lb * 1023 + 0.5) | 0]
-      : lb > 0.0031308
-        ? 1.055 * Math.pow(Math.abs(lb), GAMMA_COMP) - 0.055
-        : lb * 12.92;
+    b >= 0 && b <= 1
+      ? TO_RGB[(b * 1023 + 0.5) | 0]
+      : b > 0.0031308
+        ? 1.055 * Math.pow(Math.abs(b), INV_EXP) - 0.055
+        : b * 12.92;
 }

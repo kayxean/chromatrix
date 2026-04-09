@@ -6,25 +6,18 @@ export function rgbToHsv(input: ColorArray, output: ColorArray): void {
   const b = input[2];
 
   const v = r > g ? (r > b ? r : b) : g > b ? g : b;
-  const min = r < g ? (r < b ? r : b) : g < b ? g : b;
-  const c = v - min;
+  const m = r < g ? (r < b ? r : b) : g < b ? g : b;
+  const c = v - m;
 
   let h = 0;
   let s = 0;
-
-  if (v !== 0) {
-    s = c / v;
-  }
+  if (v !== 0) s = c / v;
 
   if (c !== 0) {
-    const invC = 1 / c;
-    if (v === r) {
-      h = (g - b) * invC;
-    } else if (v === g) {
-      h = (b - r) * invC + 2;
-    } else {
-      h = (r - g) * invC + 4;
-    }
+    const ic = 1 / c;
+    if (v === r) h = (g - b) * ic;
+    else if (v === g) h = (b - r) * ic + 2;
+    else h = (r - g) * ic + 4;
 
     h *= 60;
     if (h < 0) h += 360;
