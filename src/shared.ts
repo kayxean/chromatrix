@@ -1,22 +1,21 @@
-import type { Color, ColorSpace } from './types';
+import type { Color, Space } from './types';
 import { convertColor } from './convert';
-import { createMatrix, cloneColor } from './matrix';
+import { cloneColor, createMatrix } from './matrix';
 
-export function mutateColor<S extends ColorSpace>(color: Color, to: S): void {
+export function mutateColor<S extends Space>(color: Color<S>, to: S): void {
   const from = color.space;
-  if (from === (to as ColorSpace)) return;
+  if (from === to) return;
 
   convertColor(color.value, color.value, from, to);
-
-  (color as { space: ColorSpace }).space = to;
+  color.space = to;
 }
 
-export function deriveColor<S extends ColorSpace>(color: Color, to: S): Color<S> {
-  if (color.space === (to as ColorSpace)) {
-    return cloneColor(color as Color<S>);
+export function deriveColor<S extends Space>(color: Color<S>, to: S): Color<S> {
+  if (color.space === to) {
+    return cloneColor(color);
   }
 
-  const newValue = createMatrix(to);
+  const newValue = createMatrix();
   convertColor(color.value, newValue, color.space, to);
 
   return {

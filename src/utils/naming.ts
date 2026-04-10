@@ -1,4 +1,4 @@
-import type { Color, ColorArray } from '../types';
+import type { Color } from '../types';
 import { createColor } from '../matrix';
 import { getDistance } from './compare';
 
@@ -159,7 +159,7 @@ const NAMED_COLORS_CACHE = CSS_COLOR_DATA.map(([name, rgb]) => ({
   name,
   color: {
     space: 'rgb',
-    value: new Float32Array(rgb) as ColorArray,
+    value: new Float32Array(rgb),
     alpha: 1,
   } as Color<'rgb'>,
 }));
@@ -195,7 +195,7 @@ export function findSimilarNames(
     name: entry.name,
     distance: getDistance(color, entry.color),
   }))
-    .sort((a, b) => a.distance - b.distance)
+    .toSorted((a, b) => a.distance - b.distance)
     .slice(0, limit);
 }
 

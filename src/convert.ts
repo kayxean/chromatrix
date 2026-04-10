@@ -1,4 +1,4 @@
-import type { ColorArray, ColorSpace, ColorHub } from './types';
+import type { Matrix, Space } from './types';
 import { xyz50ToXyz65, xyz65ToXyz50 } from './adapters/cat';
 import { createMatrix, dropMatrix } from './matrix';
 import { HSL } from './spaces/hsl';
@@ -13,7 +13,7 @@ import { RGB } from './spaces/rgb';
 import { XYZ50 } from './spaces/xyz50';
 import { XYZ65 } from './spaces/xyz65';
 
-export const SPACE_MAP: { [S in ColorSpace]: ColorHub<S> } = {
+export const SPACE_MAP: { [S in Space]: Matrix<S> } = {
   rgb: RGB,
   lrgb: LRGB,
   hsl: HSL,
@@ -27,9 +27,9 @@ export const SPACE_MAP: { [S in ColorSpace]: ColorHub<S> } = {
   xyz65: XYZ65,
 };
 
-export function convertColor<S extends ColorSpace, X extends ColorSpace>(
-  input: ColorArray,
-  output: ColorArray,
+export function convertColor<S extends Space, X extends Space>(
+  input: Float32Array,
+  output: Float32Array,
   from: S,
   to: X,
 ): void {
@@ -40,7 +40,7 @@ export function convertColor<S extends ColorSpace, X extends ColorSpace>(
 
   const source = SPACE_MAP[from];
 
-  const direct = source.direct;
+  const { direct } = source;
   if (direct !== undefined) {
     const fn = direct[to];
     if (fn !== undefined) {
@@ -55,7 +55,7 @@ export function convertColor<S extends ColorSpace, X extends ColorSpace>(
   }
 
   const target = SPACE_MAP[to];
-  const scratch = createMatrix(from);
+  const scratch = createMatrix();
 
   source.toHub(input, scratch);
 
@@ -74,9 +74,9 @@ export function convertColor<S extends ColorSpace, X extends ColorSpace>(
   dropMatrix(scratch);
 }
 
-export function convertHue<S extends ColorSpace>(
-  input: ColorArray,
-  output: ColorArray,
+export function convertHue<S extends Space>(
+  input: Float32Array,
+  output: Float32Array,
   mode: S,
 ): void {
   const source = SPACE_MAP[mode];

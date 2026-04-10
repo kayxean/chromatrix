@@ -1,7 +1,7 @@
-import type { Color, ColorSpace } from '../types';
+import type { Color, Space } from '../types';
 import { createMatrix } from '../matrix';
 
-const CLAMP_BOUNDS: Partial<Record<ColorSpace, number[]>> = {
+const CLAMP_BOUNDS: Partial<Record<Space, number[]>> = {
   rgb: [0, 1, 0, 1, 0, 1],
   lrgb: [0, 1, 0, 1, 0, 1],
   hsl: [0, 360, 0, 1, 0, 1],
@@ -14,18 +14,18 @@ const CLAMP_BOUNDS: Partial<Record<ColorSpace, number[]>> = {
   xyz65: [0, 1, 0, 1, 0, 1],
 };
 
-export function clampColor<S extends ColorSpace>(color: Color<S>, mutate = true): Color<S> {
+export function clampColor<S extends Space>(color: Color<S>, mutate = true): Color<S> {
   const { value, space, alpha = 1 } = color;
   const bounds = CLAMP_BOUNDS[space];
 
   if (!bounds) {
     if (mutate) return color;
-    const resValue = createMatrix(space);
+    const resValue = createMatrix();
     resValue.set(value);
     return { space, value: resValue, alpha };
   }
 
-  const resValue = mutate ? value : createMatrix(space);
+  const resValue = mutate ? value : createMatrix();
 
   for (let i = 0; i < 3; i++) {
     const min = bounds[i * 2];
@@ -36,9 +36,9 @@ export function clampColor<S extends ColorSpace>(color: Color<S>, mutate = true)
       val = val % 360;
       if (val < 0) val += 360;
     } else {
-      if (val < min) val = min;
-      else if (val > max) val = max;
+      val = Math.max(min, Math.min(max, val));
     }
+
     resValue[i] = val;
   }
 

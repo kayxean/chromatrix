@@ -1,14 +1,14 @@
-import type { Color, ColorSpace } from '../types';
+import type { Color, Space } from '../types';
 import { convertColor } from '../convert';
 import { createMatrix, dropMatrix } from '../matrix';
 import { createScales } from './palette';
 
 const APCA_SCALE = 1.14;
 const DARK_THRESH = 0.022;
-const DARK_CLAMP = 1.414;
+const DARK_CLAMP = Math.sqrt(DARK_THRESH);
 
 export function getLuminanceD65(color: Color): number {
-  const xyz = createMatrix('xyz65');
+  const xyz = createMatrix();
   convertColor(color.value, xyz, color.space, 'xyz65');
   const y = xyz[1];
   dropMatrix(xyz);
@@ -48,7 +48,7 @@ export function getContrastRating(contrast: number): string {
   return 'fail';
 }
 
-export function matchContrast<S extends ColorSpace>(
+export function matchContrast<S extends Space>(
   color: Color<S>,
   background: Color,
   targetContrast: number,
@@ -57,7 +57,7 @@ export function matchContrast<S extends ColorSpace>(
   const vb = getSapcV(yb);
   const isDarkBg = yb < 0.5;
 
-  const oklchMat = createMatrix('oklch');
+  const oklchMat = createMatrix();
   convertColor(color.value, oklchMat, color.space, 'oklch');
 
   const chroma = oklchMat[1];
@@ -67,7 +67,7 @@ export function matchContrast<S extends ColorSpace>(
   let high = isDarkBg ? 1 : oklchMat[0];
   let bestL = oklchMat[0];
 
-  const testMat = createMatrix('oklch');
+  const testMat = createMatrix();
   testMat[1] = chroma;
   testMat[2] = hue;
 
@@ -88,7 +88,7 @@ export function matchContrast<S extends ColorSpace>(
     }
   }
 
-  const resValue = createMatrix(color.space);
+  const resValue = createMatrix();
   testMat[0] = bestL;
   convertColor(testMat, resValue, 'oklch', color.space);
 
@@ -118,7 +118,7 @@ export function checkContrastBulk(
   });
 }
 
-export function matchScales<S extends ColorSpace>(
+export function matchScales<S extends Space>(
   stops: Color<S>[],
   background: Color,
   targetContrast: number,

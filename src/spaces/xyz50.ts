@@ -1,6 +1,6 @@
-import type { ColorHub } from '../types';
+import type { Matrix } from '../types';
 
-export const XYZ50: ColorHub<'xyz50'> = {
+export const XYZ50: Matrix<'xyz50'> = {
   id: 'xyz50',
   hub: 'xyz50',
   polar: undefined,

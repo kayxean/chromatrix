@@ -1,8 +1,8 @@
-import type { ColorHub } from '../types';
+import type { Matrix } from '../types';
 import { lrgbToXyz65, xyz65ToLrgb } from '../adapters/d65';
 import { lrgbToRgb } from '../adapters/gamma';
 
-export const LRGB: ColorHub<'lrgb'> = {
+export const LRGB: Matrix<'lrgb'> = {
   id: 'lrgb',
   hub: 'xyz65',
   polar: undefined,

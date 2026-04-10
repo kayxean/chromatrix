@@ -1,9 +1,7 @@
-import type { ColorArray } from '../types';
-
 const TO_DEG = 180 / Math.PI;
 const TO_RAD = Math.PI / 180;
 
-function toPolar(input: ColorArray, output: ColorArray): void {
+function toPolar(input: Float32Array, output: Float32Array): void {
   const a = input[1];
   const b = input[2];
   const h = Math.atan2(b, a) * TO_DEG;
@@ -12,7 +10,7 @@ function toPolar(input: ColorArray, output: ColorArray): void {
   output[2] = h < 0 ? h + 360 : h;
 }
 
-function toCartesian(input: ColorArray, output: ColorArray): void {
+function toCartesian(input: Float32Array, output: Float32Array): void {
   const h = input[2];
   const r = (h >= 0 && h < 360 ? h : ((h % 360) + 360) % 360) * TO_RAD;
   const c = input[1];
