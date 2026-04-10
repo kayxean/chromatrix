@@ -1,6 +1,4 @@
-import type { ColorArray } from '../types';
-
-export function xyz65ToXyz50(input: ColorArray, output: ColorArray): void {
+export function xyz65ToXyz50(input: Float32Array, output: Float32Array): void {
   const x = input[0];
   const y = input[1];
   const z = input[2];
@@ -10,7 +8,7 @@ export function xyz65ToXyz50(input: ColorArray, output: ColorArray): void {
   output[2] = -0.0092345 * x + 0.0150436 * y + 0.7521316 * z;
 }
 
-export function xyz50ToXyz65(input: ColorArray, output: ColorArray): void {
+export function xyz50ToXyz65(input: Float32Array, output: Float32Array): void {
   const x = input[0];
   const y = input[1];
   const z = input[2];

@@ -1,6 +1,4 @@
-import type { ColorArray } from '../types';
-
-export function xyz65ToLrgb(input: ColorArray, output: ColorArray): void {
+export function xyz65ToLrgb(input: Float32Array, output: Float32Array): void {
   const x = input[0];
   const y = input[1];
   const z = input[2];
@@ -10,7 +8,7 @@ export function xyz65ToLrgb(input: ColorArray, output: ColorArray): void {
   output[2] = 0.0556434 * x - 0.2040259 * y + 1.0572252 * z;
 }
 
-export function lrgbToXyz65(input: ColorArray, output: ColorArray): void {
+export function lrgbToXyz65(input: Float32Array, output: Float32Array): void {
   const r = input[0];
   const g = input[1];
   const b = input[2];
@@ -20,7 +18,7 @@ export function lrgbToXyz65(input: ColorArray, output: ColorArray): void {
   output[2] = 0.0193339 * r + 0.119192 * g + 0.9503041 * b;
 }
 
-export function xyz65ToOklab(input: ColorArray, output: ColorArray): void {
+export function xyz65ToOklab(input: Float32Array, output: Float32Array): void {
   const x = input[0];
   const y = input[1];
   const z = input[2];
@@ -38,7 +36,7 @@ export function xyz65ToOklab(input: ColorArray, output: ColorArray): void {
   output[2] = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
 }
 
-export function oklabToXyz65(input: ColorArray, output: ColorArray): void {
+export function oklabToXyz65(input: Float32Array, output: Float32Array): void {
   const L = input[0];
   const a = input[1];
   const b = input[2];

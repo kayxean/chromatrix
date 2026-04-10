@@ -1,6 +1,4 @@
-import type { ColorArray } from '../types';
-
-export function rgbToHsv(input: ColorArray, output: ColorArray): void {
+export function rgbToHsv(input: Float32Array, output: Float32Array): void {
   const r = input[0];
   const g = input[1];
   const b = input[2];
@@ -28,7 +26,7 @@ export function rgbToHsv(input: ColorArray, output: ColorArray): void {
   output[2] = v;
 }
 
-export function hsvToRgb(input: ColorArray, output: ColorArray): void {
+export function hsvToRgb(input: Float32Array, output: Float32Array): void {
   const h = input[0];
   const s = input[1];
   const v = input[2];
@@ -44,11 +42,11 @@ export function hsvToRgb(input: ColorArray, output: ColorArray): void {
   const c = v * s;
   const m = v - c;
   const x = c * (1 - Math.abs((h60 % 2) - 1));
-  const f = (((h60 | 0) % 6) + 6) % 6;
+  const f = ((Math.trunc(h60) % 6) + 6) % 6;
 
-  let r = 0,
+  let b = 0,
     g = 0,
-    b = 0;
+    r = 0;
 
   if (f === 0) {
     r = c;
@@ -75,7 +73,7 @@ export function hsvToRgb(input: ColorArray, output: ColorArray): void {
   output[2] = b + m;
 }
 
-export function hsvToHsl(input: ColorArray, output: ColorArray): void {
+export function hsvToHsl(input: Float32Array, output: Float32Array): void {
   const h = input[0];
   const s = input[1];
   const v = input[2];
@@ -88,7 +86,7 @@ export function hsvToHsl(input: ColorArray, output: ColorArray): void {
   output[2] = l;
 }
 
-export function hslToHsv(input: ColorArray, output: ColorArray): void {
+export function hslToHsv(input: Float32Array, output: Float32Array): void {
   const h = input[0];
   const s = input[1];
   const l = input[2];
@@ -101,17 +99,17 @@ export function hslToHsv(input: ColorArray, output: ColorArray): void {
   output[2] = v;
 }
 
-export function hsvToHwb(input: ColorArray, output: ColorArray): void {
+export function hsvToHwb(input: Float32Array, output: Float32Array): void {
   const v = input[2];
   output[0] = input[0];
   output[1] = v * (1 - input[1]);
   output[2] = 1 - v;
 }
 
-export function hwbToHsv(input: ColorArray, output: ColorArray): void {
+export function hwbToHsv(input: Float32Array, output: Float32Array): void {
   const v = 1 - input[2];
   const s = v <= 0 ? 0 : (v - input[1]) / v;
   output[0] = input[0];
-  output[1] = s < 0 ? 0 : s;
+  output[1] = Math.min(1, Math.max(0, s));
   output[2] = v;
 }

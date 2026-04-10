@@ -1,9 +1,9 @@
-import type { ColorHub } from '../types';
+import type { Matrix } from '../types';
 import { lrgbToXyz65, xyz65ToLrgb } from '../adapters/d65';
-import { rgbToLrgb, lrgbToRgb } from '../adapters/gamma';
-import { hslToHsv, hsvToHsl, hsvToRgb, rgbToHsv, hsvToHwb } from '../adapters/srgb';
+import { lrgbToRgb, rgbToLrgb } from '../adapters/gamma';
+import { hslToHsv, hsvToHsl, hsvToHwb, hsvToRgb, rgbToHsv } from '../adapters/srgb';
 
-export const HSL: ColorHub<'hsl'> = {
+export const HSL: Matrix<'hsl'> = {
   id: 'hsl',
   hub: 'xyz65',
   polar: 'hsl',

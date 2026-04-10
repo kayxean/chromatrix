@@ -1,8 +1,8 @@
-import type { ColorHub } from '../types';
+import type { Matrix } from '../types';
 import { labToXyz50, xyz50ToLab } from '../adapters/d50';
-import { lchToLab, labToLch } from '../adapters/polar';
+import { labToLch, lchToLab } from '../adapters/polar';
 
-export const LCH: ColorHub<'lch'> = {
+export const LCH: Matrix<'lch'> = {
   id: 'lch',
   hub: 'xyz50',
   polar: 'lch',

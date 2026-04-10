@@ -1,31 +1,28 @@
-import type { Color, ColorSpace } from '../types';
+import type { Color, Space } from '../types';
 import { convertColor } from '../convert';
 import { createMatrix, dropMatrix } from '../matrix';
 
 export type DeficiencyType = 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia';
 
-export function simulateDeficiency<S extends ColorSpace>(
+export function simulateDeficiency<S extends Space>(
   color: Color<S>,
   type: DeficiencyType | 'none',
 ): Color<S> {
   const { space, alpha = 1 } = color;
-
   if (!type || type === 'none') {
-    const copy = createMatrix(space);
+    const copy = createMatrix();
     copy.set(color.value);
     return { space, value: copy, alpha };
   }
 
-  const lrgbMat = createMatrix('lrgb');
-  const resValue = createMatrix(space);
+  const lrgbMat = createMatrix();
+  const resValue = createMatrix();
 
   try {
     convertColor(color.value, lrgbMat, space, 'lrgb');
-
     const r = lrgbMat[0];
     const g = lrgbMat[1];
     const b = lrgbMat[2];
-
     switch (type) {
       case 'protanopia':
         lrgbMat[0] = 0.56667 * r + 0.43333 * g;
@@ -50,26 +47,24 @@ export function simulateDeficiency<S extends ColorSpace>(
         break;
       }
     }
-
     convertColor(lrgbMat, resValue, 'lrgb', space);
   } finally {
     dropMatrix(lrgbMat);
   }
-
   return { space, value: resValue, alpha };
 }
 
-export function simulateAnomaly<S extends ColorSpace>(
+export function simulateAnomaly<S extends Space>(
   color: Color<S>,
   type: Exclude<DeficiencyType, 'achromatopsia'>,
   severity: number = 0.5,
 ): Color<S> {
   const { space, alpha = 1 } = color;
-  const original = createMatrix(space);
+  const original = createMatrix();
   original.set(color.value);
 
   const deficiency = simulateDeficiency(color, type);
-  const resValue = createMatrix(space);
+  const resValue = createMatrix();
 
   try {
     for (let i = 0; i < 3; i++) {
@@ -83,13 +78,13 @@ export function simulateAnomaly<S extends ColorSpace>(
   return { space, value: resValue, alpha };
 }
 
-export function simulateAmbient<S extends ColorSpace>(
+export function simulateAmbient<S extends Space>(
   color: Color<S>,
   glareIntensity: number = 0.4,
 ): Color<S> {
   const { space, alpha = 1 } = color;
-  const lrgbMat = createMatrix('lrgb');
-  const resValue = createMatrix(space);
+  const lrgbMat = createMatrix();
+  const resValue = createMatrix();
 
   try {
     convertColor(color.value, lrgbMat, space, 'lrgb');

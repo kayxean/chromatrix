@@ -1,8 +1,8 @@
-import type { ColorHub } from '../types';
+import type { Matrix } from '../types';
 import { oklabToXyz65, xyz65ToOklab } from '../adapters/d65';
 import { oklabToOklch } from '../adapters/polar';
 
-export const OKLAB: ColorHub<'oklab'> = {
+export const OKLAB: Matrix<'oklab'> = {
   id: 'oklab',
   hub: 'xyz65',
   polar: 'oklch',

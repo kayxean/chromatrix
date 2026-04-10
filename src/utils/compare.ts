@@ -1,4 +1,4 @@
-import type { Color, ColorArray } from '../types';
+import type { Color } from '../types';
 import { convertColor } from '../convert';
 import { createMatrix, dropMatrix } from '../matrix';
 
@@ -22,7 +22,7 @@ export function isEqual(a: Color, b: Color, tolerance = 0.0001): boolean {
     );
   }
 
-  const tempMatrix = createMatrix(spaceA);
+  const tempMatrix = createMatrix();
   convertColor(b.value, tempMatrix, spaceB, spaceA);
 
   const match =
@@ -38,11 +38,11 @@ export function getDistance(a: Color, b: Color): number {
   const spaceA = a.space;
   const spaceB = b.space;
 
-  let matrixA: ColorArray = a.value;
-  let matrixB: ColorArray = b.value;
+  let matrixA = a.value;
+  let matrixB = b.value;
 
-  const tempA = spaceA !== 'oklab' ? createMatrix('oklab') : null;
-  const tempB = spaceB !== 'oklab' ? createMatrix('oklab') : null;
+  const tempA = spaceA === 'oklab' ? createMatrix() : null;
+  const tempB = spaceB === 'oklab' ? createMatrix() : null;
 
   if (tempA) {
     convertColor(a.value, tempA, spaceA, 'oklab');

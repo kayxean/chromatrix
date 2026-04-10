@@ -37,11 +37,13 @@ function buildStops(stops: GradientStop[]): string {
     const colorStr = formatCss(color);
 
     result +=
-      position !== undefined
-        ? `${colorStr} ${Number.isInteger(position) ? position : position.toFixed(2)}%`
-        : colorStr;
+      position === undefined
+        ? colorStr
+        : `${colorStr} ${Number.isInteger(position) ? position : position.toFixed(2)}%`;
 
-    if (i < len - 1) result += ', ';
+    if (i < len - 1) {
+      result += ', ';
+    }
   }
   return result;
 }

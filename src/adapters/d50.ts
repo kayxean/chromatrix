@@ -1,5 +1,3 @@
-import type { ColorArray } from '../types';
-
 const E = 216 / 24389;
 const K = 24389 / 27;
 
@@ -14,7 +12,7 @@ const INV_116 = 1 / 116;
 const K_116 = K / 116;
 const O_116 = 16 / 116;
 
-export function xyz50ToLab(input: ColorArray, output: ColorArray): void {
+export function xyz50ToLab(input: Float32Array, output: Float32Array): void {
   const x = input[0] * INV_X50;
   const y = input[1];
   const z = input[2] * INV_Z50;
@@ -28,7 +26,7 @@ export function xyz50ToLab(input: ColorArray, output: ColorArray): void {
   output[2] = 200 * (fy - fz);
 }
 
-export function labToXyz50(input: ColorArray, output: ColorArray): void {
+export function labToXyz50(input: Float32Array, output: Float32Array): void {
   const l = input[0];
   const a = input[1];
   const b = input[2];
