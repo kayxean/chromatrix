@@ -1,0 +1,222 @@
+{
+  "adapters": {
+    "xyz65ToXyz50": {
+      "input": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
+      "output": { "min": [0, 0, 0], "max": [0.96422, 1, 0.82521] },
+      "filePath": "src/adapters/cat.ts"
+    },
+    "xyz50ToXyz65": {
+      "input": { "min": [0, 0, 0], "max": [0.96422, 1, 0.82521] },
+      "output": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
+      "filePath": "src/adapters/cat.ts"
+    },
+    "xyz50ToLab": {
+      "input": { "min": [0, 0, 0], "max": [0.96422, 1, 0.82521] },
+      "output": { "min": [0, -128, -128], "max": [100, 128, 128] },
+      "filePath": "src/adapters/d50.ts"
+    },
+    "labToXyz50": {
+      "input": { "min": [0, -128, -128], "max": [100, 128, 128] },
+      "output": { "min": [0, 0, 0], "max": [0.96422, 1, 0.82521] },
+      "filePath": "src/adapters/d50.ts"
+    },
+    "xyz65ToLrgb": {
+      "input": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
+      "output": { "min": [0, 0, 0], "max": [1, 1, 1] },
+      "filePath": "src/adapters/d65.ts"
+    },
+    "lrgbToXyz65": {
+      "input": { "min": [0, 0, 0], "max": [1, 1, 1] },
+      "output": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
+      "filePath": "src/adapters/d65.ts"
+    },
+    "xyz65ToOklab": {
+      "input": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
+      "output": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0.4] },
+      "filePath": "src/adapters/d65.ts"
+    },
+    "oklabToXyz65": {
+      "input": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0.4] },
+      "output": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
+      "filePath": "src/adapters/d65.ts"
+    },
+    "rgbToLrgb": {
+      "input": { "min": [0, 0, 0], "max": [1, 1, 1] },
+      "output": { "min": [0, 0, 0], "max": [1, 1, 1] },
+      "filePath": "src/adapters/gamma.ts"
+    },
+    "lrgbToRgb": {
+      "input": { "min": [0, 0, 0], "max": [1, 1, 1] },
+      "output": { "min": [0, 0, 0], "max": [1, 1, 1] },
+      "filePath": "src/adapters/gamma.ts"
+    },
+    "labToLch": {
+      "input": { "min": [0, -128, -128], "max": [100, 128, 128] },
+      "output": { "min": [0, 0, 0], "max": [100, 181.019, 360] },
+      "filePath": "src/adapters/polar.ts"
+    },
+    "lchToLab": {
+      "input": { "min": [0, 0, 0], "max": [100, 181.019, 360] },
+      "output": { "min": [0, -128, -128], "max": [100, 128, 128] },
+      "filePath": "src/adapters/polar.ts"
+    },
+    "oklabToOklch": {
+      "input": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0.4] },
+      "output": { "min": [0, 0, 0], "max": [1, 0.4, 360] },
+      "filePath": "src/adapters/polar.ts"
+    },
+    "oklchToOklab": {
+      "input": { "min": [0, 0, 0], "max": [1, 0.4, 360] },
+      "output": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0.4] },
+      "filePath": "src/adapters/polar.ts"
+    },
+    "rgbToHsv": {
+      "input": { "min": [0, 0, 0], "max": [1, 1, 1] },
+      "output": { "min": [0, 0, 0], "max": [360, 1, 1] },
+      "filePath": "src/adapters/srgb.ts"
+    },
+    "hsvToRgb": {
+      "input": { "min": [0, 0, 0], "max": [360, 1, 1] },
+      "output": { "min": [0, 0, 0], "max": [1, 1, 1] },
+      "filePath": "src/adapters/srgb.ts"
+    },
+    "hsvToHsl": {
+      "input": { "min": [0, 0, 0], "max": [360, 1, 1] },
+      "output": { "min": [0, 0, 0], "max": [360, 1, 1] },
+      "filePath": "src/adapters/srgb.ts"
+    },
+    "hslToHsv": {
+      "input": { "min": [0, 0, 0], "max": [360, 1, 1] },
+      "output": { "min": [0, 0, 0], "max": [360, 1, 1] },
+      "filePath": "src/adapters/srgb.ts"
+    },
+    "hsvToHwb": {
+      "input": { "min": [0, 0, 0], "max": [360, 1, 1] },
+      "output": { "min": [0, 0, 0], "max": [360, 1, 1] },
+      "filePath": "src/adapters/srgb.ts"
+    },
+    "hwbToHsv": {
+      "input": { "min": [0, 0, 0], "max": [360, 1, 1] },
+      "output": { "min": [0, 0, 0], "max": [360, 1, 1] },
+      "filePath": "src/adapters/srgb.ts"
+    }
+  },
+  "spaces": {
+    "rgb": {
+      "hub": "xyz65",
+      "polar": "hsl",
+      "toHub": ["rgbToLrgb", "lrgbToXyz65"],
+      "fromHub": ["xyz65ToLrgb", "lrgbToRgb"],
+      "direct": {
+        "lrgb": ["rgbToLrgb"],
+        "hsv": ["rgbToHsv"],
+        "hsl": ["rgbToHsv", "hsvToHsl"],
+        "hwb": ["rgbToHsv", "hsvToHwb"]
+      }
+    },
+    "hsl": {
+      "hub": "xyz65",
+      "polar": "hsl",
+      "toHub": ["hslToHsv", "hsvToRgb", "rgbToLrgb", "lrgbToXyz65"],
+      "fromHub": ["xyz65ToLrgb", "lrgbToRgb", "rgbToHsv", "hsvToHsl"],
+      "direct": {
+        "hsv": ["hslToHsv"],
+        "hwb": ["hslToHsv", "hsvToHwb"],
+        "rgb": ["hslToHsv", "hsvToRgb"]
+      }
+    },
+    "hsv": {
+      "hub": "xyz65",
+      "polar": "hsv",
+      "toHub": ["hsvToRgb", "rgbToLrgb", "lrgbToXyz65"],
+      "fromHub": ["xyz65ToLrgb", "lrgbToRgb", "rgbToHsv"],
+      "direct": {
+        "rgb": ["hsvToRgb"],
+        "hsl": ["hsvToHsl"],
+        "hwb": ["hsvToHwb"]
+      }
+    },
+    "hwb": {
+      "hub": "xyz65",
+      "polar": "hwb",
+      "toHub": ["hwbToHsv", "hsvToRgb", "rgbToLrgb", "lrgbToXyz65"],
+      "fromHub": ["xyz65ToLrgb", "lrgbToRgb", "rgbToHsv", "hsvToHwb"],
+      "direct": {
+        "hsv": ["hwbToHsv"],
+        "hsl": ["hwbToHsv", "hsvToHsl"],
+        "rgb": ["hwbToHsv", "hsvToRgb"]
+      }
+    },
+    "lab": {
+      "hub": "xyz50",
+      "polar": "lch",
+      "toHub": ["labToXyz50"],
+      "fromHub": ["xyz50ToLab"],
+      "direct": {
+        "lch": ["labToLch"]
+      }
+    },
+    "lch": {
+      "hub": "xyz50",
+      "polar": "lch",
+      "toHub": ["lchToLab", "labToXyz50"],
+      "fromHub": ["xyz50ToLab", "labToLch"],
+      "direct": {
+        "lab": ["lchToLab"]
+      }
+    },
+    "oklab": {
+      "hub": "xyz65",
+      "polar": "oklch",
+      "toHub": ["oklabToXyz65"],
+      "fromHub": ["xyz65ToOklab"],
+      "direct": {
+        "oklch": ["oklabToOklch"]
+      }
+    },
+    "oklch": {
+      "hub": "xyz65",
+      "polar": "oklch",
+      "toHub": ["oklchToOklab", "oklabToXyz65"],
+      "fromHub": ["xyz65ToOklab", "oklabToOklch"],
+      "direct": {
+        "oklab": ["oklchToOklab"]
+      }
+    },
+    "lrgb": {
+      "hub": "xyz65",
+      "polar": "undefined",
+      "toHub": ["lrgbToXyz65"],
+      "fromHub": ["xyz65ToLrgb"],
+      "direct": {
+        "rgb": ["lrgbToRgb"]
+      }
+    },
+    "xyz50": {
+      "hub": "xyz50",
+      "polar": "undefined",
+      "toHub": [],
+      "fromHub": [],
+      "direct": {}
+    },
+    "xyz65": {
+      "hub": "xyz65",
+      "polar": "undefined",
+      "toHub": [],
+      "fromHub": [],
+      "direct": {}
+    }
+  },
+  "css": {
+    "rgb": { "min": [0, 0, 0], "max": [255, 255, 255] },
+    "hsl": { "min": [0, 0, 0], "max": [360, 100, 100] },
+    "hwb": { "min": [0, 0, 0], "max": [360, 100, 100] },
+    "lab": { "min": [0, -125, -125], "max": [100, 125, 125] },
+    "lch": { "min": [0, 0, 0], "max": [100, 150, 360] },
+    "oklab": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0.4] },
+    "oklch": { "min": [0, 0, 0], "max": [1, 0.4, 360] },
+    "lrgb": { "min": [0, 0, 0], "max": [1, 1, 1] },
+    "xyz50": { "min": [0, 0, 0], "max": [1, 1, 1] },
+    "xyz65": { "min": [0, 0, 0], "max": [1, 1, 1] }
+  }
+}

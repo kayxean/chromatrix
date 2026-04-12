@@ -27,13 +27,12 @@ export function xyz65ToOklab(input: Float32Array, output: Float32Array): void {
   const m_ = 0.0329845436 * x + 0.9293118715 * y + 0.0361456387 * z;
   const s_ = 0.0482003018 * x + 0.2643662691 * y + 0.633851707 * z;
 
-  const l = Math.cbrt(l_);
-  const m = Math.cbrt(m_);
-  const s = Math.cbrt(s_);
-
-  output[0] = 0.2104542553 * l + 0.7936177046 * m - 0.0040704681 * s;
-  output[1] = 1.9779984951 * l - 2.4285921822 * m + 0.4505936871 * s;
-  output[2] = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  output[0] =
+    0.2104542553 * Math.cbrt(l_) + 0.7936177046 * Math.cbrt(m_) - 0.0040704681 * Math.cbrt(s_);
+  output[1] =
+    1.9779984951 * Math.cbrt(l_) - 2.4285921822 * Math.cbrt(m_) + 0.4505936871 * Math.cbrt(s_);
+  output[2] =
+    0.0259040371 * Math.cbrt(l_) + 0.7827717662 * Math.cbrt(m_) - 0.808675766 * Math.cbrt(s_);
 }
 
 export function oklabToXyz65(input: Float32Array, output: Float32Array): void {

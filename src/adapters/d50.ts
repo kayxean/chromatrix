@@ -36,9 +36,10 @@ export function labToXyz50(input: Float32Array, output: Float32Array): void {
   const fz = fy - b * 0.005;
 
   const x3 = fx * fx * fx;
+  const y3 = fy * fy * fy;
   const z3 = fz * fz * fz;
 
   output[0] = (x3 > E ? x3 : (116 * fx - 16) * INV_K) * X50;
-  output[1] = l > 8 ? fy * fy * fy : l * INV_K;
+  output[1] = y3 > E ? y3 : l * INV_K;
   output[2] = (z3 > E ? z3 : (116 * fz - 16) * INV_K) * Z50;
 }
