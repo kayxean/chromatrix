@@ -20,6 +20,17 @@ function parseNumber(s: string, i: number, l: number): number {
   let m = 0.1;
   const f = s.codePointAt(i) ?? 0;
 
+  if (
+    (f | 32) === 110 &&
+    i + 3 < l &&
+    ((s.codePointAt(i + 1) ?? 0) | 32) === 111 &&
+    ((s.codePointAt(i + 2) ?? 0) | 32) === 110 &&
+    ((s.codePointAt(i + 3) ?? 0) | 32) === 101
+  ) {
+    PTR.i = i + 4;
+    return NaN;
+  }
+
   if (f === 45) {
     n = -1;
     i++;
@@ -55,6 +66,7 @@ function parseSpace(s: string, b: number, e: number): Space | 'color' | null {
     if (c0 === 114) return 'rgb';
     if (c0 === 104) return c1 === 115 ? 'hsl' : 'hwb';
     if (c0 === 108) return c1 === 97 ? 'lab' : 'lch';
+    if (c0 === 120 && c1 === 121 && c2 === 122) return 'xyz65';
   }
   if (l === 5) {
     if (c0 === 111 && c1 === 107) {
@@ -64,7 +76,12 @@ function parseSpace(s: string, b: number, e: number): Space | 'color' | null {
     const c4 = (s.codePointAt(b + 4) ?? 0) | 32;
     if (c0 === 99 && c4 === 114) return 'color';
   }
-  if (l >= 3 && c0 === 120 && c1 === 121 && c2 === 122) return 'xyz65';
+  if (l === 7 && c0 === 120 && c1 === 121 && c2 === 122) {
+    const c6 = s.codePointAt(b + 6) ?? 0;
+    if (c6 === 53) return 'xyz50';
+    if (c6 === 54) return 'xyz65';
+  }
+
   return null;
 }
 
@@ -104,15 +121,19 @@ function parseHex(s: string, i = 0): { r: number; g: number; b: number; a: numbe
 }
 
 function skipParse(s: string, i: number, l: number): number {
-  while (i < l) {
-    const c = s.codePointAt(i) ?? 0;
-    if (c <= 32 || c === 44 || c === 47) i++;
-    else break;
+  let cur = i;
+  while (cur < l) {
+    const c = s.codePointAt(cur) ?? 0;
+    if (c <= 32 || c === 44 || c === 47) {
+      cur++;
+    } else {
+      break;
+    }
   }
-  return i;
+  return cur;
 }
 
-function parseValues(s: string, i: number, l: number): number {
+function parseValues(s: string, i: number, l: number, sp: string): number {
   let k = 0;
   let c = i;
   BUF.fill(0);
@@ -123,12 +144,20 @@ function parseValues(s: string, i: number, l: number): number {
       break;
     }
     let v = parseNumber(s, c, l);
-    const { i: d } = PTR;
-    c = d;
-    if ((s.codePointAt(c) ?? 0) === 37) {
-      v *= I100;
+    c = PTR.i;
+
+    const next = s.codePointAt(c) ?? 0;
+    if (next === 37) {
+      if (sp === 'rgb' || k === 3) {
+        v *= I100;
+      } else if (sp === 'oklab' || sp === 'oklch') {
+        v *= k === 0 ? I100 : 0.004;
+      } else if ((sp === 'hsl' || sp === 'hwb') && k > 0) {
+        v *= I100;
+      }
       c++;
-    } else {
+    } else if ((next | 32) >= 97 && (next | 32) <= 122) {
+      const start = c;
       while (
         c < l &&
         ((s.codePointAt(c) ?? 0) | 32) >= 97 &&
@@ -136,7 +165,14 @@ function parseValues(s: string, i: number, l: number): number {
       ) {
         c++;
       }
+      const unit = s.slice(start, c);
+      if (unit === 'turn') v *= 360;
+      else if (unit === 'rad') v *= 57.29577951308232;
+      else if (unit === 'grad') v *= 0.9;
+    } else if (sp === 'rgb' && k < 3 && !Number.isNaN(v)) {
+      v *= I255;
     }
+
     BUF[k] = v;
     k++;
   }
@@ -144,28 +180,22 @@ function parseValues(s: string, i: number, l: number): number {
 }
 
 function normalize(sp: string, v: Float32Array): [number, number, number] {
-  let v0 = v[0],
-    v1 = v[1],
-    v2 = v[2];
-  if (sp === 'rgb') {
-    if (v0 > 1 || v1 > 1 || v2 > 1) {
-      v0 *= I255;
-      v1 *= I255;
-      v2 *= I255;
-    }
-  } else if (sp === 'oklab' || sp === 'oklch') {
-    if (v0 > 1) v0 *= I100;
-    v1 *= I100;
-    v2 *= I100;
-  } else if (v0 > 1 && (sp === 'lab' || sp === 'lch')) {
-    v0 *= I100;
+  let v0 = v[0];
+  const v1 = v[1];
+  const v2 = v[2];
+
+  if (sp === 'hsl' || sp === 'hwb' || sp === 'lch' || sp === 'oklch') {
+    v0 = ((v0 % 360) + 360) % 360;
   }
+
   return [v0, v1, v2];
 }
 
 export function parseColor(s: string): Color {
   const l = s.length;
-  if (l === 0) throw new Error('empty');
+  if (l === 0) {
+    throw new Error('empty');
+  }
   let i = skipParse(s, 0, l);
 
   if ((s.codePointAt(i) ?? 0) === 35) {
@@ -176,23 +206,36 @@ export function parseColor(s: string): Color {
   }
 
   const ns = i;
-  while (i < l && (s.codePointAt(i) ?? 0) !== 40 && (s.codePointAt(i) ?? 0) > 32) i++;
+  while (i < l && (s.codePointAt(i) ?? 0) !== 40 && (s.codePointAt(i) ?? 0) > 32) {
+    i++;
+  }
+
   let sp = parseSpace(s, ns, i);
-  if (!sp) throw new Error('format');
+  if (sp === null) {
+    throw new Error('format');
+  }
 
   if (sp === 'color') {
     i = skipParse(s, i + 1, l);
     const ps = i;
-    while (i < l && (s.codePointAt(i) ?? 0) > 32) i++;
+    while (i < l && (s.codePointAt(i) ?? 0) > 32) {
+      i++;
+    }
     const p = s.slice(ps, i);
-    if (p === 'srgb-linear' || p === 'xyz-d65' || p === 'xyz-d50') {
-      sp = p === 'srgb-linear' ? 'lrgb' : p === 'xyz-d65' ? 'xyz65' : 'xyz50';
+    if (p === 'srgb-linear') {
+      sp = 'lrgb';
+    } else if (p === 'xyz-d65' || p === 'xyz') {
+      sp = 'xyz65';
+    } else if (p === 'xyz-d50') {
+      sp = 'xyz50';
     } else {
       throw new Error('format');
     }
-  } else i++;
+  } else {
+    i++;
+  }
 
-  parseValues(s, i, l);
+  parseValues(s, i, l, sp);
   const res = createColor(sp, normalize(sp, BUF));
   res.alpha = BUF[3];
   return res;
