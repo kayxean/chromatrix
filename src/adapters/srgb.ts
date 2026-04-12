@@ -3,22 +3,18 @@ export function rgbToHsv(input: Float32Array, output: Float32Array): void {
   const g = input[1];
   const b = input[2];
 
-  const v = r > g ? (r > b ? r : b) : g > b ? g : b;
-  const m = r < g ? (r < b ? r : b) : g < b ? g : b;
+  const v = Math.max(r, g, b);
+  const m = Math.min(r, g, b);
   const c = v - m;
 
   let h = 0;
-  let s = 0;
-  if (v !== 0) s = c / v;
+  const s = v === 0 ? 0 : c / v;
 
   if (c !== 0) {
-    const ic = 1 / c;
-    if (v === r) h = (g - b) * ic;
-    else if (v === g) h = (b - r) * ic + 2;
-    else h = (r - g) * ic + 4;
-
+    if (v === r) h = (g - b) / c + (g < b ? 6 : 0);
+    else if (v === g) h = (b - r) / c + 2;
+    else h = (r - g) / c + 4;
     h *= 60;
-    if (h < 0) h += 360;
   }
 
   output[0] = h;
@@ -31,22 +27,15 @@ export function hsvToRgb(input: Float32Array, output: Float32Array): void {
   const s = input[1];
   const v = input[2];
 
-  if (s === 0) {
-    output[0] = v;
-    output[1] = v;
-    output[2] = v;
-    return;
-  }
-
   const h60 = h / 60;
   const c = v * s;
-  const m = v - c;
   const x = c * (1 - Math.abs((h60 % 2) - 1));
+  const m = v - c;
   const f = ((Math.trunc(h60) % 6) + 6) % 6;
 
-  let b = 0,
-    g = 0,
-    r = 0;
+  let r = 0;
+  let g = 0;
+  let b = 0;
 
   if (f === 0) {
     r = c;
@@ -63,7 +52,7 @@ export function hsvToRgb(input: Float32Array, output: Float32Array): void {
   } else if (f === 4) {
     r = x;
     b = c;
-  } else {
+  } else if (f === 5) {
     r = c;
     b = x;
   }
@@ -78,8 +67,9 @@ export function hsvToHsl(input: Float32Array, output: Float32Array): void {
   const s = input[1];
   const v = input[2];
 
-  const l = v * (1 - s * 0.5);
-  const sl = l > 0 && l < 1 ? (v - l) / (l < 0.5 ? l : 1 - l) : 0;
+  const l = v * (1 - s / 2);
+  const d = Math.min(l, 1 - l);
+  const sl = d > 0 ? (v - l) / d : 0;
 
   output[0] = h;
   output[1] = sl;
@@ -91,7 +81,7 @@ export function hslToHsv(input: Float32Array, output: Float32Array): void {
   const s = input[1];
   const l = input[2];
 
-  const v = l + s * (l < 0.5 ? l : 1 - l);
+  const v = l + s * Math.min(l, 1 - l);
   const sv = v === 0 ? 0 : 2 * (1 - l / v);
 
   output[0] = h;
@@ -100,16 +90,24 @@ export function hslToHsv(input: Float32Array, output: Float32Array): void {
 }
 
 export function hsvToHwb(input: Float32Array, output: Float32Array): void {
+  const h = input[0];
+  const s = input[1];
   const v = input[2];
-  output[0] = input[0];
-  output[1] = v * (1 - input[1]);
+
+  output[0] = h;
+  output[1] = (1 - s) * v;
   output[2] = 1 - v;
 }
 
 export function hwbToHsv(input: Float32Array, output: Float32Array): void {
-  const v = 1 - input[2];
-  const s = v <= 0 ? 0 : (v - input[1]) / v;
-  output[0] = input[0];
-  output[1] = Math.min(1, Math.max(0, s));
+  const h = input[0];
+  const w = input[1];
+  const b = input[2];
+
+  const v = 1 - b;
+  const s = v === 0 ? 0 : 1 - w / v;
+
+  output[0] = h;
+  output[1] = s;
   output[2] = v;
 }

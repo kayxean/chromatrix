@@ -15,23 +15,25 @@ for (let i = 0; i < 1024; i++) {
 export function rgbToLrgb(input: Float32Array, output: Float32Array): void {
   for (let i = 0; i < 3; i++) {
     const val = input[i];
-    output[i] =
-      val >= 0 && val <= 1
-        ? TO_LIN[Math.trunc(val * 1023 + 0.5)]
-        : val > 0.04045
-          ? Math.pow((val + 0.055) * INV_055, EXP)
-          : val * INV_12;
+    if (val >= 0 && val <= 1) {
+      output[i] = TO_LIN[Math.trunc(val * 1023 + 0.5)];
+    } else {
+      const abs = Math.abs(val);
+      const res = abs > 0.04045 ? Math.pow((abs + 0.055) * INV_055, EXP) : abs * INV_12;
+      output[i] = val < 0 ? -res : res;
+    }
   }
 }
 
 export function lrgbToRgb(input: Float32Array, output: Float32Array): void {
   for (let i = 0; i < 3; i++) {
     const val = input[i];
-    output[i] =
-      val >= 0 && val <= 1
-        ? TO_RGB[Math.trunc(val * 1023 + 0.5)]
-        : val > 0.0031308
-          ? 1.055 * Math.pow(Math.abs(val), INV_EXP) - 0.055
-          : val * 12.92;
+    if (val >= 0 && val <= 1) {
+      output[i] = TO_RGB[Math.trunc(val * 1023 + 0.5)];
+    } else {
+      const abs = Math.abs(val);
+      const res = abs > 0.0031308 ? 1.055 * Math.pow(abs, INV_EXP) - 0.055 : abs * 12.92;
+      output[i] = val < 0 ? -res : res;
+    }
   }
 }
