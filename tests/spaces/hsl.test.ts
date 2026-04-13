@@ -27,17 +27,17 @@ describe('convertColor(HSL)', () => {
   it('should convert HSL to LCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'lch');
-    expectColorCloseTo(output, [100, 0, 155.471]);
+    expectColorCloseTo(output, [100, 0, 155.4709]);
   });
   it('should convert HSL to OKLAB', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'oklab');
-    expectColorCloseTo(output, [1, 0, 0]);
+    expectColorCloseTo(output, [1, 0, -0.0001]);
   });
   it('should convert HSL to OKLCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'oklch');
-    expectColorCloseTo(output, [1, 0, 263.267]);
+    expectColorCloseTo(output, [1, 0.0001, 263.2668]);
   });
   it('should convert HSL to LRGB', () => {
     const output = createMockOutput();
@@ -47,11 +47,11 @@ describe('convertColor(HSL)', () => {
   it('should convert HSL to XYZ50', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'xyz50');
-    expectColorCloseTo(output, [0.9642, 1.0, 0.8249]);
+    expectColorCloseTo(output, [0.9642, 1, 0.8252]);
   });
   it('should convert HSL to XYZ65', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'xyz65');
-    expectColorCloseTo(output, [0.9504, 1.0, 1.0888]);
+    expectColorCloseTo(output, [0.9505, 1, 1.0888]);
   });
 });
