@@ -28,6 +28,12 @@ export default defineConfig({
         statements: 100,
       },
     },
+    onStackTrace(_, frame) {
+      if (frame.file.includes('node_modules')) {
+        return false;
+      }
+      return true;
+    },
   },
 
   lint: {
