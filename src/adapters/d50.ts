@@ -43,3 +43,81 @@ export function labToXyz50(input: Float32Array, output: Float32Array): void {
   output[1] = y3 > E ? y3 : l * INV_K;
   output[2] = (z3 > E ? z3 : (116 * fz - 16) * INV_K) * Z50;
 }
+
+export function xyz65ToLab(input: Float32Array, output: Float32Array): void {
+  const x65 = input[0];
+  const y65 = input[1];
+  const z65 = input[2];
+
+  const x = (1.0478112 * x65 + 0.0228866 * y65 - 0.050127 * z65) / X50;
+  const y = 0.0295424 * x65 + 0.9904844 * y65 - 0.0170491 * z65;
+  const z = (-0.0092345 * x65 + 0.0150436 * y65 + 0.7521316 * z65) / Z50;
+
+  const fx = x > E ? Math.cbrt(x) : K_116 * x + O_116;
+  const fy = y > E ? Math.cbrt(y) : K_116 * y + O_116;
+  const fz = z > E ? Math.cbrt(z) : K_116 * z + O_116;
+
+  output[0] = 116 * fy - 16;
+  output[1] = 500 * (fx - fy);
+  output[2] = 200 * (fy - fz);
+}
+
+export function labToXyz65(input: Float32Array, output: Float32Array): void {
+  const l = input[0];
+  const a = input[1];
+  const b = input[2];
+
+  const fy = (l + 16) * INV_116;
+  const fx = a * 0.002 + fy;
+  const fz = fy - b * 0.005;
+
+  const x3 = fx * fx * fx;
+  const z3 = fz * fz * fz;
+
+  const x50 = (x3 > E ? x3 : (116 * fx - 16) * INV_K) * X50;
+  const y50 = l > 8 ? fy * fy * fy : l * INV_K;
+  const z50 = (z3 > E ? z3 : (116 * fz - 16) * INV_K) * Z50;
+
+  output[0] = 0.9555766 * x50 - 0.0230393 * y50 + 0.0631636 * z50;
+  output[1] = -0.0282895 * x50 + 1.0099416 * y50 + 0.0210077 * z50;
+  output[2] = 0.0122982 * x50 - 0.020483 * y50 + 1.3299098 * z50;
+}
+
+export function lrgbToLab(input: Float32Array, output: Float32Array): void {
+  const r = input[0];
+  const g = input[1];
+  const b = input[2];
+
+  const x = (0.4360747 * r + 0.3850648 * g + 0.1430804 * b) / X50;
+  const y = 0.2225045 * r + 0.7168786 * g + 0.0606169 * b;
+  const z = (0.0139322 * r + 0.0971045 * g + 0.7141733 * b) / Z50;
+
+  const fx = x > E ? Math.cbrt(x) : K_116 * x + O_116;
+  const fy = y > E ? Math.cbrt(y) : K_116 * y + O_116;
+  const fz = z > E ? Math.cbrt(z) : K_116 * z + O_116;
+
+  output[0] = 116 * fy - 16;
+  output[1] = 500 * (fx - fy);
+  output[2] = 200 * (fy - fz);
+}
+
+export function labToLrgb(input: Float32Array, output: Float32Array): void {
+  const l = input[0];
+  const a = input[1];
+  const b = input[2];
+
+  const fy = (l + 16) * INV_116;
+  const fx = a * 0.002 + fy;
+  const fz = fy - b * 0.005;
+
+  const x3 = fx * fx * fx;
+  const z3 = fz * fz * fz;
+
+  const x = (x3 > E ? x3 : (116 * fx - 16) * INV_K) * X50;
+  const y = l > 8 ? fy * fy * fy : l * INV_K;
+  const z = (z3 > E ? z3 : (116 * fz - 16) * INV_K) * Z50;
+
+  output[0] = 3.1338561 * x - 1.6168667 * y - 0.4906146 * z;
+  output[1] = -0.9787684 * x + 1.9161415 * y + 0.033454 * z;
+  output[2] = 0.0719453 * x - 0.2289914 * y + 1.4052427 * z;
+}
