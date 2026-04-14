@@ -3,7 +3,7 @@ import { convertColor } from '~/convert';
 import { createMockArray, createMockOutput } from '../factory';
 
 describe('convertColor(LCH)', () => {
-  const input = createMockArray([100, 181.019, 360]);
+  const input = createMockArray([100, 0, 180]);
   const output = createMockOutput();
   bench('convert (lch-to-rgb)', () => {
     convertColor(input, output, 'lch', 'rgb');

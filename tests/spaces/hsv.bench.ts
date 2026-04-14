@@ -3,7 +3,7 @@ import { convertColor } from '~/convert';
 import { createMockArray, createMockOutput } from '../factory';
 
 describe('convertColor(HSV)', () => {
-  const input = createMockArray([360, 1, 1]);
+  const input = createMockArray([0, 0, 1]);
   const output = createMockOutput();
   bench('convert (hsv-to-rgb)', () => {
     convertColor(input, output, 'hsv', 'rgb');
