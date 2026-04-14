@@ -1,6 +1,8 @@
 import type { Matrix } from '../types';
-import { lrgbToXyz65, xyz65ToLrgb } from '../adapters/d65';
-import { lrgbToRgb, rgbToLrgb } from '../adapters/gamma';
+import { lrgbToLab } from '../adapters/d50';
+import { lrgbToOklab, lrgbToXyz65, xyz65ToLrgb } from '../adapters/d65';
+import { hsvToLrgb, lrgbToRgb, rgbToLrgb } from '../adapters/gamma';
+import { labToLch, oklabToOklch } from '../adapters/polar';
 import { hsvToHsl, hsvToHwb, hsvToRgb, rgbToHsv } from '../adapters/srgb';
 
 export const HSV: Matrix<'hsv'> = {
@@ -21,5 +23,24 @@ export const HSV: Matrix<'hsv'> = {
     rgb: hsvToRgb,
     hsl: hsvToHsl,
     hwb: hsvToHwb,
+    lab: (input, output) => {
+      hsvToLrgb(input, output);
+      lrgbToLab(output, output);
+    },
+    lch: (input, output) => {
+      hsvToLrgb(input, output);
+      lrgbToLab(output, output);
+      labToLch(output, output);
+    },
+    oklab: (input, output) => {
+      hsvToLrgb(input, output);
+      lrgbToOklab(output, output);
+    },
+    oklch: (input, output) => {
+      hsvToLrgb(input, output);
+      lrgbToOklab(output, output);
+      oklabToOklch(output, output);
+    },
+    lrgb: hsvToLrgb,
   },
 };

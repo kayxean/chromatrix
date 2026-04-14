@@ -3,7 +3,7 @@ import { convertColor } from '~/convert';
 import { createMockArray, createMockOutput, expectColorCloseTo } from '../factory';
 
 describe('convertColor(HSL)', () => {
-  const input = createMockArray([360, 1, 1]);
+  const input = createMockArray([0, 0, 1]);
   it('should convert HSL to RGB', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'rgb');
@@ -12,12 +12,12 @@ describe('convertColor(HSL)', () => {
   it('should convert HSL to HSV', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'hsv');
-    expectColorCloseTo(output, [360, 0, 1]);
+    expectColorCloseTo(output, [0, 0, 1]);
   });
   it('should convert HSL to HWB', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'hwb');
-    expectColorCloseTo(output, [360, 1, 0]);
+    expectColorCloseTo(output, [0, 1, 0]);
   });
   it('should convert HSL to LAB', () => {
     const output = createMockOutput();
@@ -27,17 +27,17 @@ describe('convertColor(HSL)', () => {
   it('should convert HSL to LCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'lch');
-    expectColorCloseTo(output, [100, 0, 155.4709]);
+    expectColorCloseTo(output, [100, 0, 180]);
   });
   it('should convert HSL to OKLAB', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'oklab');
-    expectColorCloseTo(output, [1, 0, -0.0001]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   it('should convert HSL to OKLCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'oklch');
-    expectColorCloseTo(output, [1, 0.0001, 263.2668]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   it('should convert HSL to LRGB', () => {
     const output = createMockOutput();

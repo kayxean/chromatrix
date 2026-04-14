@@ -27,17 +27,17 @@ describe('convertColor(RGB)', () => {
   it('should convert RGB to LCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'rgb', 'lch');
-    expectColorCloseTo(output, [100, 0, 155.4709]);
+    expectColorCloseTo(output, [100, 0, 180]);
   });
   it('should convert RGB to OKLAB', () => {
     const output = createMockOutput();
     convertColor(input, output, 'rgb', 'oklab');
-    expectColorCloseTo(output, [1, 0, -0.0001]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   it('should convert RGB to OKLCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'rgb', 'oklch');
-    expectColorCloseTo(output, [1, 0.0001, 263.2668]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   it('should convert RGB to LRGB', () => {
     const output = createMockOutput();

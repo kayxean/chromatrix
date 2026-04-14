@@ -3,11 +3,11 @@ import { labToLch, lchToLab, oklabToOklch, oklchToOklab } from '~/adapters/polar
 import { createMockArray, createMockOutput, expectColorCloseTo, expectColorToBe } from '../factory';
 
 describe('labToLch()', () => {
-  it('should convert Lab to LCH', () => {
-    const input = createMockArray([1, 128, 128]);
+  it('should convert LAB to LCH', () => {
+    const input = createMockArray([100, 128, 128]);
     const output = createMockOutput();
     labToLch(input, output);
-    expectColorCloseTo(output, [1, 181.019, 45]);
+    expectColorCloseTo(output, [100, 181.0193, 45]);
   });
   it('should handle zero values', () => {
     const input = createMockArray([0, 0, 0]);
@@ -16,19 +16,19 @@ describe('labToLch()', () => {
     expectColorToBe(output, [0, 0, 0]);
   });
   it('should handle negative values', () => {
-    const input = createMockArray([0, -128, -128]);
+    const input = createMockArray([-100, -128, -128]);
     const output = createMockOutput();
     labToLch(input, output);
-    expectColorCloseTo(output, [0, 181.019, 225]);
+    expectColorCloseTo(output, [-100, 181.0193, 225]);
   });
 });
 
 describe('lchToLab()', () => {
-  it('should convert LCH to Lab', () => {
-    const input = createMockArray([1, 150, 360]);
+  it('should convert LCH to LAB', () => {
+    const input = createMockArray([100, 181.019, 360]);
     const output = createMockOutput();
     lchToLab(input, output);
-    expectColorCloseTo(output, [1, 150, 0]);
+    expectColorCloseTo(output, [100, 181.019, 0]);
   });
   it('should handle zero values', () => {
     const input = createMockArray([0, 0, 0]);
@@ -37,15 +37,15 @@ describe('lchToLab()', () => {
     expectColorToBe(output, [0, 0, 0]);
   });
   it('should handle negative values', () => {
-    const input = createMockArray([0, -150, -360]);
+    const input = createMockArray([-100, -181.019, -360]);
     const output = createMockOutput();
     lchToLab(input, output);
-    expectColorCloseTo(output, [0, -150, 0]);
+    expectColorCloseTo(output, [-100, -181.019, 0]);
   });
 });
 
 describe('oklabToOklch()', () => {
-  it('should convert Oklab to Oklch', () => {
+  it('should convert OKLAB to OKLCH', () => {
     const input = createMockArray([1, 0.4, 0.4]);
     const output = createMockOutput();
     oklabToOklch(input, output);
@@ -66,7 +66,7 @@ describe('oklabToOklch()', () => {
 });
 
 describe('oklchToOklab()', () => {
-  it('should convert Oklch to Oklab', () => {
+  it('should convert OKLCH to OKLAB', () => {
     const input = createMockArray([1, 0.4, 360]);
     const output = createMockOutput();
     oklchToOklab(input, output);
@@ -79,9 +79,9 @@ describe('oklchToOklab()', () => {
     expectColorToBe(output, [0, 0, 0]);
   });
   it('should handle negative values', () => {
-    const input = createMockArray([0, -0.4, -360]);
+    const input = createMockArray([-1, -0.4, -360]);
     const output = createMockOutput();
     oklchToOklab(input, output);
-    expectColorCloseTo(output, [0, -0.4, 0]);
+    expectColorCloseTo(output, [-1, -0.4, 0]);
   });
 });

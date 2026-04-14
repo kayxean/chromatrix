@@ -3,7 +3,7 @@ import { convertColor } from '~/convert';
 import { createMockArray, createMockOutput } from '../factory';
 
 describe('convertColor(HWB)', () => {
-  const input = createMockArray([360, 1, 1]);
+  const input = createMockArray([0, 1, 0]);
   const output = createMockOutput();
   bench('convert (hwb-to-rgb)', () => {
     convertColor(input, output, 'hwb', 'rgb');

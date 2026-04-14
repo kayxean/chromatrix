@@ -3,7 +3,7 @@ import { convertColor } from '~/convert';
 import { createMockArray, createMockOutput } from '../factory';
 
 describe('convertColor(XYZ50)', () => {
-  const input = createMockArray([0.96422, 1, 0.82521]);
+  const input = createMockArray([0.9642, 1, 0.8252]);
   const output = createMockOutput();
   bench('convert (xyz50-to-rgb)', () => {
     convertColor(input, output, 'xyz50', 'rgb');
