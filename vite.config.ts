@@ -32,6 +32,9 @@ export default defineConfig({
       if (frame.file.includes('node_modules')) {
         return false;
       }
+      if (frame.file.includes('tests/factory.ts')) {
+        return false;
+      }
       return true;
     },
   },
