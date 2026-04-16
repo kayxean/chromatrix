@@ -1,8 +1,17 @@
 import type { Matrix, Space } from './types';
 import { xyz50ToXyz65, xyz65ToXyz50 } from './chroma';
-import { labToXyz50, xyz50ToLab } from './cielab';
-import { lrgbToRgb, rgbToLrgb } from './linear';
-import { lrgbToXyz65, oklabToXyz65, xyz65ToLrgb, xyz65ToOklab } from './oklab';
+import { labToLrgb, labToXyz50, labToXyz65, lrgbToLab, xyz50ToLab, xyz65ToLab } from './cielab';
+import { hsvToLrgb, lrgbToHsv, lrgbToRgb, rgbToLrgb } from './linear';
+import {
+  lrgbToOklab,
+  lrgbToXyz65,
+  oklabToLrgb,
+  oklabToXyz50,
+  oklabToXyz65,
+  xyz50ToOklab,
+  xyz65ToLrgb,
+  xyz65ToOklab,
+} from './oklab';
 import { labToLch, lchToLab, oklabToOklch, oklchToOklab } from './polar';
 import { hslToHsv, hsvToHsl, hsvToHwb, hsvToRgb, hwbToHsv, rgbToHsv } from './srgb';
 
@@ -31,6 +40,7 @@ export const HSV: Matrix<'hsv'> = {
   direct: {
     hsl: hsvToHsl,
     hwb: hsvToHwb,
+    lrgb: hsvToLrgb,
   },
 };
 
@@ -48,6 +58,8 @@ export const LAB: Matrix<'lab'> = {
   target: xyz50ToLab,
   direct: {
     lch: labToLch,
+    lrgb: labToLrgb,
+    xyz65: labToXyz65,
   },
 };
 
@@ -65,6 +77,8 @@ export const OKLAB: Matrix<'oklab'> = {
   target: xyz65ToOklab,
   direct: {
     oklch: oklabToOklch,
+    lrgb: oklabToLrgb,
+    xyz50: oklabToXyz50,
   },
 };
 
@@ -82,6 +96,9 @@ export const LRGB: Matrix<'lrgb'> = {
   target: xyz65ToLrgb,
   direct: {
     rgb: lrgbToRgb,
+    hsv: lrgbToHsv,
+    lab: lrgbToLab,
+    oklab: lrgbToOklab,
   },
 };
 
@@ -92,15 +109,22 @@ export const XYZ50: Matrix<'xyz50'> = {
   target: xyz65ToXyz50,
   direct: {
     lab: xyz50ToLab,
+    oklab: xyz50ToOklab,
   },
 };
 
 export const XYZ65: Matrix<'xyz65'> = {
   id: 'xyz65',
-  hub: 'xyz50',
-  source: xyz65ToXyz50,
-  target: xyz50ToXyz65,
+  hub: 'xyz65',
+  source: (i, o) => {
+    o.set(i);
+  },
+  target: (i, o) => {
+    o.set(i);
+  },
   direct: {
+    lab: xyz65ToLab,
+    oklab: xyz65ToOklab,
     lrgb: xyz65ToLrgb,
   },
 };
@@ -117,4 +141,4 @@ export const MATRICES: { [S in Space]: Matrix<S> } = {
   lrgb: LRGB,
   xyz50: XYZ50,
   xyz65: XYZ65,
-};
+} as const;
