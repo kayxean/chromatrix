@@ -32,7 +32,7 @@ describe('convertColor(LRGB)', () => {
   it('should convert LRGB to LCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'lch');
-    expectColorCloseTo(output, [100, 0, 180]);
+    expectColorCloseTo(output, [100, 0, 0]);
   });
   it('should convert LRGB to OKLAB', () => {
     const output = createMockOutput();

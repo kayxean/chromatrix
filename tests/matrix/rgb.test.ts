@@ -27,7 +27,7 @@ describe('convertColor(RGB)', () => {
   it('should convert RGB to LCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'rgb', 'lch');
-    expectColorCloseTo(output, [100, 0, 180]);
+    expectColorCloseTo(output, [100, 0, 0]);
   });
   it('should convert RGB to OKLAB', () => {
     const output = createMockOutput();

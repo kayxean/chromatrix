@@ -27,7 +27,7 @@ describe('convertColor(HSV)', () => {
   it('should convert HSV to LCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsv', 'lch');
-    expectColorCloseTo(output, [100, 0, 180]);
+    expectColorCloseTo(output, [100, 0, 0]);
   });
   it('should convert HSV to OKLAB', () => {
     const output = createMockOutput();

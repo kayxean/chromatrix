@@ -1,14 +1,97 @@
 import type { Space } from '../lib/types';
 import { MATRICES } from '../lib/map';
 
-interface PathStep {
-  fn: (input: Float32Array, output: Float32Array) => void;
+type ConvertFn = (input: Float32Array, output: Float32Array) => void;
+
+const SPACES: readonly Space[] = [
+  'rgb',
+  'hsl',
+  'hsv',
+  'hwb',
+  'lab',
+  'lch',
+  'oklab',
+  'oklch',
+  'lrgb',
+  'xyz50',
+  'xyz65',
+];
+
+const COUNT = SPACES.length;
+
+const IDS: Record<Space, number> = {
+  rgb: 0,
+  hsl: 1,
+  hsv: 2,
+  hwb: 3,
+  lab: 4,
+  lch: 5,
+  oklab: 6,
+  oklch: 7,
+  lrgb: 8,
+  xyz50: 9,
+  xyz65: 10,
+};
+
+const JUMP_PLANS: (readonly ConvertFn[])[] = Array.from({ length: COUNT * COUNT }, () => []);
+
+function resolvePath(from: Space, to: Space): ConvertFn[] {
+  const queue: { space: Space; path: ConvertFn[] }[] = [{ space: from, path: [] }];
+  const visited = new Set<Space>([from]);
+  let head = 0;
+  let tail = 1;
+
+  while (head < tail) {
+    const { space, path } = queue[head++];
+    if (space === to) return path;
+
+    const matrix = MATRICES[space];
+    const neighbors: Space[] = [];
+    const neighborFns: ConvertFn[] = [];
+    let nIdx = 0;
+
+    if (matrix.direct) {
+      for (const target in matrix.direct) {
+        const targetSpace = target as Space;
+        neighbors[nIdx] = targetSpace;
+        neighborFns[nIdx] = matrix.direct[targetSpace]!;
+        nIdx++;
+      }
+    }
+
+    neighbors[nIdx] = matrix.hub;
+    neighborFns[nIdx] = matrix.source;
+    nIdx++;
+
+    for (let i = 0; i < COUNT; i++) {
+      const key = SPACES[i];
+      if (MATRICES[key].hub === space) {
+        neighbors[nIdx] = key;
+        neighborFns[nIdx] = MATRICES[key].target;
+        nIdx++;
+      }
+    }
+
+    for (let i = 0; i < nIdx; i++) {
+      const next = neighbors[i];
+      if (!visited.has(next)) {
+        visited.add(next);
+        queue[tail++] = { space: next, path: [...path, neighborFns[i]] };
+      }
+    }
+  }
+  return [];
 }
 
-const PATH_CACHE = new Map<string, PathStep[]>();
-
-const SCRATCH_A = new Float32Array(4);
-const SCRATCH_B = new Float32Array(4);
+(function compile(): void {
+  for (let i = 0; i < COUNT; i++) {
+    const from = SPACES[i];
+    for (let j = 0; j < COUNT; j++) {
+      if (i === j) continue;
+      JUMP_PLANS[i * COUNT + j] = resolvePath(from, SPACES[j]);
+    }
+  }
+})();
 
 export function convertColor<S extends Space, T extends Space>(
   input: Float32Array,
@@ -21,92 +104,22 @@ export function convertColor<S extends Space, T extends Space>(
     return;
   }
 
-  const cacheKey = `${from}:${to}`;
-  let path = PATH_CACHE.get(cacheKey);
+  const plan = JUMP_PLANS[IDS[from] * COUNT + IDS[to]];
+  const len = plan.length;
 
-  if (!path) {
-    path = computePath(from, to);
-    PATH_CACHE.set(cacheKey, path);
-  }
-
-  const len = path.length;
   if (len === 1) {
-    path[0].fn(input, output);
-  } else {
-    let src = input;
-    for (let i = 0; i < len; i++) {
-      const isLast = i === len - 1;
-      const dst = isLast ? output : i % 2 === 0 ? SCRATCH_A : SCRATCH_B;
-
-      path[i].fn(src, dst);
-      src = dst;
-    }
-  }
-}
-
-function computePath(from: Space, to: Space): PathStep[] {
-  const forwardChain = buildChainToHub(from);
-  const reverseChain = buildChainToHub(to);
-
-  const forwardSet = new Set<Space>(forwardChain);
-  let meetAt: Space | undefined;
-
-  for (const node of reverseChain) {
-    if (forwardSet.has(node)) {
-      meetAt = node;
-      break;
-    }
+    plan[0](input, output);
+    return;
   }
 
-  if (!meetAt) {
-    throw new Error(`No conversion path from "${from}" to "${to}"`);
+  const bufA = new Float32Array(3);
+  const bufB = new Float32Array(3);
+
+  let currentIn = input;
+  for (let i = 0; i < len - 1; i++) {
+    const currentOut = i % 2 === 0 ? bufA : bufB;
+    plan[i](currentIn, currentOut);
+    currentIn = currentOut;
   }
-
-  const upPath = forwardChain.slice(0, forwardChain.indexOf(meetAt) + 1);
-  const downPath = reverseChain.slice(0, reverseChain.indexOf(meetAt)).toReversed();
-  const fullPath: Space[] = [...upPath, ...downPath];
-
-  const steps: PathStep[] = [];
-
-  for (let i = 0; i < fullPath.length - 1; i++) {
-    const curr = fullPath[i];
-    const next = fullPath[i + 1];
-
-    const currMatrix = MATRICES[curr];
-
-    const directFn = currMatrix.direct ? currMatrix.direct[next] : undefined;
-
-    if (directFn) {
-      steps.push({ fn: directFn });
-    } else if (currMatrix.hub === next) {
-      steps.push({ fn: currMatrix.source });
-    } else {
-      const nextMatrix = MATRICES[next];
-      if (nextMatrix.hub === curr) {
-        steps.push({ fn: nextMatrix.target });
-      } else {
-        throw new Error(`Gap in conversion graph: ${curr} -> ${next}`);
-      }
-    }
-  }
-
-  return steps;
-}
-
-function buildChainToHub(start: Space): Space[] {
-  const chain: Space[] = [];
-  let current: Space = start;
-
-  while (true) {
-    chain.push(current);
-    if (current === 'xyz65') break;
-
-    const matrix = MATRICES[current];
-    const { hub } = matrix;
-
-    if (!hub || hub === current) break;
-    current = hub;
-  }
-
-  return chain;
+  plan[len - 1](currentIn, output);
 }

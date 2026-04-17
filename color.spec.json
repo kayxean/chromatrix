@@ -1,160 +1,18 @@
 {
   "adapters": {
-    "xyz65ToXyz50": {
-      "input": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
-      "output": { "min": [0, 0, 0], "max": [0.96422, 1, 0.82521] },
-      "filePath": "src/adapters/cat.ts"
-    },
-    "xyz50ToXyz65": {
-      "input": { "min": [0, 0, 0], "max": [0.96422, 1, 0.82521] },
-      "output": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
-      "filePath": "src/adapters/cat.ts"
-    },
-
-    "xyz50ToLab": {
-      "input": { "min": [0, 0, 0], "max": [0.96422, 1, 0.82521] },
-      "output": { "min": [0, -128, -128], "max": [100, 0, 0] },
-      "filePath": "src/adapters/d50.ts"
-    },
-    "labToXyz50": {
-      "input": { "min": [0, -128, -128], "max": [100, 128, 128] },
-      "output": { "min": [0, 0, 0], "max": [1.9105, 1, 0.0385] },
-      "filePath": "src/adapters/d50.ts"
-    },
-    "xyz65ToLab": {
-      "input": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
-      "output": { "min": [0, -128, -128], "max": [100, 128, 128] },
-      "filePath": "src/adapters/d50.ts"
-    },
-    "labToXyz65": {
-      "input": { "min": [0, -128, -128], "max": [100, 128, 128] },
-      "output": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
-      "filePath": "src/adapters/d50.ts"
-    },
-    "lrgbToLab": {
-      "input": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "output": { "min": [0, -128, -128], "max": [100, 128, 128] },
-      "filePath": "src/adapters/d50.ts"
-    },
-    "labToLrgb": {
-      "input": { "min": [0, -128, -128], "max": [100, 128, 128] },
-      "output": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "filePath": "src/adapters/d50.ts"
-    },
-
-    "xyz65ToLrgb": {
-      "input": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
-      "output": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "filePath": "src/adapters/d65.ts"
-    },
-    "lrgbToXyz65": {
-      "input": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "output": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
-      "filePath": "src/adapters/d65.ts"
-    },
-    "xyz65ToOklab": {
-      "input": { "min": [0, 0, 0], "max": [0.95047, 1, 1.08883] },
-      "output": { "min": [0, -0.4, -0.4], "max": [1, 0, 0] },
-      "filePath": "src/adapters/d65.ts"
-    },
-    "oklabToXyz65": {
-      "input": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0.4] },
-      "output": { "min": [0, 0, 0], "max": [1.9404, 0.8164, -0.3466] },
-      "filePath": "src/adapters/d65.ts"
-    },
-    "xyz50ToOklab": {
-      "input": { "min": [0, 0, 0], "max": [0.96422, 1, 0.82521] },
-      "output": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0.4] },
-      "filePath": "src/adapters/d65.ts"
-    },
-    "oklabToXyz50": {
-      "input": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0.4] },
-      "output": { "min": [0, 0, 0], "max": [0.96422, 1, 0.82521] },
-      "filePath": "src/adapters/d65.ts"
-    },
-    "lrgbToOklab": {
-      "input": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "output": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0.4] },
-      "filePath": "src/adapters/d65.ts"
-    },
-    "oklabToLrgb": {
-      "input": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0.4] },
-      "output": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "filePath": "src/adapters/d65.ts"
-    },
-
-    "rgbToLrgb": {
-      "input": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "output": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "filePath": "src/adapters/gamma.ts"
-    },
-    "lrgbToRgb": {
-      "input": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "output": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "filePath": "src/adapters/gamma.ts"
-    },
-    "hsvToLrgb": {
-      "input": { "min": [0, 0, 0], "max": [360, 1, 1] },
-      "output": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "filePath": "src/adapters/gamma.ts"
-    },
-    "lrgbToHsv": {
-      "input": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "output": { "min": [0, 0, 0], "max": [360, 1, 1] },
-      "filePath": "src/adapters/gamma.ts"
-    },
-
-    "labToLch": {
-      "input": { "min": [0, -128, -128], "max": [100, 128, 128] },
-      "output": { "min": [0, 0, 0], "max": [100, 181.0193, 45] },
-      "filePath": "src/adapters/polar.ts"
-    },
-    "lchToLab": {
-      "input": { "min": [0, 0, 0], "max": [100, 181.019, 360] },
-      "output": { "min": [0, -128, -128], "max": [100, 181.019, 0] },
-      "filePath": "src/adapters/polar.ts"
-    },
-    "oklabToOklch": {
-      "input": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0.4] },
-      "output": { "min": [0, 0, 0], "max": [1, 0.56569, 45] },
-      "filePath": "src/adapters/polar.ts"
-    },
-    "oklchToOklab": {
-      "input": { "min": [0, 0, 0], "max": [1, 0.4, 360] },
-      "output": { "min": [0, -0.4, -0.4], "max": [1, 0.4, 0] },
-      "filePath": "src/adapters/polar.ts"
-    },
-
-    "rgbToHsv": {
-      "input": { "min": [0, 0, 0], "max": [1, 1, 1] },
-      "output": { "min": [0, 0, 0], "max": [0, 0, 1] },
-      "filePath": "src/adapters/srgb.ts"
-    },
-    "hsvToRgb": {
-      "input": { "min": [0, 0, 0], "max": [360, 1, 1] },
-      "output": { "min": [0, 0, 0], "max": [1, 0, 0] },
-      "filePath": "src/adapters/srgb.ts"
-    },
-    "hsvToHsl": {
-      "input": { "min": [0, 0, 0], "max": [360, 1, 1] },
-      "output": { "min": [0, 0, 0], "max": [360, 1, 0.5] },
-      "filePath": "src/adapters/srgb.ts"
-    },
-    "hslToHsv": {
-      "input": { "min": [0, 0, 0], "max": [360, 1, 1] },
-      "output": { "min": [0, 0, 0], "max": [360, 0, 1] },
-      "filePath": "src/adapters/srgb.ts"
-    },
-    "hsvToHwb": {
-      "input": { "min": [0, 0, 0], "max": [360, 1, 1] },
-      "output": { "min": [0, 0, 0], "max": [360, 0, 0] },
-      "filePath": "src/adapters/srgb.ts"
-    },
-    "hwbToHsv": {
-      "input": { "min": [0, 0, 0], "max": [360, 1, 1] },
-      "output": { "min": [0, 0, 0], "max": [360, 0, 0] },
-      "filePath": "src/adapters/srgb.ts"
-    }
+    "chroma": ["xyz65ToXyz50", "xyz50ToXyz65"],
+    "cielab": ["xyz50ToLab", "labToXyz50", "xyz65ToLab", "labToXyz65", "lrgbToLab", "labToLrgb"],
+    "linear": ["lrgbToRgb", "rgbToLrgb", "lrgbToXyz65", "xyz65ToLrgb", "lrgbToHsv", "hsvToLrgb"],
+    "oklab": [
+      "xyz65ToOklab",
+      "oklabToXyz65",
+      "xyz50ToOklab",
+      "oklabToXyz50",
+      "lrgbToOklab",
+      "oklabToLrgb"
+    ],
+    "polar": ["labToLch", "lchToLab", "oklabToOklch", "oklchToOklab"],
+    "srgb": ["rgbToHsv", "hsvToRgb", "hsvToHsl", "hslToHsv", "hsvToHwb", "hwbToHsv"]
   },
   "spaces": {
     "rgb": {

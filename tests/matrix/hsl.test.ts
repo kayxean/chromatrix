@@ -27,7 +27,7 @@ describe('convertColor(HSL)', () => {
   it('should convert HSL to LCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'lch');
-    expectColorCloseTo(output, [100, 0, 180]);
+    expectColorCloseTo(output, [100, 0, 0]);
   });
   it('should convert HSL to OKLAB', () => {
     const output = createMockOutput();

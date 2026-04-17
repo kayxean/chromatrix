@@ -10,7 +10,7 @@ export function rgbToHsv(input: Float32Array, output: Float32Array): void {
   let h = 0;
   const s = v === 0 ? 0 : c / v;
 
-  if (c !== 0) {
+  if (c > 2e-5) {
     if (v === r) h = (g - b) / c + (g < b ? 6 : 0);
     else if (v === g) h = (b - r) / c + 2;
     else h = (r - g) / c + 4;
@@ -18,8 +18,8 @@ export function rgbToHsv(input: Float32Array, output: Float32Array): void {
   }
 
   output[0] = h;
-  output[1] = s;
-  output[2] = v;
+  output[1] = Math.max(0, Math.min(1, s));
+  output[2] = Math.max(0, Math.min(1, v));
 }
 
 export function hsvToRgb(input: Float32Array, output: Float32Array): void {
@@ -40,20 +40,26 @@ export function hsvToRgb(input: Float32Array, output: Float32Array): void {
   if (f === 0) {
     r = c;
     g = x;
+    b = 0;
   } else if (f === 1) {
     r = x;
     g = c;
+    b = 0;
   } else if (f === 2) {
+    r = 0;
     g = c;
     b = x;
   } else if (f === 3) {
+    r = 0;
     g = x;
     b = c;
   } else if (f === 4) {
     r = x;
+    g = 0;
     b = c;
-  } else if (f === 5) {
+  } else {
     r = c;
+    g = 0;
     b = x;
   }
 
@@ -64,15 +70,15 @@ export function hsvToRgb(input: Float32Array, output: Float32Array): void {
 
 export function hsvToHsl(input: Float32Array, output: Float32Array): void {
   const h = input[0];
-  const s = input[1];
-  const v = input[2];
+  const s = Math.max(0, Math.min(1, input[1]));
+  const v = Math.max(0, Math.min(1, input[2]));
 
   const l = v * (1 - s / 2);
   const d = Math.min(l, 1 - l);
-  const sl = d > 0 ? (v - l) / d : 0;
+  const sl = d > 1e-7 ? (v - l) / d : 0;
 
   output[0] = h;
-  output[1] = sl;
+  output[1] = Math.max(0, Math.min(1, sl));
   output[2] = l;
 }
 
@@ -91,8 +97,8 @@ export function hslToHsv(input: Float32Array, output: Float32Array): void {
 
 export function hsvToHwb(input: Float32Array, output: Float32Array): void {
   const h = input[0];
-  const s = input[1];
-  const v = input[2];
+  const s = Math.max(0, Math.min(1, input[1]));
+  const v = Math.max(0, Math.min(1, input[2]));
 
   output[0] = h;
   output[1] = (1 - s) * v;

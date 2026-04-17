@@ -1,73 +1,63 @@
-const INV_12 = 1 / 12.92;
-const INV_055 = 1 / 1.055;
-const EXP = 2.4;
-const INV_EXP = 1 / 2.4;
+import { D50_TO_SRGB, D65_TO_SRGB, SRGB_TO_D50, SRGB_TO_D65, multiplyVector } from './vector';
 
-const TO_LIN = new Float32Array(1024);
-const TO_RGB = new Float32Array(1024);
-
-for (let i = 0; i < 1024; i++) {
-  const n = i / 1023;
-  TO_LIN[i] = n <= 0.04045 ? n * INV_12 : Math.pow((n + 0.055) * INV_055, EXP);
-  TO_RGB[i] = n <= 0.0031308 ? n * 12.92 : 1.055 * Math.pow(n, INV_EXP) - 0.055;
+export function toLin(val: number): number {
+  return val <= 0.04045 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
 }
 
-export function lrgbToRgb(input: Float32Array, output: Float32Array): void {
-  const lr = input[0];
-  if (lr >= 0 && lr <= 1) {
-    output[0] = TO_RGB[Math.trunc(lr * 1023 + 0.5)];
-  } else {
-    const abs = Math.abs(lr);
-    const res = abs > 0.0031308 ? 1.055 * Math.pow(abs, INV_EXP) - 0.055 : abs * 12.92;
-    output[0] = lr < 0 ? -res : res;
-  }
-
-  const lg = input[1];
-  if (lg >= 0 && lg <= 1) {
-    output[1] = TO_RGB[Math.trunc(lg * 1023 + 0.5)];
-  } else {
-    const abs = Math.abs(lg);
-    const res = abs > 0.0031308 ? 1.055 * Math.pow(abs, INV_EXP) - 0.055 : abs * 12.92;
-    output[1] = lg < 0 ? -res : res;
-  }
-
-  const lb = input[2];
-  if (lb >= 0 && lb <= 1) {
-    output[2] = TO_RGB[Math.trunc(lb * 1023 + 0.5)];
-  } else {
-    const abs = Math.abs(lb);
-    const res = abs > 0.0031308 ? 1.055 * Math.pow(abs, INV_EXP) - 0.055 : abs * 12.92;
-    output[2] = lb < 0 ? -res : res;
-  }
+export function toRgb(val: number): number {
+  return val <= 0.0031308 ? 12.92 * val : 1.055 * Math.pow(val, 1 / 2.4) - 0.055;
 }
 
 export function rgbToLrgb(input: Float32Array, output: Float32Array): void {
+  output[0] = toLin(input[0]);
+  output[1] = toLin(input[1]);
+  output[2] = toLin(input[2]);
+}
+
+export function lrgbToRgb(input: Float32Array, output: Float32Array): void {
+  output[0] = toRgb(input[0]);
+  output[1] = toRgb(input[1]);
+  output[2] = toRgb(input[2]);
+}
+
+export function lrgbToXyz65(input: Float32Array, output: Float32Array): void {
+  multiplyVector(SRGB_TO_D65, input, output);
+}
+
+export function lrgbToXyz50(input: Float32Array, output: Float32Array): void {
+  multiplyVector(SRGB_TO_D50, input, output);
+}
+
+export function xyz65ToLrgb(input: Float32Array, output: Float32Array): void {
+  multiplyVector(D65_TO_SRGB, input, output);
+}
+
+export function xyz50ToLrgb(input: Float32Array, output: Float32Array): void {
+  multiplyVector(D50_TO_SRGB, input, output);
+}
+
+export function lrgbToHsv(input: Float32Array, output: Float32Array): void {
   const r = input[0];
-  if (r >= 0 && r <= 1) {
-    output[0] = TO_LIN[Math.trunc(r * 1023 + 0.5)];
-  } else {
-    const abs = Math.abs(r);
-    const res = abs > 0.04045 ? Math.pow((abs + 0.055) * INV_055, EXP) : abs * INV_12;
-    output[0] = r < 0 ? -res : res;
-  }
-
   const g = input[1];
-  if (g >= 0 && g <= 1) {
-    output[1] = TO_LIN[Math.trunc(g * 1023 + 0.5)];
-  } else {
-    const abs = Math.abs(g);
-    const res = abs > 0.04045 ? Math.pow((abs + 0.055) * INV_055, EXP) : abs * INV_12;
-    output[1] = g < 0 ? -res : res;
+  const b = input[2];
+
+  const v = Math.max(r, g, b);
+  const m = Math.min(r, g, b);
+  const c = v - m;
+
+  let h = 0;
+  const s = v === 0 ? 0 : c / v;
+
+  if (c > 2e-5) {
+    if (v === r) h = (g - b) / c + (g < b ? 6 : 0);
+    else if (v === g) h = (b - r) / c + 2;
+    else h = (r - g) / c + 4;
+    h *= 60;
   }
 
-  const b = input[2];
-  if (b >= 0 && b <= 1) {
-    output[2] = TO_LIN[Math.trunc(b * 1023 + 0.5)];
-  } else {
-    const abs = Math.abs(b);
-    const res = abs > 0.04045 ? Math.pow((abs + 0.055) * INV_055, EXP) : abs * INV_12;
-    output[2] = b < 0 ? -res : res;
-  }
+  output[0] = h;
+  output[1] = Math.max(0, Math.min(1, s));
+  output[2] = Math.max(0, Math.min(1, v));
 }
 
 export function hsvToLrgb(input: Float32Array, output: Float32Array): void {
@@ -84,97 +74,34 @@ export function hsvToLrgb(input: Float32Array, output: Float32Array): void {
   let r = 0;
   let g = 0;
   let b = 0;
+
   if (f === 0) {
-    r = c + m;
-    g = x + m;
-    b = m;
+    r = c;
+    g = x;
+    b = 0;
   } else if (f === 1) {
-    r = x + m;
-    g = c + m;
-    b = m;
+    r = x;
+    g = c;
+    b = 0;
   } else if (f === 2) {
-    r = m;
-    g = c + m;
-    b = x + m;
+    r = 0;
+    g = c;
+    b = x;
   } else if (f === 3) {
-    r = m;
-    g = x + m;
-    b = c + m;
+    r = 0;
+    g = x;
+    b = c;
   } else if (f === 4) {
-    r = x + m;
-    g = m;
-    b = c + m;
-  } else if (f === 5) {
-    r = c + m;
-    g = m;
-    b = x + m;
+    r = x;
+    g = 0;
+    b = c;
+  } else {
+    r = c;
+    g = 0;
+    b = x;
   }
 
-  if (r >= 0 && r <= 1) output[0] = TO_LIN[Math.trunc(r * 1023 + 0.5)];
-  else {
-    const abs = Math.abs(r);
-    const res = abs > 0.04045 ? Math.pow((abs + 0.055) * INV_055, EXP) : abs * INV_12;
-    output[0] = r < 0 ? -res : res;
-  }
-
-  if (g >= 0 && g <= 1) output[1] = TO_LIN[Math.trunc(g * 1023 + 0.5)];
-  else {
-    const abs = Math.abs(g);
-    const res = abs > 0.04045 ? Math.pow((abs + 0.055) * INV_055, EXP) : abs * INV_12;
-    output[1] = g < 0 ? -res : res;
-  }
-
-  if (b >= 0 && b <= 1) output[2] = TO_LIN[Math.trunc(b * 1023 + 0.5)];
-  else {
-    const abs = Math.abs(b);
-    const res = abs > 0.04045 ? Math.pow((abs + 0.055) * INV_055, EXP) : abs * INV_12;
-    output[2] = b < 0 ? -res : res;
-  }
-}
-
-export function lrgbToHsv(input: Float32Array, output: Float32Array): void {
-  const lr = input[0];
-  const lg = input[1];
-  const lb = input[2];
-  let r = 0;
-  let g = 0;
-  let b = 0;
-
-  if (lr >= 0 && lr <= 1) r = TO_RGB[Math.trunc(lr * 1023 + 0.5)];
-  else {
-    const abs = Math.abs(lr);
-    const res = abs > 0.0031308 ? 1.055 * Math.pow(abs, INV_EXP) - 0.055 : abs * 12.92;
-    r = lr < 0 ? -res : res;
-  }
-
-  if (lg >= 0 && lg <= 1) g = TO_RGB[Math.trunc(lg * 1023 + 0.5)];
-  else {
-    const abs = Math.abs(lg);
-    const res = abs > 0.0031308 ? 1.055 * Math.pow(abs, INV_EXP) - 0.055 : abs * 12.92;
-    g = lg < 0 ? -res : res;
-  }
-
-  if (lb >= 0 && lb <= 1) b = TO_RGB[Math.trunc(lb * 1023 + 0.5)];
-  else {
-    const abs = Math.abs(lb);
-    const res = abs > 0.0031308 ? 1.055 * Math.pow(abs, INV_EXP) - 0.055 : abs * 12.92;
-    b = lb < 0 ? -res : res;
-  }
-
-  const v = Math.max(r, g, b);
-  const m = Math.min(r, g, b);
-  const c = v - m;
-
-  let h = 0;
-  const s = v === 0 ? 0 : c / v;
-  if (c !== 0) {
-    if (v === r) h = (g - b) / c + (g < b ? 6 : 0);
-    else if (v === g) h = (b - r) / c + 2;
-    else h = (r - g) / c + 4;
-    h *= 60;
-  }
-
-  output[0] = h;
-  output[1] = s;
-  output[2] = v;
+  output[0] = r + m;
+  output[1] = g + m;
+  output[2] = b + m;
 }
