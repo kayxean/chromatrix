@@ -27,7 +27,7 @@ describe('convertColor(HWB)', () => {
   it('should convert HWB to LCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hwb', 'lch');
-    expectColorCloseTo(output, [100, 0, 180]);
+    expectColorCloseTo(output, [100, 0, 0]);
   });
   it('should convert HWB to OKLAB', () => {
     const output = createMockOutput();

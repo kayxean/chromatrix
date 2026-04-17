@@ -32,7 +32,7 @@ describe('convertColor(OKLCH)', () => {
   it('should convert OKLCH to LCH', () => {
     const output = createMockOutput();
     convertColor(input, output, 'oklch', 'lch');
-    expectColorCloseTo(output, [100, 0, 180]);
+    expectColorCloseTo(output, [100, 0, 0]);
   });
   it('should convert OKLCH to OKLAB', () => {
     const output = createMockOutput();
