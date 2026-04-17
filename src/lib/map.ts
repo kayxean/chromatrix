@@ -1,15 +1,22 @@
 import type { Matrix, Space } from './types';
 import { xyz50ToXyz65, xyz65ToXyz50 } from './chroma';
 import { labToLrgb, labToXyz50, labToXyz65, lrgbToLab, xyz50ToLab, xyz65ToLab } from './cielab';
-import { hsvToLrgb, lrgbToHsv, lrgbToRgb, rgbToLrgb } from './linear';
+import {
+  hsvToLrgb,
+  lrgbToHsv,
+  lrgbToRgb,
+  lrgbToXyz50,
+  lrgbToXyz65,
+  rgbToLrgb,
+  xyz50ToLrgb,
+  xyz65ToLrgb,
+} from './linear';
 import {
   lrgbToOklab,
-  lrgbToXyz65,
   oklabToLrgb,
   oklabToXyz50,
   oklabToXyz65,
   xyz50ToOklab,
-  xyz65ToLrgb,
   xyz65ToOklab,
 } from './oklab';
 import { labToLch, lchToLab, oklabToOklch, oklchToOklab } from './polar';
@@ -99,6 +106,7 @@ export const LRGB: Matrix<'lrgb'> = {
     hsv: lrgbToHsv,
     lab: lrgbToLab,
     oklab: lrgbToOklab,
+    xyz50: lrgbToXyz50,
   },
 };
 
@@ -110,6 +118,7 @@ export const XYZ50: Matrix<'xyz50'> = {
   direct: {
     lab: xyz50ToLab,
     oklab: xyz50ToOklab,
+    lrgb: xyz50ToLrgb,
   },
 };
 
