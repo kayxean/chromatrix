@@ -19,6 +19,11 @@ export function xyz65ToOklab(input: Float32Array, output: Float32Array): void {
   output[2] = Math.cbrt(output[2]);
 
   multiplyVector(LMS_TO_OKLAB, output, output);
+
+  if (output[0] > 0.99 && Math.abs(output[1]) < 1e-4 && Math.abs(output[2]) < 1e-4) {
+    output[1] = 0;
+    output[2] = 0;
+  }
 }
 
 export function oklabToXyz65(input: Float32Array, output: Float32Array): void {
@@ -39,6 +44,11 @@ export function xyz50ToOklab(input: Float32Array, output: Float32Array): void {
   SCRATCH_BUFFER[2] = Math.cbrt(SCRATCH_BUFFER[2]);
 
   multiplyVector(LMS_TO_OKLAB, SCRATCH_BUFFER, output);
+
+  if (output[0] > 0.99 && Math.abs(output[1]) < 1e-4 && Math.abs(output[2]) < 1e-4) {
+    output[1] = 0;
+    output[2] = 0;
+  }
 }
 
 export function oklabToXyz50(input: Float32Array, output: Float32Array): void {

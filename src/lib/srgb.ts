@@ -114,6 +114,6 @@ export function hwbToHsv(input: Float32Array, output: Float32Array): void {
   const s = v === 0 ? 0 : 1 - w / v;
 
   output[0] = h;
-  output[1] = s;
+  output[1] = Math.max(0, Math.min(1, s));
   output[2] = v;
 }
