@@ -1,3 +1,8 @@
+const HSV_COEFFS = new Float32Array([
+  1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0,
+  0, 0, 1,
+]);
+
 export function rgbToHsv(input: Float32Array, output: Float32Array): void {
   const r = input[0];
   const g = input[1];
@@ -23,49 +28,16 @@ export function rgbToHsv(input: Float32Array, output: Float32Array): void {
 }
 
 export function hsvToRgb(input: Float32Array, output: Float32Array): void {
-  const h = input[0];
-  const s = input[1];
-  const v = input[2];
-
-  const h60 = h / 60;
-  const c = v * s;
+  const h60 = input[0] / 60;
+  const c = input[2] * input[1];
   const x = c * (1 - Math.abs((h60 % 2) - 1));
-  const m = v - c;
-  const f = ((Math.trunc(h60) % 6) + 6) % 6;
+  const m = input[2] - c;
 
-  let r = 0;
-  let g = 0;
-  let b = 0;
+  const o = (((Math.trunc(h60) % 6) + 6) % 6) * 6;
 
-  if (f === 0) {
-    r = c;
-    g = x;
-    b = 0;
-  } else if (f === 1) {
-    r = x;
-    g = c;
-    b = 0;
-  } else if (f === 2) {
-    r = 0;
-    g = c;
-    b = x;
-  } else if (f === 3) {
-    r = 0;
-    g = x;
-    b = c;
-  } else if (f === 4) {
-    r = x;
-    g = 0;
-    b = c;
-  } else {
-    r = c;
-    g = 0;
-    b = x;
-  }
-
-  output[0] = r + m;
-  output[1] = g + m;
-  output[2] = b + m;
+  output[0] = HSV_COEFFS[o] * c + HSV_COEFFS[o + 1] * x + m;
+  output[1] = HSV_COEFFS[o + 2] * c + HSV_COEFFS[o + 3] * x + m;
+  output[2] = HSV_COEFFS[o + 4] * c + HSV_COEFFS[o + 5] * x + m;
 }
 
 export function hsvToHsl(input: Float32Array, output: Float32Array): void {

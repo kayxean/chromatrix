@@ -19,6 +19,9 @@ const SPACES: readonly Space[] = [
 
 const COUNT = SPACES.length;
 
+const BUFFER_A = new Float32Array(3);
+const BUFFER_B = new Float32Array(3);
+
 const IDS: Record<Space, number> = {
   rgb: 0,
   hsl: 1,
@@ -33,50 +36,47 @@ const IDS: Record<Space, number> = {
   xyz65: 10,
 };
 
-const JUMP_PLANS: (readonly ConvertFn[])[] = Array.from({ length: COUNT * COUNT }, () => []);
+const OPTIMIZED_PLANS: ConvertFn[] = Array.from(
+  { length: COUNT * COUNT },
+  () => (input, output) => {
+    output[0] = input[0];
+    output[1] = input[1];
+    output[2] = input[2];
+  },
+);
 
 function resolvePath(from: Space, to: Space): ConvertFn[] {
   const queue: { space: Space; path: ConvertFn[] }[] = [{ space: from, path: [] }];
   const visited = new Set<Space>([from]);
   let head = 0;
-  let tail = 1;
 
-  while (head < tail) {
+  while (head < queue.length) {
     const { space, path } = queue[head++];
     if (space === to) return path;
 
     const matrix = MATRICES[space];
-    const neighbors: Space[] = [];
-    const neighborFns: ConvertFn[] = [];
-    let nIdx = 0;
+    const connections: [Space, ConvertFn][] = [];
 
     if (matrix.direct) {
       for (const target in matrix.direct) {
-        const targetSpace = target as Space;
-        neighbors[nIdx] = targetSpace;
-        neighborFns[nIdx] = matrix.direct[targetSpace]!;
-        nIdx++;
+        connections.push([target as Space, matrix.direct[target as Space]!]);
       }
     }
 
-    neighbors[nIdx] = matrix.hub;
-    neighborFns[nIdx] = matrix.source;
-    nIdx++;
+    connections.push([matrix.hub, matrix.source]);
 
     for (let i = 0; i < COUNT; i++) {
       const key = SPACES[i];
       if (MATRICES[key].hub === space) {
-        neighbors[nIdx] = key;
-        neighborFns[nIdx] = MATRICES[key].target;
-        nIdx++;
+        connections.push([key, MATRICES[key].target]);
       }
     }
 
-    for (let i = 0; i < nIdx; i++) {
-      const next = neighbors[i];
+    for (let i = 0; i < connections.length; i++) {
+      const [next, fn] = connections[i];
       if (!visited.has(next)) {
         visited.add(next);
-        queue[tail++] = { space: next, path: [...path, neighborFns[i]] };
+        queue.push({ space: next, path: [...path, fn] });
       }
     }
   }
@@ -88,9 +88,44 @@ function resolvePath(from: Space, to: Space): ConvertFn[] {
     const from = SPACES[i];
     for (let j = 0; j < COUNT; j++) {
       if (i === j) continue;
-      JUMP_PLANS[i * COUNT + j] = resolvePath(from, SPACES[j]);
+
+      const to = SPACES[j];
+      const idx = i * COUNT + j;
+      const path = resolvePath(from, to);
+      const len = path.length;
+
+      if (len === 1) {
+        OPTIMIZED_PLANS[idx] = path[0];
+      } else if (len === 2) {
+        const f0 = path[0];
+        const f1 = path[1];
+        OPTIMIZED_PLANS[idx] = (input, output) => {
+          f0(input, BUFFER_A);
+          f1(BUFFER_A, output);
+        };
+      } else if (len === 3) {
+        const f0 = path[0];
+        const f1 = path[1];
+        const f2 = path[2];
+        OPTIMIZED_PLANS[idx] = (input, output) => {
+          f0(input, BUFFER_A);
+          f1(BUFFER_A, BUFFER_B);
+          f2(BUFFER_B, output);
+        };
+      } else {
+        OPTIMIZED_PLANS[idx] = (input, output) => {
+          let currentIn = input;
+          for (let k = 0; k < len - 1; k++) {
+            const currentOut = k % 2 === 0 ? BUFFER_A : BUFFER_B;
+            path[k](currentIn, currentOut);
+            currentIn = currentOut;
+          }
+          path[len - 1](currentIn, output);
+        };
+      }
     }
   }
+  Object.seal(OPTIMIZED_PLANS);
 })();
 
 export function convertColor<S extends Space, T extends Space>(
@@ -99,27 +134,5 @@ export function convertColor<S extends Space, T extends Space>(
   from: S,
   to: T,
 ): void {
-  if (from === (to as string)) {
-    output.set(input);
-    return;
-  }
-
-  const plan = JUMP_PLANS[IDS[from] * COUNT + IDS[to]];
-  const len = plan.length;
-
-  if (len === 1) {
-    plan[0](input, output);
-    return;
-  }
-
-  const bufA = new Float32Array(3);
-  const bufB = new Float32Array(3);
-
-  let currentIn = input;
-  for (let i = 0; i < len - 1; i++) {
-    const currentOut = i % 2 === 0 ? bufA : bufB;
-    plan[i](currentIn, currentOut);
-    currentIn = currentOut;
-  }
-  plan[len - 1](currentIn, output);
+  OPTIMIZED_PLANS[IDS[from] * COUNT + IDS[to]](input, output);
 }

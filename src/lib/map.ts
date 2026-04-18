@@ -1,16 +1,7 @@
 import type { Matrix, Space } from './types';
 import { xyz50ToXyz65, xyz65ToXyz50 } from './chroma';
 import { labToLrgb, labToXyz50, labToXyz65, lrgbToLab, xyz50ToLab, xyz65ToLab } from './cielab';
-import {
-  hsvToLrgb,
-  lrgbToHsv,
-  lrgbToRgb,
-  lrgbToXyz50,
-  lrgbToXyz65,
-  rgbToLrgb,
-  xyz50ToLrgb,
-  xyz65ToLrgb,
-} from './linear';
+import { lrgbToRgb, lrgbToXyz50, lrgbToXyz65, rgbToLrgb, xyz50ToLrgb, xyz65ToLrgb } from './linear';
 import {
   lrgbToOklab,
   oklabToLrgb,
@@ -47,7 +38,7 @@ export const HSV: Matrix<'hsv'> = {
   direct: {
     hsl: hsvToHsl,
     hwb: hsvToHwb,
-    lrgb: hsvToLrgb,
+    lrgb: hsvToRgb,
   },
 };
 
@@ -103,7 +94,7 @@ export const LRGB: Matrix<'lrgb'> = {
   target: xyz65ToLrgb,
   direct: {
     rgb: lrgbToRgb,
-    hsv: lrgbToHsv,
+    hsv: rgbToHsv,
     lab: lrgbToLab,
     oklab: lrgbToOklab,
     xyz50: lrgbToXyz50,
