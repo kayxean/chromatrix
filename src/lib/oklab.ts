@@ -1,28 +1,21 @@
-function cbrt(x: number): number {
-  if (x >= 0) return Math.pow(x, 0.3333333333333333);
-  return -Math.pow(-x, 0.3333333333333333);
-}
-
-// xyz65 → LMS (D65_TO_LMS) → cbrt → oklab (LMS_TO_OKLAB), fully inlined
 export function xyz65ToOklab(input: Float32Array, output: Float32Array): void {
   const x = input[0];
   const y = input[1];
   const z = input[2];
 
-  const l = cbrt(0.8189330101 * x + 0.3618667424 * y - 0.1288597137 * z);
-  const m = cbrt(0.0329845436 * x + 0.9293118715 * y + 0.0361456387 * z);
-  const s = cbrt(0.0482003018 * x + 0.2643662691 * y + 0.633851707 * z);
+  const l = Math.cbrt(0.8189330101 * x + 0.3618667424 * y - 0.1288597137 * z);
+  const m = Math.cbrt(0.0329845436 * x + 0.9293118715 * y + 0.0361456387 * z);
+  const s = Math.cbrt(0.0482003018 * x + 0.2643662691 * y + 0.633851707 * z);
 
   const o0 = 0.2104542553 * l + 0.7936177046 * m - 0.0040704681 * s;
   const o1 = 1.9779984951 * l - 2.4285921822 * m + 0.4505936871 * s;
   const o2 = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
 
   output[0] = o0;
-  output[1] = o0 > 0.99 && o1 * o1 < 1e-8 && o2 * o2 < 1e-8 ? 0 : o1;
-  output[2] = o0 > 0.99 && o1 * o1 < 1e-8 && o2 * o2 < 1e-8 ? 0 : o2;
+  output[1] = o1;
+  output[2] = o2;
 }
 
-// oklab (OKLAB_TO_LMS) → cube → xyz65 (LMS_TO_D65), fully inlined
 export function oklabToXyz65(input: Float32Array, output: Float32Array): void {
   const L = input[0];
   const a = input[1];
@@ -41,26 +34,24 @@ export function oklabToXyz65(input: Float32Array, output: Float32Array): void {
   output[2] = -0.0763812845 * l - 0.4214819784 * m + 1.5861632204 * s;
 }
 
-// xyz50 → LMS (XYZ50_TO_LMS) → cbrt → oklab (LMS_TO_OKLAB), fully inlined
 export function xyz50ToOklab(input: Float32Array, output: Float32Array): void {
   const x = input[0];
   const y = input[1];
   const z = input[2];
 
-  const l = cbrt(0.7707314497 * x + 0.349236067 * y - 0.112043051 * z);
-  const m = cbrt(0.0056740161 * x + 0.9370504065 * y + 0.0696765667 * z);
-  const s = cbrt(0.046375526 * x + 0.2529008071 * y + 0.8515638287 * z);
+  const l = Math.cbrt(0.7707314497 * x + 0.349236067 * y - 0.112043051 * z);
+  const m = Math.cbrt(0.0056740161 * x + 0.9370504065 * y + 0.0696765667 * z);
+  const s = Math.cbrt(0.046375526 * x + 0.2529008071 * y + 0.8515638287 * z);
 
   const o0 = 0.2104542553 * l + 0.7936177046 * m - 0.0040704681 * s;
   const o1 = 1.9779984951 * l - 2.4285921822 * m + 0.4505936871 * s;
   const o2 = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
 
   output[0] = o0;
-  output[1] = o0 > 0.99 && o1 * o1 < 1e-8 && o2 * o2 < 1e-8 ? 0 : o1;
-  output[2] = o0 > 0.99 && o1 * o1 < 1e-8 && o2 * o2 < 1e-8 ? 0 : o2;
+  output[1] = o1;
+  output[2] = o2;
 }
 
-// oklab (OKLAB_TO_LMS) → cube → xyz50 (LMS_TO_XYZ50), fully inlined
 export function oklabToXyz50(input: Float32Array, output: Float32Array): void {
   const L = input[0];
   const a = input[1];
@@ -79,22 +70,20 @@ export function oklabToXyz50(input: Float32Array, output: Float32Array): void {
   output[2] = -0.0693901215 * l - 0.29512658 * m + 1.1893279304 * s;
 }
 
-// lrgb → LMS (LRGB_TO_LMS) → cbrt → oklab (LMS_TO_OKLAB), fully inlined
 export function lrgbToOklab(input: Float32Array, output: Float32Array): void {
   const r = input[0];
   const g = input[1];
   const b = input[2];
 
-  const l = cbrt(0.4122215 * r + 0.5363325 * g + 0.051446 * b);
-  const m = cbrt(0.2119035 * r + 0.6806995 * g + 0.107397 * b);
-  const s = cbrt(0.0883025 * r + 0.2817185 * g + 0.629979 * b);
+  const l = Math.cbrt(0.4122215 * r + 0.5363325 * g + 0.051446 * b);
+  const m = Math.cbrt(0.2119035 * r + 0.6806995 * g + 0.107397 * b);
+  const s = Math.cbrt(0.0883025 * r + 0.2817185 * g + 0.629979 * b);
 
   output[0] = 0.2104542553 * l + 0.7936177046 * m - 0.0040704681 * s;
   output[1] = 1.9779984951 * l - 2.4285921822 * m + 0.4505936871 * s;
   output[2] = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
 }
 
-// oklab (OKLAB_TO_LMS) → cube → lrgb (LMS_TO_LRGB), fully inlined
 export function oklabToLrgb(input: Float32Array, output: Float32Array): void {
   const L = input[0];
   const a = input[1];

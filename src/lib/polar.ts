@@ -8,7 +8,7 @@ function toPolar(input: Float32Array, output: Float32Array): void {
   const a = input[1];
   const b = input[2];
   const c = Math.sqrt(a * a + b * b);
-  const h = c < 2e-5 ? 0 : Math.atan2(b, a) * TO_DEG;
+  const h = Math.abs(c) < 1e-4 ? 0 : Math.atan2(b, a) * TO_DEG;
   output[0] = input[0];
   output[1] = c;
   output[2] = h < 0 ? h + 360 : h;

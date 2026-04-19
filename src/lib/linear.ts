@@ -9,14 +9,10 @@ for (let i = 0; i < LUT_SIZE; i++) {
 }
 
 export function toLin(val: number): number {
-  const idx = Math.trunc(val * 255 + 0.5);
-  if (idx >= 0 && idx < 256) return TO_LIN_LUT[idx];
   return val <= 0.04045 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
 }
 
 export function toRgb(val: number): number {
-  const idx = Math.trunc(val * 255 + 0.5);
-  if (idx >= 0 && idx < 256) return TO_RGB_LUT[idx];
   return val <= 0.0031308 ? 12.92 * val : 1.055 * Math.pow(val, 1 / 2.4) - 0.055;
 }
 
@@ -32,7 +28,6 @@ export function lrgbToRgb(input: Float32Array, output: Float32Array): void {
   output[2] = toRgb(input[2]);
 }
 
-// lrgb → xyz65, inline SRGB_TO_D65
 export function lrgbToXyz65(input: Float32Array, output: Float32Array): void {
   const r = input[0];
   const g = input[1];
@@ -42,7 +37,6 @@ export function lrgbToXyz65(input: Float32Array, output: Float32Array): void {
   output[2] = 0.0193339 * r + 0.119192 * g + 0.9503041 * b;
 }
 
-// lrgb → xyz50, inline SRGB_TO_D50
 export function lrgbToXyz50(input: Float32Array, output: Float32Array): void {
   const r = input[0];
   const g = input[1];
@@ -52,7 +46,6 @@ export function lrgbToXyz50(input: Float32Array, output: Float32Array): void {
   output[2] = 0.0139322 * r + 0.0971045 * g + 0.7141733 * b;
 }
 
-// xyz65 → lrgb, inline D65_TO_SRGB
 export function xyz65ToLrgb(input: Float32Array, output: Float32Array): void {
   const x = input[0];
   const y = input[1];
@@ -62,7 +55,6 @@ export function xyz65ToLrgb(input: Float32Array, output: Float32Array): void {
   output[2] = 0.0556434 * x - 0.2040259 * y + 1.0572252 * z;
 }
 
-// xyz50 → lrgb, inline D50_TO_SRGB
 export function xyz50ToLrgb(input: Float32Array, output: Float32Array): void {
   const x = input[0];
   const y = input[1];
