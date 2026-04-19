@@ -1,7 +1,7 @@
 import type { Space } from '~/lib/types';
 import { describe, expect, it } from 'vitest';
 import { convertColor } from '~/api/convert';
-import { createMockArray, createMockOutput } from '../factory';
+import { createMockArray, createMockOutput, expectColorTrace } from '../factory';
 
 const SPACES: readonly Space[] = [
   'rgb',
@@ -35,7 +35,17 @@ function randomInRange(min: number, max: number): number {
   return Math.random() * (max - min) + min;
 }
 
+function randomHwb(): Float32Array {
+  const h = randomInRange(0, 360);
+  const w = Math.random();
+  const b = Math.random() * (1 - w);
+
+  return createMockArray([h, w, b]);
+}
+
 function randomColor(space: Space): Float32Array {
+  if (space === 'hwb') return randomHwb();
+
   const gamut = GAMUTS[space];
   return createMockArray([
     randomInRange(gamut.min[0], gamut.max[0]),
@@ -104,6 +114,20 @@ describe('convertColor()', () => {
       for (let j = 0; j < 3; j++) {
         expect(Number.isFinite(output[j])).toBe(true);
       }
+    });
+
+    it(`should round-trip random-color-${i + 1}`, () => {
+      const { from, to } = pickRandomDifferent(SPACES);
+      const input = randomColor(from);
+      const intermediate = createMockOutput();
+      const backToStart = createMockOutput();
+
+      convertColor(input, intermediate, from, to);
+      convertColor(intermediate, backToStart, to, from);
+
+      const expectedArray = Array.from(input);
+
+      expectColorTrace(backToStart, expectedArray, 3, { from, to, intermediate });
     });
   }
 

@@ -1,4 +1,12 @@
-import { D50_TO_SRGB, D65_TO_SRGB, SRGB_TO_D50, SRGB_TO_D65, multiplyVector } from './vector';
+const LUT_SIZE = 256;
+const TO_LIN_LUT = new Float32Array(LUT_SIZE);
+const TO_RGB_LUT = new Float32Array(LUT_SIZE);
+
+for (let i = 0; i < LUT_SIZE; i++) {
+  const v = i / 255;
+  TO_LIN_LUT[i] = v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  TO_RGB_LUT[i] = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+}
 
 export function toLin(val: number): number {
   return val <= 0.04045 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
@@ -21,87 +29,37 @@ export function lrgbToRgb(input: Float32Array, output: Float32Array): void {
 }
 
 export function lrgbToXyz65(input: Float32Array, output: Float32Array): void {
-  multiplyVector(SRGB_TO_D65, input, output);
-}
-
-export function lrgbToXyz50(input: Float32Array, output: Float32Array): void {
-  multiplyVector(SRGB_TO_D50, input, output);
-}
-
-export function xyz65ToLrgb(input: Float32Array, output: Float32Array): void {
-  multiplyVector(D65_TO_SRGB, input, output);
-}
-
-export function xyz50ToLrgb(input: Float32Array, output: Float32Array): void {
-  multiplyVector(D50_TO_SRGB, input, output);
-}
-
-export function lrgbToHsv(input: Float32Array, output: Float32Array): void {
   const r = input[0];
   const g = input[1];
   const b = input[2];
-
-  const v = Math.max(r, g, b);
-  const m = Math.min(r, g, b);
-  const c = v - m;
-
-  let h = 0;
-  const s = v === 0 ? 0 : c / v;
-
-  if (c > 2e-5) {
-    if (v === r) h = (g - b) / c + (g < b ? 6 : 0);
-    else if (v === g) h = (b - r) / c + 2;
-    else h = (r - g) / c + 4;
-    h *= 60;
-  }
-
-  output[0] = h;
-  output[1] = Math.max(0, Math.min(1, s));
-  output[2] = Math.max(0, Math.min(1, v));
+  output[0] = 0.4124564 * r + 0.3575761 * g + 0.1804375 * b;
+  output[1] = 0.2126729 * r + 0.7151522 * g + 0.072175 * b;
+  output[2] = 0.0193339 * r + 0.119192 * g + 0.9503041 * b;
 }
 
-export function hsvToLrgb(input: Float32Array, output: Float32Array): void {
-  const h = input[0];
-  const s = input[1];
-  const v = input[2];
+export function lrgbToXyz50(input: Float32Array, output: Float32Array): void {
+  const r = input[0];
+  const g = input[1];
+  const b = input[2];
+  output[0] = 0.4360747 * r + 0.3850648 * g + 0.1430804 * b;
+  output[1] = 0.2225045 * r + 0.7168786 * g + 0.0606169 * b;
+  output[2] = 0.0139322 * r + 0.0971045 * g + 0.7141733 * b;
+}
 
-  const h60 = h / 60;
-  const c = v * s;
-  const x = c * (1 - Math.abs((h60 % 2) - 1));
-  const m = v - c;
-  const f = ((Math.trunc(h60) % 6) + 6) % 6;
+export function xyz65ToLrgb(input: Float32Array, output: Float32Array): void {
+  const x = input[0];
+  const y = input[1];
+  const z = input[2];
+  output[0] = 3.2404542 * x - 1.5371385 * y - 0.4985314 * z;
+  output[1] = -0.969266 * x + 1.8760108 * y + 0.041556 * z;
+  output[2] = 0.0556434 * x - 0.2040259 * y + 1.0572252 * z;
+}
 
-  let r = 0;
-  let g = 0;
-  let b = 0;
-
-  if (f === 0) {
-    r = c;
-    g = x;
-    b = 0;
-  } else if (f === 1) {
-    r = x;
-    g = c;
-    b = 0;
-  } else if (f === 2) {
-    r = 0;
-    g = c;
-    b = x;
-  } else if (f === 3) {
-    r = 0;
-    g = x;
-    b = c;
-  } else if (f === 4) {
-    r = x;
-    g = 0;
-    b = c;
-  } else {
-    r = c;
-    g = 0;
-    b = x;
-  }
-
-  output[0] = r + m;
-  output[1] = g + m;
-  output[2] = b + m;
+export function xyz50ToLrgb(input: Float32Array, output: Float32Array): void {
+  const x = input[0];
+  const y = input[1];
+  const z = input[2];
+  output[0] = 3.1338561 * x - 1.6168667 * y - 0.4906146 * z;
+  output[1] = -0.9787684 * x + 1.9161415 * y + 0.033454 * z;
+  output[2] = 0.0719453 * x - 0.2289914 * y + 1.4052427 * z;
 }
