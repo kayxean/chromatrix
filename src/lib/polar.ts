@@ -1,8 +1,5 @@
 const TO_DEG = 180 / Math.PI;
 const TO_RAD = Math.PI / 180;
-let _cachedAngle = NaN;
-let _cachedCos = 0;
-let _cachedSin = 0;
 
 function toPolar(input: Float32Array, output: Float32Array): void {
   const a = input[1];
@@ -15,22 +12,13 @@ function toPolar(input: Float32Array, output: Float32Array): void {
 }
 
 function toCartesian(input: Float32Array, output: Float32Array): void {
-  const h = input[2];
-  const c = input[1];
-  const r = (((h % 360) + 360) % 360) * TO_RAD;
-
-  if (r !== _cachedAngle) {
-    _cachedAngle = r;
-    _cachedCos = Math.cos(r);
-    _cachedSin = Math.sin(r);
-  }
-
+  const r = (((input[2] % 360) + 360) % 360) * TO_RAD;
   output[0] = input[0];
-  output[1] = c * _cachedCos;
-  output[2] = c * _cachedSin;
+  output[1] = input[1] * Math.cos(r);
+  output[2] = input[1] * Math.sin(r);
 }
 
 export const labToLch = toPolar;
-export const oklabToOklch = toPolar;
 export const lchToLab = toCartesian;
+export const oklabToOklch = toPolar;
 export const oklchToOklab = toCartesian;
