@@ -1,19 +1,35 @@
-const LUT_SIZE = 256;
-const TO_LIN_LUT = new Float32Array(LUT_SIZE);
-const TO_RGB_LUT = new Float32Array(LUT_SIZE);
+const LUT_SIZE = 65536;
+const MAX_LUT = LUT_SIZE - 1;
+const LIN_LUT = new Float32Array(LUT_SIZE + 1);
+const RGB_LUT = new Float32Array(LUT_SIZE + 1);
 
 for (let i = 0; i < LUT_SIZE; i++) {
-  const v = i / 255;
-  TO_LIN_LUT[i] = v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-  TO_RGB_LUT[i] = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+  const v = i / MAX_LUT;
+  LIN_LUT[i] = v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  RGB_LUT[i] = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
 }
 
-export function toLin(val: number): number {
-  return val <= 0.04045 ? val / 12.92 : Math.pow((val + 0.055) / 1.055, 2.4);
+LIN_LUT[LUT_SIZE] = LIN_LUT[MAX_LUT];
+RGB_LUT[LUT_SIZE] = RGB_LUT[MAX_LUT];
+
+function toLin(v: number): number {
+  if (v < 0 || v > 1) {
+    return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  }
+  const s = v * MAX_LUT;
+  const i = Math.trunc(s);
+  const t = s - i;
+  return LIN_LUT[i] + t * (LIN_LUT[i + 1] - LIN_LUT[i]);
 }
 
-export function toRgb(val: number): number {
-  return val <= 0.0031308 ? 12.92 * val : 1.055 * Math.pow(val, 1 / 2.4) - 0.055;
+function toRgb(v: number): number {
+  if (v < 0 || v > 1) {
+    return v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+  }
+  const s = v * MAX_LUT;
+  const i = Math.trunc(s);
+  const t = s - i;
+  return RGB_LUT[i] + t * (RGB_LUT[i + 1] - RGB_LUT[i]);
 }
 
 export function rgbToLrgb(input: Float32Array, output: Float32Array): void {
