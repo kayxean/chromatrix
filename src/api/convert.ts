@@ -29,9 +29,26 @@ import { hslToHsv, hsvToHsl, hsvToHwb, hsvToRgb, hwbToHsv, rgbToHsv } from '../l
 
 type ConvertFn = (input: Float32Array, output: Float32Array) => void;
 
-type Edge = readonly [from: number, to: number, fn: ConvertFn];
-
-const SPACES: readonly Space[] = [
+const GRAPH: Record<Space, Partial<Record<Space, ConvertFn>>> = {
+  rgb: { hsv: rgbToHsv, lrgb: rgbToLrgb },
+  hsl: { hsv: hslToHsv },
+  hsv: { rgb: hsvToRgb, hsl: hsvToHsl, hwb: hsvToHwb },
+  hwb: { hsv: hwbToHsv },
+  lab: { lch: labToLch, lrgb: labToLrgb, xyz50: labToXyz50, xyz65: labToXyz65 },
+  lch: { lab: lchToLab },
+  oklab: { oklch: oklabToOklch, lrgb: oklabToLrgb, xyz50: oklabToXyz50, xyz65: oklabToXyz65 },
+  oklch: { oklab: oklchToOklab },
+  lrgb: {
+    rgb: lrgbToRgb,
+    lab: lrgbToLab,
+    oklab: lrgbToOklab,
+    xyz50: lrgbToXyz50,
+    xyz65: lrgbToXyz65,
+  },
+  xyz50: { lab: xyz50ToLab, oklab: xyz50ToOklab, lrgb: xyz50ToLrgb, xyz65: xyz50ToXyz65 },
+  xyz65: { lab: xyz65ToLab, oklab: xyz65ToOklab, lrgb: xyz65ToLrgb, xyz50: xyz65ToXyz50 },
+};
+const SPACES: Space[] = [
   'rgb',
   'hsl',
   'hsv',
@@ -43,193 +60,160 @@ const SPACES: readonly Space[] = [
   'lrgb',
   'xyz50',
   'xyz65',
-] as const;
-
+];
 const COUNT = SPACES.length;
-
-const IDS: Readonly<Record<Space, number>> = Object.freeze({
-  rgb: 0,
-  hsl: 1,
-  hsv: 2,
-  hwb: 3,
-  lab: 4,
-  lch: 5,
-  oklab: 6,
-  oklch: 7,
-  lrgb: 8,
-  xyz50: 9,
-  xyz65: 10,
+const IDS: Record<string, number> = Object.fromEntries(SPACES.map((name, i) => [name, i]));
+const ADJACENCY = SPACES.map((name) => {
+  const connections = GRAPH[name] as Record<string, ConvertFn>;
+  return Object.entries(connections).map(([neighbor, fn]) => ({
+    to: IDS[neighbor],
+    fn,
+  }));
 });
 
-const enum SpaceId {
-  rgb = 0,
-  hsl = 1,
-  hsv = 2,
-  hwb = 3,
-  lab = 4,
-  lch = 5,
-  oklab = 6,
-  oklch = 7,
-  lrgb = 8,
-  xyz50 = 9,
-  xyz65 = 10,
-}
-
-const RGB = SpaceId.rgb;
-const HSL = SpaceId.hsl;
-const HSV = SpaceId.hsv;
-const HWB = SpaceId.hwb;
-const LAB = SpaceId.lab;
-const LCH = SpaceId.lch;
-const OKLAB = SpaceId.oklab;
-const OKLCH = SpaceId.oklch;
-const LRGB = SpaceId.lrgb;
-const XYZ50 = SpaceId.xyz50;
-const XYZ65 = SpaceId.xyz65;
-
-const EDGES: readonly Edge[] = [
-  [RGB, HSV, rgbToHsv],
-  [RGB, LRGB, rgbToLrgb],
-  [HSL, HSV, hslToHsv],
-  [HSV, RGB, hsvToRgb],
-  [HSV, HSL, hsvToHsl],
-  [HSV, HWB, hsvToHwb],
-  [HWB, HSV, hwbToHsv],
-  [LAB, LCH, labToLch],
-  [LAB, LRGB, labToLrgb],
-  [LAB, XYZ50, labToXyz50],
-  [LAB, XYZ65, labToXyz65],
-  [LCH, LAB, lchToLab],
-  [OKLAB, OKLCH, oklabToOklch],
-  [OKLAB, LRGB, oklabToLrgb],
-  [OKLAB, XYZ50, oklabToXyz50],
-  [OKLAB, XYZ65, oklabToXyz65],
-  [OKLCH, OKLAB, oklchToOklab],
-  [LRGB, RGB, lrgbToRgb],
-  [LRGB, LAB, lrgbToLab],
-  [LRGB, OKLAB, lrgbToOklab],
-  [LRGB, XYZ50, lrgbToXyz50],
-  [LRGB, XYZ65, lrgbToXyz65],
-  [XYZ50, LAB, xyz50ToLab],
-  [XYZ50, OKLAB, xyz50ToOklab],
-  [XYZ50, LRGB, xyz50ToLrgb],
-  [XYZ50, XYZ65, xyz50ToXyz65],
-  [XYZ65, LAB, xyz65ToLab],
-  [XYZ65, OKLAB, xyz65ToOklab],
-  [XYZ65, LRGB, xyz65ToLrgb],
-  [XYZ65, XYZ50, xyz65ToXyz50],
-];
-
-const POOL_SIZE = 8;
-const BUFFER_POOL = Array.from({ length: POOL_SIZE }, () => ({
-  a: new Float32Array(3),
-  b: new Float32Array(3),
-}));
-const state = { poolIdx: 0 };
-const MAX_PATH_LEN = 6;
-const PLAN_POINTERS = new Uint32Array(COUNT * COUNT);
-const PATH_DATA = new Int32Array(COUNT * COUNT * MAX_PATH_LEN).fill(-1);
-const _QUEUE = new Uint32Array(COUNT);
-const _PARENTS = new Int32Array(COUNT);
-const _EDGE_MAP = new Int32Array(COUNT);
-
-function resolvePathNumerical(from: number, to: number): void {
-  if (from === to) return;
-  _PARENTS.fill(-1);
-  _EDGE_MAP.fill(-1);
+function getPath(start: number, target: number): ConvertFn[] {
+  if (start === target) return [];
+  const queue = new Int16Array(COUNT);
   let head = 0;
   let tail = 0;
-  _QUEUE[tail++] = from;
+  queue[tail++] = start;
+  const parents = new Int16Array(COUNT).fill(-1);
+  const stepFns = Array.from<unknown, ConvertFn | null>({ length: COUNT }, () => null);
+  let found = false;
   while (head < tail) {
-    const curr = _QUEUE[head++];
-    if (curr === to) {
-      const planIdx = from * COUNT + to;
-      PLAN_POINTERS[planIdx] = planIdx * MAX_PATH_LEN;
-      let temp = to;
-      let depth = 0;
-      const tempPath = _QUEUE;
-      while (temp !== from) {
-        tempPath[depth++] = _EDGE_MAP[temp];
-        temp = _PARENTS[temp];
-      }
-      for (let k = 0; k < depth; k++) {
-        PATH_DATA[PLAN_POINTERS[planIdx] + k] = tempPath[depth - 1 - k];
-      }
-      return;
+    const curr = queue[head++];
+    if (curr === target) {
+      found = true;
+      break;
     }
-    for (let i = 0; i < EDGES.length; i++) {
-      const e = EDGES[i];
-      if (e[0] === curr && _PARENTS[e[1]] === -1 && e[1] !== from) {
-        _PARENTS[e[1]] = curr;
-        _EDGE_MAP[e[1]] = i;
-        _QUEUE[tail++] = e[1];
+    const neighbors = ADJACENCY[curr];
+    for (let i = 0; i < neighbors.length; i++) {
+      const neighbor = neighbors[i];
+      const { to, fn } = neighbor;
+      if (parents[to] === -1 && to !== start) {
+        parents[to] = curr;
+        stepFns[to] = fn;
+        queue[tail++] = to;
       }
     }
+  }
+  if (!found) return [];
+  const path: ConvertFn[] = [];
+  let curr = target;
+  while (curr !== start) {
+    const fn = stepFns[curr];
+    if (fn) path.push(fn);
+    curr = parents[curr];
+  }
+  return path.toReversed();
+}
+
+const R1 = new Float32Array(3);
+const R2 = new Float32Array(3);
+
+function bake(steps: ConvertFn[]): ConvertFn {
+  const len = steps.length;
+  switch (len) {
+    case 0:
+      return (i, o) => {
+        o[0] = i[0];
+        o[1] = i[1];
+        o[2] = i[2];
+      };
+    case 1: {
+      const f0 = steps[0];
+      return (i, o) => {
+        f0(i, o);
+      };
+    }
+    case 2: {
+      const f0 = steps[0];
+      const f1 = steps[1];
+      return (i, o) => {
+        f0(i, R1);
+        f1(R1, o);
+      };
+    }
+    case 3: {
+      const f0 = steps[0];
+      const f1 = steps[1];
+      const f2 = steps[2];
+      return (i, o) => {
+        f0(i, R1);
+        f1(R1, R2);
+        f2(R2, o);
+      };
+    }
+    case 4: {
+      const f0 = steps[0];
+      const f1 = steps[1];
+      const f2 = steps[2];
+      const f3 = steps[3];
+      return (i, o) => {
+        f0(i, R1);
+        f1(R1, R2);
+        f2(R2, R1);
+        f3(R1, o);
+      };
+    }
+    case 5: {
+      const f0 = steps[0];
+      const f1 = steps[1];
+      const f2 = steps[2];
+      const f3 = steps[3];
+      const f4 = steps[4];
+      return (i, o) => {
+        f0(i, R1);
+        f1(R1, R2);
+        f2(R2, R1);
+        f3(R1, R2);
+        f4(R2, o);
+      };
+    }
+    case 6: {
+      const f0 = steps[0];
+      const f1 = steps[1];
+      const f2 = steps[2];
+      const f3 = steps[3];
+      const f4 = steps[4];
+      const f5 = steps[5];
+      return (i, o) => {
+        f0(i, R1);
+        f1(R1, R2);
+        f2(R2, R1);
+        f3(R1, R2);
+        f4(R2, R1);
+        f5(R1, o);
+      };
+    }
+    default:
+      return (i, o) => {
+        let src = i;
+        let dst = R1;
+        for (let n = 0; n < len - 1; n++) {
+          steps[n](src, dst);
+          const next = src === R1 ? R2 : R1;
+          src = dst;
+          dst = next;
+        }
+        steps[len - 1](src, o);
+      };
   }
 }
 
-(function init(): void {
-  for (let i = 0; i < COUNT; i++) {
-    for (let j = 0; j < COUNT; j++) {
-      resolvePathNumerical(i, j);
-    }
-  }
-})();
+const DISPATCH = Array.from<unknown, ConvertFn>({ length: COUNT * COUNT }, (_, index) => {
+  const from = Math.trunc(index / COUNT);
+  const to = index % COUNT;
+  return bake(getPath(from, to));
+});
 
 export function convertColorById(
   input: Float32Array,
   output: Float32Array,
-  fIdx: number,
-  tIdx: number,
+  from: number,
+  to: number,
 ): void {
-  if (fIdx === tIdx) {
-    output[0] = input[0];
-    output[1] = input[1];
-    output[2] = input[2];
-    return;
-  }
-
-  const offset = PLAN_POINTERS[fIdx * COUNT + tIdx];
-  const pool = BUFFER_POOL[state.poolIdx++ & 7];
-
-  const e0 = PATH_DATA[offset];
-  if (e0 === -1) return;
-
-  const e1 = PATH_DATA[offset + 1];
-  if (e1 === -1) {
-    EDGES[e0][2](input, output);
-    return;
-  }
-  EDGES[e0][2](input, pool.a);
-
-  const e2 = PATH_DATA[offset + 2];
-  if (e2 === -1) {
-    EDGES[e1][2](pool.a, output);
-    return;
-  }
-  EDGES[e1][2](pool.a, pool.b);
-
-  const e3 = PATH_DATA[offset + 3];
-  if (e3 === -1) {
-    EDGES[e2][2](pool.b, output);
-    return;
-  }
-  EDGES[e2][2](pool.b, pool.a);
-
-  const e4 = PATH_DATA[offset + 4];
-  if (e4 === -1) {
-    EDGES[e3][2](pool.a, output);
-    return;
-  }
-  EDGES[e3][2](pool.a, pool.b);
-
-  const e5 = PATH_DATA[offset + 5];
-  if (e5 === -1) {
-    EDGES[e4][2](pool.b, output);
-    return;
-  }
-  EDGES[e4][2](pool.b, pool.a);
-  EDGES[e5][2](pool.a, output);
+  DISPATCH[from * COUNT + to](input, output);
 }
 
 export function convertColor<S extends Space, T extends Space>(
@@ -238,12 +222,7 @@ export function convertColor<S extends Space, T extends Space>(
   from: S,
   to: T,
 ): void {
-  const fIdx = IDS[from];
-  const tIdx = IDS[to];
-
-  if (fIdx === undefined || tIdx === undefined) {
-    throw new Error(`Invalid space: ${from} or ${to}`);
-  }
-
-  convertColorById(input, output, fIdx, tIdx);
+  const fromId = IDS[from];
+  const toId = IDS[to];
+  DISPATCH[fromId * COUNT + toId](input, output);
 }
