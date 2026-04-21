@@ -16,11 +16,3 @@ export type Color<S extends Space> = {
   value: Float32Array;
   alpha: number;
 };
-
-export type Matrix<S extends Space> = {
-  readonly id: S;
-  readonly hub: Space;
-  readonly source: (input: Float32Array, output: Float32Array) => void;
-  readonly target: (input: Float32Array, output: Float32Array) => void;
-  readonly direct?: Partial<Record<Space, (input: Float32Array, output: Float32Array) => void>>;
-};
