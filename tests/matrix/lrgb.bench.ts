@@ -2,7 +2,7 @@ import { bench, describe } from 'vitest';
 import { convertColor } from '~/api/convert';
 import { createMockArray, createMockOutput } from '../factory';
 
-describe('convertColor(LRGB)', () => {
+describe('convert-color-lrgb', () => {
   const input = createMockArray([1, 1, 1]);
   const output = createMockOutput();
   bench('convert (lrgb-to-rgb)', () => {

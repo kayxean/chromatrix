@@ -1,55 +1,55 @@
-import { describe, it } from 'vitest';
+import { describe, test } from 'vitest';
 import { convertColor } from '~/api/convert';
 import { createMockArray, createMockOutput, expectColorCloseTo } from '../factory';
 
-describe('convertColor(LRGB)', () => {
+describe('convert-color-lrgb', () => {
   const input = createMockArray([1, 1, 1]);
-  it('should convert LRGB to RGB', () => {
+  test('convert (lrgb-to-rgb)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'rgb');
     expectColorCloseTo(output, [1, 1, 1]);
   });
-  it('should convert LRGB to HSL', () => {
+  test('convert (lrgb-to-hsl)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'hsl');
     expectColorCloseTo(output, [0, 0, 1]);
   });
-  it('should convert LRGB to HSV', () => {
+  test('convert (lrgb-to-hsv)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'hsv');
     expectColorCloseTo(output, [0, 0, 1]);
   });
-  it('should convert LRGB to HWB', () => {
+  test('convert (lrgb-to-hwb)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'hwb');
     expectColorCloseTo(output, [0, 1, 0]);
   });
-  it('should convert LRGB to LAB', () => {
+  test('convert (lrgb-to-lab)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'lab');
     expectColorCloseTo(output, [100, 0, 0]);
   });
-  it('should convert LRGB to LCH', () => {
+  test('convert (lrgb-to-lch)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'lch');
     expectColorCloseTo(output, [100, 0, 0]);
   });
-  it('should convert LRGB to OKLAB', () => {
+  test('convert (lrgb-to-oklab)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'oklab');
     expectColorCloseTo(output, [1, 0, 0]);
   });
-  it('should convert LRGB to OKLCH', () => {
+  test('convert (lrgb-to-oklch)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'oklch');
     expectColorCloseTo(output, [1, 0, 0]);
   });
-  it('should convert LRGB to XYZ50', () => {
+  test('convert (lrgb-to-xyz50)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'xyz50');
     expectColorCloseTo(output, [0.9642, 1, 0.8252]);
   });
-  it('should convert LRGB to XYZ65', () => {
+  test('convert (lrgb-to-xyz65)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'xyz65');
     expectColorCloseTo(output, [0.9505, 1, 1.0888]);

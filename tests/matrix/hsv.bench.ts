@@ -2,7 +2,7 @@ import { bench, describe } from 'vitest';
 import { convertColor } from '~/api/convert';
 import { createMockArray, createMockOutput } from '../factory';
 
-describe('convertColor(HSV)', () => {
+describe('convert-color-hsv', () => {
   const input = createMockArray([0, 0, 1]);
   const output = createMockOutput();
   bench('convert (hsv-to-rgb)', () => {

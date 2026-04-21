@@ -1,55 +1,55 @@
-import { describe, it } from 'vitest';
+import { describe, test } from 'vitest';
 import { convertColor } from '~/api/convert';
 import { createMockArray, createMockOutput, expectColorCloseTo } from '../factory';
 
-describe('convertColor(HSL)', () => {
+describe('convert-color-hsl', () => {
   const input = createMockArray([0, 0, 1]);
-  it('should convert HSL to RGB', () => {
+  test('convert (hsl-to-rgb)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'rgb');
     expectColorCloseTo(output, [1, 1, 1]);
   });
-  it('should convert HSL to HSV', () => {
+  test('convert (hsl-to-hsv)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'hsv');
     expectColorCloseTo(output, [0, 0, 1]);
   });
-  it('should convert HSL to HWB', () => {
+  test('convert (hsl-to-hwb)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'hwb');
     expectColorCloseTo(output, [0, 1, 0]);
   });
-  it('should convert HSL to LAB', () => {
+  test('convert (hsl-to-lab)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'lab');
     expectColorCloseTo(output, [100, 0, 0]);
   });
-  it('should convert HSL to LCH', () => {
+  test('convert (hsl-to-lch)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'lch');
     expectColorCloseTo(output, [100, 0, 0]);
   });
-  it('should convert HSL to OKLAB', () => {
+  test('convert (hsl-to-oklab)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'oklab');
     expectColorCloseTo(output, [1, 0, 0]);
   });
-  it('should convert HSL to OKLCH', () => {
+  test('convert (hsl-to-oklch)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'oklch');
     expectColorCloseTo(output, [1, 0, 0]);
   });
-  it('should convert HSL to LRGB', () => {
+  test('convert (hsl-to-lrgb)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'lrgb');
     expectColorCloseTo(output, [1, 1, 1]);
   });
-  it('should convert HSL to XYZ50', () => {
+  test('convert (hsl-to-xyz50)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'xyz50');
     expectColorCloseTo(output, [0.9642, 1, 0.8252]);
   });
-  it('should convert HSL to XYZ65', () => {
+  test('convert (hsl-to-xyz65)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsl', 'xyz65');
     expectColorCloseTo(output, [0.9505, 1, 1.0888]);

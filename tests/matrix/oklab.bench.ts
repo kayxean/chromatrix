@@ -2,7 +2,7 @@ import { bench, describe } from 'vitest';
 import { convertColor } from '~/api/convert';
 import { createMockArray, createMockOutput } from '../factory';
 
-describe('convertColor(OKLAB)', () => {
+describe('convert-color-oklab', () => {
   const input = createMockArray([1, 0, 0]);
   const output = createMockOutput();
   bench('convert (oklab-to-rgb)', () => {
