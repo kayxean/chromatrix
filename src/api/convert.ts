@@ -111,7 +111,7 @@ function getPath(start: number, target: number): ConvertFn[] {
 const R1 = new Float32Array(3);
 const R2 = new Float32Array(3);
 
-function bake(steps: ConvertFn[]): ConvertFn {
+function bake(steps: Readonly<ConvertFn[]>): ConvertFn {
   const len = steps.length;
   switch (len) {
     case 0:
@@ -216,11 +216,11 @@ export function convertColorById(
   DISPATCH[from * COUNT + to](input, output);
 }
 
-export function convertColor<S extends Space, T extends Space>(
+export function convertColor(
   input: Float32Array,
   output: Float32Array,
-  from: S,
-  to: T,
+  from: Space,
+  to: Space,
 ): void {
   const fromId = IDS[from];
   const toId = IDS[to];

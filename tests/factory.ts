@@ -1,9 +1,9 @@
-import type { Color, Space } from '~/types';
+import type { Color, Space } from '~/lib/types';
 import { expect } from 'vitest';
 
 export const expectColorCloseTo = (
   actual: Float32Array,
-  expected: number[],
+  expected: Readonly<number[]>,
   precision = 3,
 ): void => {
   for (let i = 0; i < actual.length; i++) {
@@ -19,7 +19,7 @@ export const expectColorCloseTo = (
   }
 };
 
-export const expectColorToBe = (actual: Float32Array, expected: number[]): void => {
+export const expectColorToBe = (actual: Float32Array, expected: Readonly<number[]>): void => {
   actual.forEach((val, i) => {
     expect(val).toBe(expected[i]);
   });
@@ -27,15 +27,15 @@ export const expectColorToBe = (actual: Float32Array, expected: number[]): void 
 
 export const expectColorTrace = (
   actual: Float32Array,
-  expected: number[],
+  expected: Readonly<number[]>,
   precision = 3,
-  context: { from: string; to: string; intermediate: Float32Array },
+  context: Readonly<{ from: string; to: string; intermediate: Float32Array }>,
 ): void => {
   for (let i = 0; i < actual.length; i++) {
     try {
       expect(actual[i]).toBeCloseTo(expected[i], precision);
     } catch {
-      const fmt = (arr: Float32Array | number[]) =>
+      const fmt = (arr: Float32Array | Readonly<number[]>) =>
         `[${Array.from(arr)
           .map((n) => n.toFixed(precision + 2))
           .join(', ')}]`;
@@ -52,19 +52,19 @@ export const expectColorTrace = (
   }
 };
 
-export const createMockColor = (
-  space: Space,
-  values: number[] | Float32Array,
+export const createMockColor = <S extends Space>(
+  space: S,
+  values: Float32Array | Readonly<number[]>,
   alpha = 1,
-): Color => {
+): Color<S> => {
   return {
     space,
     value: new Float32Array(values),
     alpha,
-  } as Color;
+  };
 };
 
-export const createMockArray = (values: number[]): Float32Array => {
+export const createMockArray = (values: Readonly<number[]>): Float32Array => {
   return new Float32Array(values);
 };
 

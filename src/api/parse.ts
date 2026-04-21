@@ -1,4 +1,4 @@
-import type { Color, Space } from './types';
+import type { Color, Space } from '../lib/types';
 import { createColor } from './matrix';
 
 const I255 = 1 / 255;

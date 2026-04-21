@@ -1,4 +1,4 @@
-import type { Color, Space } from './types';
+import type { Color, Space } from '../lib/types';
 
 const s = {
   rgb: 'rgb(',
@@ -85,7 +85,7 @@ function formatHex(r: number, g: number, b: number, a?: number): string {
   return res;
 }
 
-export function formatCss(color: Color, asHex = false, precision = 2): string {
+export function formatCss<S extends Space>(color: Color<S>, asHex = false, precision = 2): string {
   const { space, value, alpha } = color;
 
   if (asHex && space === 'rgb') {

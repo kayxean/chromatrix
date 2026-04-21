@@ -2,7 +2,7 @@ import { bench, describe } from 'vitest';
 import { convertColor } from '~/api/convert';
 import { createMockArray, createMockOutput } from '../factory';
 
-describe('convertColor(LCH)', () => {
+describe('convert-color-lch', () => {
   const input = createMockArray([100, 0, 180]);
   const output = createMockOutput();
   bench('convert (lch-to-rgb)', () => {

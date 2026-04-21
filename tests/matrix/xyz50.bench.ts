@@ -2,7 +2,7 @@ import { bench, describe } from 'vitest';
 import { convertColor } from '~/api/convert';
 import { createMockArray, createMockOutput } from '../factory';
 
-describe('convertColor(XYZ50)', () => {
+describe('convert-color-xyz50', () => {
   const input = createMockArray([0.9642, 1, 0.8252]);
   const output = createMockOutput();
   bench('convert (xyz50-to-rgb)', () => {
