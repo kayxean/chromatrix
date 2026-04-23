@@ -1,5 +1,4 @@
 import type { Color, Space } from '../lib/types';
-import { createColor } from './matrix';
 
 const I255 = 1 / 255;
 const I100 = 1 / 100;
@@ -191,52 +190,59 @@ function normalize(sp: string, v: Float32Array): [number, number, number] {
   return [v0, v1, v2];
 }
 
-export function parseColor(s: string): Color {
+export function parseColor(s: string): Color<Space> {
   const l = s.length;
   if (l === 0) {
     throw new Error('empty');
   }
   let i = skipParse(s, 0, l);
 
+  let sp: Space;
+
   if ((s.codePointAt(i) ?? 0) === 35) {
     const { r, g, b, a } = parseHex(s, i);
-    const c = createColor('rgb', [r * I255, g * I255, b * I255]);
-    c.alpha = a * I255;
-    return c;
-  }
-
-  const ns = i;
-  while (i < l && (s.codePointAt(i) ?? 0) !== 40 && (s.codePointAt(i) ?? 0) > 32) {
-    i++;
-  }
-
-  let sp = parseSpace(s, ns, i);
-  if (sp === null) {
-    throw new Error('format');
-  }
-
-  if (sp === 'color') {
-    i = skipParse(s, i + 1, l);
-    const ps = i;
-    while (i < l && (s.codePointAt(i) ?? 0) > 32) {
+    BUF[0] = r * I255;
+    BUF[1] = g * I255;
+    BUF[2] = b * I255;
+    BUF[3] = a * I255;
+    sp = 'rgb';
+  } else {
+    const ns = i;
+    while (i < l && (s.codePointAt(i) ?? 0) !== 40 && (s.codePointAt(i) ?? 0) > 32) {
       i++;
     }
-    const p = s.slice(ps, i);
-    if (p === 'srgb-linear') {
-      sp = 'lrgb';
-    } else if (p === 'xyz-d65' || p === 'xyz') {
-      sp = 'xyz65';
-    } else if (p === 'xyz-d50') {
-      sp = 'xyz50';
-    } else {
+
+    const detected = parseSpace(s, ns, i);
+    if (detected === null) {
       throw new Error('format');
     }
-  } else {
-    i++;
+
+    if (detected === 'color') {
+      i = skipParse(s, i + 1, l);
+      const ps = i;
+      while (i < l && (s.codePointAt(i) ?? 0) > 32) {
+        i++;
+      }
+      const p = s.slice(ps, i);
+      if (p === 'srgb-linear') sp = 'lrgb';
+      else if (p === 'xyz-d65' || p === 'xyz') sp = 'xyz65';
+      else if (p === 'xyz-d50') sp = 'xyz50';
+      else throw new Error('format');
+    } else {
+      sp = detected;
+      i++;
+    }
+
+    parseValues(s, i, l, sp);
+    const [v0, v1, v2] = normalize(sp, BUF);
+    BUF[0] = v0;
+    BUF[1] = v1;
+    BUF[2] = v2;
   }
 
-  parseValues(s, i, l, sp);
-  const res = createColor(sp, normalize(sp, BUF));
-  res.alpha = BUF[3];
-  return res;
+  return {
+    space: sp,
+    value: new Float32Array([BUF[0], BUF[1], BUF[2]]),
+    alpha: BUF[3],
+  };
 }
