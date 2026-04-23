@@ -88,11 +88,15 @@ function formatHex(r: number, g: number, b: number, a?: number): string {
 export function formatCss<S extends Space>(color: Color<S>, asHex = false, precision = 2): string {
   const { space, value, alpha } = color;
 
+  const v0 = value[0];
+  const v1 = value[1];
+  const v2 = value[2];
+
   if (asHex && space === 'rgb') {
     return formatHex(
-      Math.trunc((Number.isNaN(value[0]) ? 0 : value[0]) * 255 + 0.5),
-      Math.trunc((Number.isNaN(value[1]) ? 0 : value[1]) * 255 + 0.5),
-      Math.trunc((Number.isNaN(value[2]) ? 0 : value[2]) * 255 + 0.5),
+      Math.trunc((Number.isNaN(v0) ? 0 : v0) * 255 + 0.5),
+      Math.trunc((Number.isNaN(v1) ? 0 : v1) * 255 + 0.5),
+      Math.trunc((Number.isNaN(v2) ? 0 : v2) * 255 + 0.5),
       alpha === undefined ? undefined : Math.trunc(alpha * 255 + 0.5),
     );
   }
@@ -114,16 +118,5 @@ export function formatCss<S extends Space>(color: Color<S>, asHex = false, preci
   }
 
   const n = spaces[space] ?? space;
-  return (
-    s.clr +
-    n +
-    s.sp +
-    num(value[0], f) +
-    s.sp +
-    num(value[1], f) +
-    s.sp +
-    num(value[2], f) +
-    a +
-    s.e
-  );
+  return s.clr + n + s.sp + num(v0, f) + s.sp + num(v1, f) + s.sp + num(v2, f) + a + s.e;
 }

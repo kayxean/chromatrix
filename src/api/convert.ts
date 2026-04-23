@@ -207,15 +207,6 @@ const DISPATCH = Array.from<unknown, ConvertFn>({ length: COUNT * COUNT }, (_, i
   return bake(getPath(from, to));
 });
 
-export function convertColorById(
-  input: Float32Array,
-  output: Float32Array,
-  from: number,
-  to: number,
-): void {
-  DISPATCH[from * COUNT + to](input, output);
-}
-
 export function convertColor(
   input: Float32Array,
   output: Float32Array,
