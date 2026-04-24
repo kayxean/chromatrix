@@ -1,248 +1,202 @@
 import type { Color, Space } from '../lib/types';
 
 const I255 = 1 / 255;
-const I100 = 1 / 100;
-const BUF = new Float32Array(4);
-const PTR = { i: 0 };
+const SCRATCH = new Uint8Array(256);
+let cur = 0;
 
-function parseChar(c: number): number {
-  if (c >= 48 && c <= 57) return c - 48;
-  if (c >= 65 && c <= 70) return c - 55;
-  if (c >= 97 && c <= 102) return c - 87;
-  return 0;
-}
+export function parseHex(b: Readonly<Uint8Array>, slen: number): Color<'rgb'> {
+  const v = new Float32Array(3);
+  const start = ++cur;
 
-function parseNumber(s: string, i: number, l: number): number {
-  let v = 0;
-  let n = 1;
-  let d = 0;
-  let m = 0.1;
-  const f = s.codePointAt(i) ?? 0;
-
-  if (
-    (f | 32) === 110 &&
-    i + 3 < l &&
-    ((s.codePointAt(i + 1) ?? 0) | 32) === 111 &&
-    ((s.codePointAt(i + 2) ?? 0) | 32) === 110 &&
-    ((s.codePointAt(i + 3) ?? 0) | 32) === 101
+  while (
+    cur < slen &&
+    ((b[cur] >= 48 && b[cur] <= 57) || ((b[cur] | 32) >= 97 && (b[cur] | 32) <= 102))
   ) {
-    PTR.i = i + 4;
-    return NaN;
+    cur++;
   }
 
-  if (f === 45) {
-    n = -1;
-    i++;
-  } else if (f === 43) i++;
+  const hLen = cur - start;
+  const wide = hLen >= 6;
+  const step = wide ? 2 : 1;
 
-  while (i < l) {
-    const c = s.codePointAt(i) ?? 0;
-    if (c >= 48 && c <= 57) {
-      if (d === 0) v = v * 10 + (c - 48);
-      else {
-        v += (c - 48) * m;
-        m *= 0.1;
-      }
-      i++;
-    } else if (c === 46) {
-      d = 1;
-      i++;
-    } else break;
+  for (let i = 0; i < 3; i++) {
+    const p = start + i * step;
+    const c1 = b[p];
+    const c2 = wide ? b[p + 1] : c1;
+    v[i] = ((((c1 & 0xf) + (c1 > 64 ? 9 : 0)) << 4) | ((c2 & 0xf) + (c2 > 64 ? 9 : 0))) * I255;
   }
-  PTR.i = i;
-  return v * n;
+
+  let a = 1;
+  if (hLen === 4 || hLen === 8) {
+    const p = start + hLen - step;
+    const c1 = b[p];
+    const c2 = wide ? b[p + 1] : c1;
+    a = ((((c1 & 0xf) + (c1 > 64 ? 9 : 0)) << 4) | ((c2 & 0xf) + (c2 > 64 ? 9 : 0))) * I255;
+  }
+
+  return { space: 'rgb', value: v, alpha: a };
 }
 
-function parseSpace(s: string, b: number, e: number): Space | 'color' | null {
-  const l = e - b;
-  if (l < 3) return null;
+export function parseCss(b: Readonly<Uint8Array>, slen: number, space: Space): Color<Space> {
+  const v = new Float32Array(3);
+  let alpha = 1;
 
-  const c0 = (s.codePointAt(b) ?? 0) | 32,
-    c1 = (s.codePointAt(b + 1) ?? 0) | 32,
-    c2 = (s.codePointAt(b + 2) ?? 0) | 32;
-
-  if (l === 3 || l === 4) {
-    if (c0 === 114) return 'rgb';
-    if (c0 === 104) return c1 === 115 ? 'hsl' : 'hwb';
-    if (c0 === 108) return c1 === 97 ? 'lab' : 'lch';
-    if (c0 === 120 && c1 === 121 && c2 === 122) return 'xyz65';
-  }
-  if (l === 5) {
-    if (c0 === 111 && c1 === 107) {
-      const c3 = (s.codePointAt(b + 3) ?? 0) | 32;
-      return c2 === 108 && c3 === 97 ? 'oklab' : 'oklch';
-    }
-    const c4 = (s.codePointAt(b + 4) ?? 0) | 32;
-    if (c0 === 99 && c4 === 114) return 'color';
-  }
-  if (l === 7 && c0 === 120 && c1 === 121 && c2 === 122) {
-    const c6 = s.codePointAt(b + 6) ?? 0;
-    if (c6 === 53) return 'xyz50';
-    if (c6 === 54) return 'xyz65';
-  }
-
-  return null;
-}
-
-function parseHex(s: string, i = 0): { r: number; g: number; b: number; a: number } {
-  const l = s.length;
-  const t = (s.codePointAt(i) ?? 0) === 35 ? i + 1 : i;
-  const n = l - t;
-
-  if (n === 0) throw new Error('empty hex');
-  if (!((1 << n) & 344)) throw new Error(`invalid hex length: ${n}`);
-
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  let a = 255;
-
-  if (n >= 6) {
-    r = (parseChar(s.codePointAt(t) ?? 0) << 4) | parseChar(s.codePointAt(t + 1) ?? 0);
-    g = (parseChar(s.codePointAt(t + 2) ?? 0) << 4) | parseChar(s.codePointAt(t + 3) ?? 0);
-    b = (parseChar(s.codePointAt(t + 4) ?? 0) << 4) | parseChar(s.codePointAt(t + 5) ?? 0);
-    if (n === 8) {
-      a = (parseChar(s.codePointAt(t + 6) ?? 0) << 4) | parseChar(s.codePointAt(t + 7) ?? 0);
-    }
-  } else {
-    r = parseChar(s.codePointAt(t) ?? 0);
-    r = (r << 4) | r;
-    g = parseChar(s.codePointAt(t + 1) ?? 0);
-    g = (g << 4) | g;
-    b = parseChar(s.codePointAt(t + 2) ?? 0);
-    b = (b << 4) | b;
-    if (n === 4) {
-      a = parseChar(s.codePointAt(t + 3) ?? 0);
-      a = (a << 4) | a;
-    }
-  }
-  return { r, g, b, a };
-}
-
-function skipParse(s: string, i: number, l: number): number {
-  let cur = i;
-  while (cur < l) {
-    const c = s.codePointAt(cur) ?? 0;
-    if (c <= 32 || c === 44 || c === 47) {
+  for (let idx = 0; idx < 4; idx++) {
+    while (cur < slen && (b[cur] <= 32 || b[cur] === 44 || b[cur] === 47)) {
       cur++;
-    } else {
+    }
+    if (cur >= slen || b[cur] === 41) {
       break;
     }
-  }
-  return cur;
-}
 
-function parseValues(s: string, i: number, l: number, sp: string): number {
-  let k = 0;
-  let c = i;
-  BUF.fill(0);
-  BUF[3] = 1;
-  while (c < l && k < 4) {
-    c = skipParse(s, c, l);
-    if ((s.codePointAt(c) ?? 0) === 41) {
-      break;
-    }
-    let v = parseNumber(s, c, l);
-    c = PTR.i;
-
-    const next = s.codePointAt(c) ?? 0;
-    if (next === 37) {
-      if (sp === 'rgb' || k === 3) {
-        v *= I100;
-      } else if (sp === 'oklab' || sp === 'oklch') {
-        v *= k === 0 ? I100 : 0.004;
-      } else if ((sp === 'hsl' || sp === 'hwb') && k > 0) {
-        v *= I100;
+    if (b[cur] === 110) {
+      cur += 4;
+      if (idx < 3) {
+        v[idx] = NaN;
+      } else {
+        alpha = NaN;
       }
-      c++;
-    } else if ((next | 32) >= 97 && (next | 32) <= 122) {
-      const start = c;
-      while (
-        c < l &&
-        ((s.codePointAt(c) ?? 0) | 32) >= 97 &&
-        ((s.codePointAt(c) ?? 0) | 32) <= 122
+      continue;
+    }
+
+    let val = 0;
+    let div = 1;
+    let dot = false;
+    const sign = b[cur] === 45 ? -1 : 1;
+    if (b[cur] === 45 || b[cur] === 43) {
+      cur++;
+    }
+    while (cur < slen) {
+      const c = b[cur];
+      if (c >= 48 && c <= 57) {
+        if (dot) {
+          val = val + (c - 48) / (div *= 10);
+        } else {
+          val = val * 10 + (c - 48);
+        }
+      } else if (c === 46) {
+        dot = true;
+      } else {
+        break;
+      }
+      cur++;
+    }
+
+    const res = val * sign;
+    const isPct = b[cur] === 37;
+    while (cur < slen && b[cur] > 32 && b[cur] !== 44 && b[cur] !== 47 && b[cur] !== 41) {
+      cur++;
+    }
+
+    if (idx === 3) {
+      alpha = isPct ? res * 0.01 : res;
+    } else if (idx === 0) {
+      if (space === 'rgb') {
+        v[0] = Number.isNaN(res) ? NaN : isPct ? res * 0.01 : res * I255;
+      } else if (space === 'hsl' || space === 'hwb') {
+        v[0] = res === 360 ? 360 : ((res % 360) + 360) % 360;
+      } else if (space === 'oklch' || space === 'oklab') {
+        v[0] = res * 0.01;
+      } else if (isPct && space !== 'lab' && space !== 'lch') {
+        v[0] = res * 0.01;
+      } else {
+        v[0] = res;
+      }
+    } else if (idx === 1) {
+      if (space === 'rgb') {
+        v[1] = Number.isNaN(res) ? NaN : isPct ? res * 0.01 : res * I255;
+      } else if (
+        space === 'hsl' ||
+        space === 'hwb' ||
+        (isPct && space !== 'lab' && space !== 'lch')
       ) {
-        c++;
+        v[1] = res * 0.01;
+      } else if (space === 'oklab' && isPct) {
+        v[1] = res * 0.01;
+      } else {
+        v[1] = res;
       }
-      const unit = s.slice(start, c);
-      if (unit === 'turn') v *= 360;
-      else if (unit === 'rad') v *= 57.29577951308232;
-      else if (unit === 'grad') v *= 0.9;
-    } else if (sp === 'rgb' && k < 3 && !Number.isNaN(v)) {
-      v *= I255;
+    } else {
+      if (space === 'rgb') {
+        v[2] = Number.isNaN(res) ? NaN : isPct ? res * 0.01 : res * I255;
+      } else if (
+        space === 'hsl' ||
+        space === 'hwb' ||
+        (isPct && space !== 'lab' && space !== 'lch')
+      ) {
+        v[2] = res * 0.01;
+      } else if (space === 'oklch' || space === 'lch') {
+        v[2] = res === 360 ? 360 : ((res % 360) + 360) % 360;
+      } else {
+        v[2] = res;
+      }
     }
-
-    BUF[k] = v;
-    k++;
   }
-  return c;
-}
-
-function normalize(sp: string, v: Float32Array): [number, number, number] {
-  let v0 = v[0];
-  const v1 = v[1];
-  const v2 = v[2];
-
-  if (sp === 'hsl' || sp === 'hwb' || sp === 'lch' || sp === 'oklch') {
-    v0 = ((v0 % 360) + 360) % 360;
-  }
-
-  return [v0, v1, v2];
+  return { space, value: v, alpha };
 }
 
 export function parseColor(s: string): Color<Space> {
-  const l = s.length;
-  if (l === 0) {
-    throw new Error('empty');
-  }
-  let i = skipParse(s, 0, l);
-
-  let sp: Space;
-
-  if ((s.codePointAt(i) ?? 0) === 35) {
-    const { r, g, b, a } = parseHex(s, i);
-    BUF[0] = r * I255;
-    BUF[1] = g * I255;
-    BUF[2] = b * I255;
-    BUF[3] = a * I255;
-    sp = 'rgb';
-  } else {
-    const ns = i;
-    while (i < l && (s.codePointAt(i) ?? 0) !== 40 && (s.codePointAt(i) ?? 0) > 32) {
-      i++;
-    }
-
-    const detected = parseSpace(s, ns, i);
-    if (detected === null) {
-      throw new Error('format');
-    }
-
-    if (detected === 'color') {
-      i = skipParse(s, i + 1, l);
-      const ps = i;
-      while (i < l && (s.codePointAt(i) ?? 0) > 32) {
-        i++;
-      }
-      const p = s.slice(ps, i);
-      if (p === 'srgb-linear') sp = 'lrgb';
-      else if (p === 'xyz-d65' || p === 'xyz') sp = 'xyz65';
-      else if (p === 'xyz-d50') sp = 'xyz50';
-      else throw new Error('format');
-    } else {
-      sp = detected;
-      i++;
-    }
-
-    parseValues(s, i, l, sp);
-    const [v0, v1, v2] = normalize(sp, BUF);
-    BUF[0] = v0;
-    BUF[1] = v1;
-    BUF[2] = v2;
+  const slen = s.length;
+  const b = slen <= 256 ? SCRATCH : new Uint8Array(slen);
+  for (let k = 0; k < slen; k++) {
+    b[k] = s.codePointAt(k) ?? 0;
   }
 
-  return {
-    space: sp,
-    value: new Float32Array([BUF[0], BUF[1], BUF[2]]),
-    alpha: BUF[3],
-  };
+  cur = 0;
+  while (cur < slen && b[cur] <= 32) {
+    cur++;
+  }
+  if (b[cur] === 35) {
+    return parseHex(b, slen);
+  }
+
+  const nS = cur;
+  while (cur < slen && b[cur] !== 40 && b[cur] > 32) {
+    cur++;
+  }
+  const c0 = b[nS];
+  const c1 = b[nS + 1];
+  const c2 = b[nS + 2];
+
+  while (cur < slen && b[cur] !== 40) {
+    cur++;
+  }
+  cur++;
+
+  if (c0 === 114) {
+    return parseCss(b, slen, 'rgb');
+  }
+  if (c0 === 104) {
+    return parseCss(b, slen, c2 === 98 ? 'hwb' : 'hsl');
+  }
+  if (c0 === 108) {
+    return parseCss(b, slen, c1 === 99 ? 'lch' : 'lab');
+  }
+  if (c0 === 111) {
+    const space = b[nS + 4] === 104 ? 'oklch' : 'oklab';
+    return parseCss(b, slen, space);
+  }
+  if (c0 === 99) {
+    while (cur < slen && b[cur] <= 32) {
+      cur++;
+    }
+    const tS = cur;
+    while (cur < slen && b[cur] > 32) {
+      cur++;
+    }
+    const char0 = b[tS];
+    while (cur < slen && b[cur] <= 32) {
+      cur++;
+    }
+    if (char0 === 115) {
+      const space = b[tS + 4] === 45 ? 'lrgb' : 'rgb';
+      return parseCss(b, slen, space);
+    }
+    if (char0 === 120) {
+      const space = b[tS + 5] === 53 ? 'xyz50' : 'xyz65';
+      return parseCss(b, slen, space);
+    }
+  }
+
+  return { space: 'rgb', value: new Float32Array(3), alpha: 1 };
 }

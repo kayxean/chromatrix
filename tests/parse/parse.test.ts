@@ -60,7 +60,7 @@ describe('parse-color-hsl', () => {
   });
   test('parse (hsl-max)', () => {
     const { value } = parseColor('hsl(360deg 100% 100%)');
-    expectColorCloseTo(value, [0, 1, 1]);
+    expectColorCloseTo(value, [360, 1, 1]);
   });
   test('parse (hsl-alpha)', () => {
     const { alpha } = parseColor('hsl(200deg 50% 50% / 0.1)');
@@ -84,7 +84,7 @@ describe('parse-color-hwb', () => {
   });
   test('parse (hwb-max)', () => {
     const { value } = parseColor('hwb(360deg 100% 100%)');
-    expectColorCloseTo(value, [0, 1, 1]);
+    expectColorCloseTo(value, [360, 1, 1]);
   });
   test('parse (hwb-alpha)', () => {
     const { alpha } = parseColor('hwb(120deg 0% 0% / 0.5)');
