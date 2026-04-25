@@ -102,13 +102,14 @@ export function deriveColor<S extends Space, T extends Space>(color: Color<S>, t
   };
 }
 
-export function mutateColor<S extends Space>(color: Color<S>, to: S): void {
+export function mutateColor<S extends Space>(color: Color<S>, to: S): asserts color is Color<S> {
   const from = color.space;
   if (from === (to as string)) return;
 
   convertColor(color.value, color.value, from, to);
 
-  color.space = to;
+  const ref = color as { -readonly [K in keyof Color<Space>]: Color<Space>[K] };
+  ref.space = to;
 }
 
 export function mountMatrix(size: number): void {
