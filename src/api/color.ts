@@ -1,4 +1,4 @@
-import type { Color, Space } from '../lib/types';
+import type { Color, Mutable, Space } from '../lib/types';
 import { convertColor } from './convert';
 
 const MAX_CELLS = 2048;
@@ -108,7 +108,7 @@ export function mutateColor<S extends Space>(color: Color<S>, to: S): asserts co
 
   convertColor(color.value, color.value, from, to);
 
-  const ref = color as { -readonly [K in keyof Color<Space>]: Color<Space>[K] };
+  const ref = color as Mutable<Color<S>>;
   ref.space = to;
 }
 
