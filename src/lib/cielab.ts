@@ -8,6 +8,7 @@ const INV_X50 = 1 / X50;
 const INV_Z50 = 1 / Z50;
 
 const INV_K = 1 / K;
+const INV_K_100 = 100 / K;
 const K_116 = K / 116;
 const O_116 = 16 / 116;
 
@@ -20,14 +21,14 @@ export function xyz50ToLab(input: Float32Array, output: Float32Array): void {
   const oy = fy > E ? Math.cbrt(fy) : K_116 * fy + O_116;
   const oz = fz > E ? Math.cbrt(fz) : K_116 * fz + O_116;
 
-  output[0] = 116 * oy - 16;
+  output[0] = 1.16 * oy - 0.16;
   output[1] = 500 * (ox - oy);
   output[2] = 200 * (oy - oz);
 }
 
 export function labToXyz50(input: Float32Array, output: Float32Array): void {
   const l = input[0];
-  const fy = (l + 16) / 116;
+  const fy = (l + 0.16) / 1.16;
   const fx = input[1] * 0.002 + fy;
   const fz = fy - input[2] * 0.005;
 
@@ -36,7 +37,7 @@ export function labToXyz50(input: Float32Array, output: Float32Array): void {
   const z3 = fz * fz * fz;
 
   output[0] = (x3 > E ? x3 : (116 * fx - 16) * INV_K) * X50;
-  output[1] = y3 > E ? y3 : l * INV_K;
+  output[1] = y3 > E ? y3 : l * INV_K_100;
   output[2] = (z3 > E ? z3 : (116 * fz - 16) * INV_K) * Z50;
 }
 
@@ -56,14 +57,14 @@ export function xyz65ToLab(input: Float32Array, output: Float32Array): void {
   const oy = y50 > E ? Math.cbrt(y50) : K_116 * y50 + O_116;
   const oz = fz > E ? Math.cbrt(fz) : K_116 * fz + O_116;
 
-  output[0] = 116 * oy - 16;
+  output[0] = 1.16 * oy - 0.16;
   output[1] = 500 * (ox - oy);
   output[2] = 200 * (oy - oz);
 }
 
 export function labToXyz65(input: Float32Array, output: Float32Array): void {
   const l = input[0];
-  const fy = (l + 16) / 116;
+  const fy = (l + 0.16) / 1.16;
   const fx = input[1] * 0.002 + fy;
   const fz = fy - input[2] * 0.005;
 
@@ -72,7 +73,7 @@ export function labToXyz65(input: Float32Array, output: Float32Array): void {
   const z3 = fz * fz * fz;
 
   const x50 = (x3 > E ? x3 : (116 * fx - 16) * INV_K) * X50;
-  const y50 = y3 > E ? y3 : l * INV_K;
+  const y50 = y3 > E ? y3 : l * INV_K_100;
   const z50 = (z3 > E ? z3 : (116 * fz - 16) * INV_K) * Z50;
 
   output[0] = 0.9555766 * x50 - 0.0230393 * y50 + 0.0631636 * z50;
@@ -96,14 +97,14 @@ export function lrgbToLab(input: Float32Array, output: Float32Array): void {
   const oy = y50 > E ? Math.cbrt(y50) : K_116 * y50 + O_116;
   const oz = fz > E ? Math.cbrt(fz) : K_116 * fz + O_116;
 
-  output[0] = 116 * oy - 16;
+  output[0] = 1.16 * oy - 0.16;
   output[1] = 500 * (ox - oy);
   output[2] = 200 * (oy - oz);
 }
 
 export function labToLrgb(input: Float32Array, output: Float32Array): void {
   const l = input[0];
-  const fy = (l + 16) / 116;
+  const fy = (l + 0.16) / 1.16;
   const fx = input[1] * 0.002 + fy;
   const fz = fy - input[2] * 0.005;
 
@@ -112,7 +113,7 @@ export function labToLrgb(input: Float32Array, output: Float32Array): void {
   const z3 = fz * fz * fz;
 
   const x50 = (x3 > E ? x3 : (116 * fx - 16) * INV_K) * X50;
-  const y50 = y3 > E ? y3 : l * INV_K;
+  const y50 = y3 > E ? y3 : l * INV_K_100;
   const z50 = (z3 > E ? z3 : (116 * fz - 16) * INV_K) * Z50;
 
   output[0] = 3.1338561 * x50 - 1.6168667 * y50 - 0.4906146 * z50;

@@ -100,7 +100,7 @@ describe('parse-color-lab', () => {
   test('parse lab', () => {
     const { space, value } = parseColor('lab(50% 40 20)');
     expect(space).toBe('lab');
-    expectColorCloseTo(value, [50, 40, 20]);
+    expectColorCloseTo(value, [0.5, 40, 20]);
   });
   test('parse (lab-min)', () => {
     const { value } = parseColor('lab(0% -125 -125)');
@@ -108,7 +108,7 @@ describe('parse-color-lab', () => {
   });
   test('parse (lab-max)', () => {
     const { value } = parseColor('lab(100% 125 125)');
-    expectColorCloseTo(value, [100, 125, 125]);
+    expectColorCloseTo(value, [1, 125, 125]);
   });
   test('parse (lab-alpha)', () => {
     const { alpha } = parseColor('lab(50% 0 0 / 0.5)');
@@ -124,7 +124,7 @@ describe('parse-color-lch', () => {
   test('parse lch', () => {
     const { space, value } = parseColor('lch(50% 100 30deg)');
     expect(space).toBe('lch');
-    expectColorCloseTo(value, [50, 100, 30]);
+    expectColorCloseTo(value, [0.5, 100, 30]);
   });
   test('parse (lch-min)', () => {
     const { value } = parseColor('lch(0% 0 0deg)');
@@ -132,7 +132,7 @@ describe('parse-color-lch', () => {
   });
   test('parse (lch-max)', () => {
     const { value } = parseColor('lch(100% 150 360deg)');
-    expectColorCloseTo(value, [100, 150, 360]);
+    expectColorCloseTo(value, [1, 150, 360]);
   });
   test('parse (lch-alpha)', () => {
     const { alpha } = parseColor('lch(50% 50 10deg / 0.1)');

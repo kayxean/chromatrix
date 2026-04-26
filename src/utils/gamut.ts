@@ -17,16 +17,12 @@ export function clampHsv(color: Color<Space>): void {
 
 export function clampCartesian(color: Color<Space>): void {
   const v = color.value;
-  const isLab = color.space === 'lab';
-  const maxL = isLab ? 100 : 1;
-  v[0] = Math.max(0, Math.min(maxL, v[0]));
+  v[0] = Math.max(0, Math.min(1, v[0]));
 }
 
 export function clampPolar(color: Color<Space>): void {
   const v = color.value;
-  const isLch = color.space === 'lch';
-  const maxL = isLch ? 100 : 1;
-  v[0] = Math.max(0, Math.min(maxL, v[0]));
+  v[0] = Math.max(0, Math.min(1, v[0]));
   v[1] = Math.max(0, v[1]);
   v[2] = ((v[2] % 360) + 360) % 360;
 }

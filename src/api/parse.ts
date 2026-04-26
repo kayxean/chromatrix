@@ -97,7 +97,7 @@ export function parseCss(b: Readonly<Uint8Array>, slen: number, space: Space): C
         v[0] = res === 360 ? 360 : ((res % 360) + 360) % 360;
       } else if (space === 'oklch' || space === 'oklab') {
         v[0] = res * 0.01;
-      } else if (isPct && space !== 'lab' && space !== 'lch') {
+      } else if (isPct) {
         v[0] = res * 0.01;
       } else {
         v[0] = res;
@@ -105,11 +105,7 @@ export function parseCss(b: Readonly<Uint8Array>, slen: number, space: Space): C
     } else if (idx === 1) {
       if (space === 'rgb') {
         v[1] = Number.isNaN(res) ? NaN : isPct ? res * 0.01 : res * I255;
-      } else if (
-        space === 'hsl' ||
-        space === 'hwb' ||
-        (isPct && space !== 'lab' && space !== 'lch')
-      ) {
+      } else if (space === 'hsl' || space === 'hwb') {
         v[1] = res * 0.01;
       } else if (space === 'oklab' && isPct) {
         v[1] = res * 0.01;
@@ -119,11 +115,7 @@ export function parseCss(b: Readonly<Uint8Array>, slen: number, space: Space): C
     } else {
       if (space === 'rgb') {
         v[2] = Number.isNaN(res) ? NaN : isPct ? res * 0.01 : res * I255;
-      } else if (
-        space === 'hsl' ||
-        space === 'hwb' ||
-        (isPct && space !== 'lab' && space !== 'lch')
-      ) {
+      } else if (space === 'hsl' || space === 'hwb') {
         v[2] = res * 0.01;
       } else if (space === 'oklch' || space === 'lch') {
         v[2] = res === 360 ? 360 : ((res % 360) + 360) % 360;

@@ -27,12 +27,12 @@ describe('convert-color-lrgb', () => {
   test('convert (lrgb-to-lab)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'lab');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (lrgb-to-lch)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lrgb', 'lch');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (lrgb-to-oklab)', () => {
     const output = createMockOutput();

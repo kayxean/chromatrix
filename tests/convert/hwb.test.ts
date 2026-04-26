@@ -22,12 +22,12 @@ describe('convert-color-hwb', () => {
   test('convert (hwb-to-lab)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hwb', 'lab');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (hwb-to-lch)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hwb', 'lch');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (hwb-to-oklab)', () => {
     const output = createMockOutput();

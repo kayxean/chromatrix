@@ -92,7 +92,7 @@ describe('format-css-hwb', () => {
 
 describe('format-css-lab', () => {
   test('format lab', () => {
-    const color = createMockColor('lab', [50, 40, 20]);
+    const color = createMockColor('lab', [0.5, 40, 20]);
     expect(formatCss(color)).toBe('lab(50% 40 20)');
   });
   test('format (lab-min)', () => {
@@ -100,11 +100,11 @@ describe('format-css-lab', () => {
     expect(formatCss(color)).toBe('lab(0% -125 -125)');
   });
   test('format (lab-max)', () => {
-    const color = createMockColor('lab', [100, 125, 125]);
+    const color = createMockColor('lab', [1, 125, 125]);
     expect(formatCss(color)).toBe('lab(100% 125 125)');
   });
   test('format (lab-alpha)', () => {
-    const color = createMockColor('lab', [50, 0, 0], 0.5);
+    const color = createMockColor('lab', [0.5, 0, 0], 0.5);
     expect(formatCss(color)).toBe('lab(50% 0 0 / 0.5)');
   });
   test('format (lab-none)', () => {
@@ -115,7 +115,7 @@ describe('format-css-lab', () => {
 
 describe('format-css-lch', () => {
   test('format lch', () => {
-    const color = createMockColor('lch', [50, 100, 30]);
+    const color = createMockColor('lch', [0.5, 100, 30]);
     expect(formatCss(color)).toBe('lch(50% 100 30deg)');
   });
   test('format (lch-min)', () => {
@@ -123,11 +123,11 @@ describe('format-css-lch', () => {
     expect(formatCss(color)).toBe('lch(0% 0 0deg)');
   });
   test('format (lch-max)', () => {
-    const color = createMockColor('lch', [100, 150, 360]);
+    const color = createMockColor('lch', [1, 150, 360]);
     expect(formatCss(color)).toBe('lch(100% 150 360deg)');
   });
   test('format (lch-alpha)', () => {
-    const color = createMockColor('lch', [50, 50, 10], 0.1);
+    const color = createMockColor('lch', [0.5, 50, 10], 0.1);
     expect(formatCss(color)).toBe('lch(50% 50 10deg / 0.1)');
   });
   test('format (lch-none)', () => {

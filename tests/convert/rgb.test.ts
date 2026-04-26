@@ -22,12 +22,12 @@ describe('convert-color-rgb', () => {
   test('convert (rgb-to-lab)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'rgb', 'lab');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (rgb-to-lch)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'rgb', 'lch');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (rgb-to-oklab)', () => {
     const output = createMockOutput();
