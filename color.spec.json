@@ -1,0 +1,159 @@
+{
+  "src": {
+    "api": {
+      "color.ts": {
+        "createMatrix": "Allocate a reused Float32Array from the matrix pool",
+        "dropMatrix": "Return a Float32Array to the matrix pool",
+        "createColor": "Create a new color object using a pooled matrix for values",
+        "dropColor": "Return a color's value matrix to the pool",
+        "cloneColor": "Clone a color into a new object with pooled matrix",
+        "deriveColor": "Create a new color in a target space, converting values if needed",
+        "mutateColor": "Mutate a color in-place to a target space",
+        "mountMatrix": "Initialize the matrix pool with a given size",
+        "clearMatrix": "Clear all pooled matrices (reset HEAD to -1)",
+        "countMatrix": "Return the number of available matrices in the pool"
+      },
+      "convert.ts": {
+        "getPath": "Find the shortest conversion path between two color spaces (private)",
+        "bake": "Bake a sequence of conversion steps into a single optimized function (private)",
+        "convertColor": "Convert a color value from one space to another using the precomputed dispatch table"
+      },
+      "format.ts": {
+        "serialize": "Serialize a numeric value with optional unit and precision (private)",
+        "rgbToHex": "Convert an RGB color value to hex string (private)",
+        "rgbToCss": "Format RGB color to CSS rgb() string (private)",
+        "hslToCss": "Format HSL color to CSS hsl() string (private)",
+        "hwbToCss": "Format HWB color to CSS hwb() string (private)",
+        "labToCss": "Format Lab color to CSS lab() string (private)",
+        "lchToCss": "Format LCh color to CSS lch() string (private)",
+        "oklabToCss": "Format Oklab color to CSS oklab() string (private)",
+        "oklchToCss": "Format Oklch color to CSS oklch() string (private)",
+        "lrgbToCss": "Format linear RGB color to CSS color(srgb-linear) string (private)",
+        "xyz50ToCss": "Format XYZ D50 color to CSS color(xyz-d50) string (private)",
+        "xyz65ToCss": "Format XYZ D65 color to CSS color(xyz-d65) string (private)",
+        "formatCss": "Format a color to CSS string (hex or functional notation)"
+      },
+      "parse.ts": {
+        "parseHex": "Parse a hex color string (3/4/6/8 digits) into an RGB color",
+        "parseCss": "Parse a CSS color function (e.g., rgb(), hsl()) into a color of the given space",
+        "parseColor": "Parse any supported color string (hex or CSS color function) into a color"
+      }
+    },
+    "utils": {
+      "adjust.ts": {
+        "lighten": "Increase luminance",
+        "darken": "Decrease luminance",
+        "saturate": "Increase chroma",
+        "desaturate": "Decrease chroma",
+        "whiten": "Increase lightness and chroma",
+        "blacken": "Decrease lightness and chroma",
+        "rotate": "Rotate hue angle",
+        "invert": "Invert RGB values",
+        "matchLuminance": "Match source luminance to target"
+      },
+      "analyze.ts": {
+        "getItpDistance": "Calculate ITP distance (private)",
+        "getDeltaE": "Calculate DeltaE distance (private)",
+        "getOklabDistance": "Calculate OKLab distance (private)",
+        "getDistance": "Calculate color distance using ITP, DeltaE, or OKLab",
+        "sortColors": "Sort colors by luminance, hue, chroma, or distance",
+        "averageColor": "Compute average color from an array",
+        "adaptColor": "Adapt color to different white point",
+        "isEqual": "Check semantic equality with cross-space and hue-wrap support"
+      },
+      "contrast.ts": {
+        "getSapcV": "SAPC helper function (private)",
+        "calculateLc": "Calculate lightness contrast (private)",
+        "getContrast": "Get APCA contrast score",
+        "getContrastRating": "Rate contrast score strength",
+        "getContrastRatio": "Get WCAG contrast ratio",
+        "isAccessible": "Check WCAG accessibility compliance",
+        "matchContrast": "Adjust color to meet target contrast",
+        "pickContrast": "Pick best contrasting color from options"
+      },
+      "gamut.ts": {
+        "clampRgb": "Clamp RGB/LRGB/XYZ values to [0, 1] bounds",
+        "clampHsv": "Clamp HSL/HSV/HWB saturation/lightness and wrap hue",
+        "clampCartesian": "Clamp Lab/OKLab lightness (0-100/0-1)",
+        "clampPolar": "Clamp LCH/OKLCH lightness and chroma, wrap hue",
+        "inGamut": "Check if color fits in sRGB gamut",
+        "toGamut": "Perceptually map color into sRGB via OKLCH chroma reduction"
+      },
+      "gradient.ts": {
+        "buildStops": "Internal string-builder for raw colors and stops (private)",
+        "createLinearGradient": "Build CSS linear-gradient string",
+        "createRadialGradient": "Build CSS radial-gradient string",
+        "createConicGradient": "Build CSS conic-gradient string",
+        "createSmoothGradient": "Build multi-step gradient via polar interpolation",
+        "createMultiColorGradient": "Build gradient from evenly distributed colors"
+      },
+      "palette.ts": {
+        "ensurePolar": "Convert color to polar space (private)",
+        "mixColor": "Mix two colors with interpolation",
+        "mixSubtractive": "Mix two colors with subtractive mixing",
+        "createHarmony": "Generate harmonic colors from ratios",
+        "createScales": "Create gradient scales between stops",
+        "createTints": "Generate tints from color to white",
+        "createShades": "Generate shades from color to black",
+        "createTonal": "Generate full tonal range (black to color to white)"
+      },
+      "picker.ts": {
+        "createPicker": "Initialize stateful HSV controller; pivots input to pool-managed Color<'hsv'>",
+        "update": "Coordinate-based update (x, y) for SV/H/A with 0.001 epsilon tolerance",
+        "assign": "Synchronize state with external Color; implements significant-hue memory for grayscale",
+        "setHue": "Direct hue mutation (0-360) with 0.1 epsilon check",
+        "setSaturation": "Direct saturation mutation (0-1) with 0.001 epsilon check",
+        "setValue": "Direct brightness mutation (0-1) with 0.001 epsilon check",
+        "setAlpha": "Direct alpha mutation (0-1) with 0.001 epsilon check",
+        "subscribe": "Agnostic 60fps observer; passes internal hsv reference to subscribers",
+        "getState": "Return internal Color<'hsv'> reference (No allocation/cloning)",
+        "getValue": "Return POJO representation {h, s, v, a} for UI components",
+        "getHue": "Return current hue value",
+        "getSaturation": "Return current saturation value",
+        "getBrightness": "Return current brightness (value) value",
+        "getAlpha": "Return current alpha value",
+        "getColor": "Return fresh pool-based clone of current state (requires dropColor)",
+        "getSolid": "Return fresh pool-based clone with alpha forced to 1 (requires dropColor)",
+        "dispose": "Release internal hsv reference to pool and clear all subscribers"
+      },
+      "simulate.ts": {
+        "simulateDeficiency": "Simulate color vision deficiency",
+        "simulateAmbient": "Simulate ambient light effect",
+        "simulateNightMode": "Simulate night mode viewing",
+        "simulateLowLight": "Simulate low light conditions",
+        "simulateCataract": "Simulate cataract vision",
+        "simulateSunlight": "Simulate sunlight exposure"
+      }
+    },
+    "lib": {
+      "chroma.ts": ["xyz65ToXyz50", "xyz50ToXyz65"],
+      "cielab.ts": [
+        "xyz50ToLab",
+        "labToXyz50",
+        "xyz65ToLab",
+        "labToXyz65",
+        "lrgbToLab",
+        "labToLrgb"
+      ],
+      "linear.ts": [
+        "rgbToLrgb",
+        "lrgbToRgb",
+        "lrgbToXyz65",
+        "lrgbToXyz50",
+        "xyz65ToLrgb",
+        "xyz50ToLrgb"
+      ],
+      "oklab.ts": [
+        "xyz65ToOklab",
+        "oklabToXyz65",
+        "xyz50ToOklab",
+        "oklabToXyz50",
+        "lrgbToOklab",
+        "oklabToLrgb"
+      ],
+      "polar.ts": ["labToLch", "lchToLab", "oklabToOklch", "oklchToOklab"],
+      "srgb.ts": ["rgbToHsv", "hsvToRgb", "hsvToHsl", "hslToHsv", "hsvToHwb", "hwbToHsv"],
+      "types.ts": ["Space", "Color", "Mutable"]
+    }
+  }
+}

@@ -16,3 +16,5 @@ export type Color<S extends Space> = {
   value: Float32Array;
   alpha: number;
 };
+
+export type Mutable<S extends Color<Space>> = { -readonly [K in keyof S]: S[K] };

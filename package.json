@@ -22,40 +22,44 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
-    },
-    "./adapters/*": {
-      "types": "./dist/adapters/*.d.mts",
-      "import": "./dist/adapters/*.mjs"
-    },
-    "./utils/*": {
-      "types": "./dist/utils/*.d.mts",
-      "import": "./dist/utils/*.mjs"
-    },
-    "./convert": {
-      "types": "./dist/convert.d.mts",
-      "import": "./dist/convert.mjs"
-    },
-    "./format": {
-      "types": "./dist/format.d.mts",
-      "import": "./dist/format.mjs"
-    },
-    "./matrix": {
-      "types": "./dist/matrix.d.mts",
-      "import": "./dist/matrix.mjs"
-    },
-    "./parse": {
-      "types": "./dist/parse.d.mts",
-      "import": "./dist/parse.mjs"
-    },
-    "./shared": {
-      "types": "./dist/shared.d.mts",
-      "import": "./dist/shared.mjs"
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
     },
     "./types": {
-      "types": "./dist/types.d.mts",
-      "import": "./dist/types.mjs"
+      "import": "./dist/lib/types.mjs",
+      "types": "./dist/lib/types.d.mts"
+    },
+    "./adjust": {
+      "import": "./dist/utils/adjust.mjs",
+      "types": "./dist/utils/adjust.d.mts"
+    },
+    "./analyze": {
+      "import": "./dist/utils/analyze.mjs",
+      "types": "./dist/utils/analyze.d.mts"
+    },
+    "./contrast": {
+      "import": "./dist/utils/contrast.mjs",
+      "types": "./dist/utils/contrast.d.mts"
+    },
+    "./gamut": {
+      "import": "./dist/utils/gamut.mjs",
+      "types": "./dist/utils/gamut.d.mts"
+    },
+    "./gradient": {
+      "import": "./dist/utils/gradient.mjs",
+      "types": "./dist/utils/gradient.d.mts"
+    },
+    "./palette": {
+      "import": "./dist/utils/palette.mjs",
+      "types": "./dist/utils/palette.d.mts"
+    },
+    "./picker": {
+      "import": "./dist/utils/picker.mjs",
+      "types": "./dist/utils/picker.d.mts"
+    },
+    "./simulate": {
+      "import": "./dist/utils/simulate.mjs",
+      "types": "./dist/utils/simulate.d.mts"
     }
   },
   "publishConfig": {
