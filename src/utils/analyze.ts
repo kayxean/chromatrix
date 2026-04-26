@@ -29,7 +29,7 @@ const calculateItp = (xyz: Float32Array): [number, number, number] => {
   return [I, Ct, Cp];
 };
 
-function getItpDistance(colorA: Color<Space>, colorB: Color<Space>): number {
+const getItpDistance = (colorA: Color<Space>, colorB: Color<Space>): number => {
   mutateColor(colorA, 'xyz65');
   mutateColor(colorB, 'xyz65');
 
@@ -44,9 +44,9 @@ function getItpDistance(colorA: Color<Space>, colorB: Color<Space>): number {
   const dCp = c1[2] - c2[2];
 
   return 720 * Math.sqrt(dI * dI + 0.25 * (dCt * dCt) + dCp * dCp);
-}
+};
 
-function getDeltaE(colorA: Color<Space>, colorB: Color<Space>): number {
+const getDeltaE = (colorA: Color<Space>, colorB: Color<Space>): number => {
   mutateColor(colorA, 'lab');
   mutateColor(colorB, 'lab');
 
@@ -116,9 +116,9 @@ function getDeltaE(colorA: Color<Space>, colorB: Color<Space>): number {
   return Math.sqrt(
     (dLp / SL) ** 2 + (dCp / SC) ** 2 + (dHp / SH) ** 2 + RT * (dCp / SC) * (dHp / SH),
   );
-}
+};
 
-function getOklabDistance(colorA: Color<Space>, colorB: Color<Space>): number {
+const getOklabDistance = (colorA: Color<Space>, colorB: Color<Space>): number => {
   mutateColor(colorA, 'oklab');
   mutateColor(colorB, 'oklab');
 
@@ -129,7 +129,7 @@ function getOklabDistance(colorA: Color<Space>, colorB: Color<Space>): number {
   const db = a[2] - b[2];
 
   return Math.sqrt(dL * dL + da * da + db * db);
-}
+};
 
 export function getDistance(
   colorA: Color<Space>,
