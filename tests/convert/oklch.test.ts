@@ -27,12 +27,12 @@ describe('convert-color-oklch', () => {
   test('convert (oklch-to-lab)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'oklch', 'lab');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (oklch-to-lch)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'oklch', 'lch');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (oklch-to-oklab)', () => {
     const output = createMockOutput();

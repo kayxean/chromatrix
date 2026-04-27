@@ -70,7 +70,7 @@ const hwbToCss = (v: Float32Array, f: number, a: string) =>
 
 const labToCss = (v: Float32Array, f: number, a: string) =>
   'lab(' +
-  serialize(v[0], f, PERCENT) +
+  serialize(v[0] * 100, f, PERCENT) +
   BLANK +
   serialize(v[1], f, EMPTY) +
   BLANK +
@@ -80,7 +80,7 @@ const labToCss = (v: Float32Array, f: number, a: string) =>
 
 const lchToCss = (v: Float32Array, f: number, a: string) =>
   'lch(' +
-  serialize(v[0], f, PERCENT) +
+  serialize(v[0] * 100, f, PERCENT) +
   BLANK +
   serialize(v[1], f, EMPTY) +
   BLANK +

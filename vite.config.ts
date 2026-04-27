@@ -98,6 +98,7 @@ export default defineConfig({
   },
 
   test: {
+    include: ['tests/**/*.test.ts', 'tests/**/*.spec.ts'],
     benchmark: {
       include: ['tests/**/*.bench.ts'],
     },
@@ -112,7 +113,6 @@ export default defineConfig({
     },
     environment: 'node',
     globals: true,
-    include: ['tests/**/*.test.ts'],
     pool: 'threads',
     onStackTrace(_, frame) {
       const ignoredFiles = ['node_modules', 'tests/factory.ts'];

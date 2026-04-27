@@ -22,12 +22,12 @@ describe('convert-color-hsv', () => {
   test('convert (hsv-to-lab)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsv', 'lab');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (hsv-to-lch)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'hsv', 'lch');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (hsv-to-oklab)', () => {
     const output = createMockOutput();

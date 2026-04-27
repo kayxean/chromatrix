@@ -1,7 +1,7 @@
 import type { Color, Space } from '../lib/types';
 import { createMatrix, mutateColor } from '../api/color';
 
-function ensurePolar(color: Color<Space>): void {
+const ensurePolar = (color: Color<Space>): void => {
   const s = color.space;
   if (s === 'oklab') {
     mutateColor(color, 'oklch');
@@ -10,7 +10,7 @@ function ensurePolar(color: Color<Space>): void {
   } else if (s !== 'oklch' && s !== 'lch' && s !== 'hsl' && s !== 'hwb') {
     mutateColor(color, 'oklch');
   }
-}
+};
 
 export function mixColor(colorA: Color<Space>, colorB: Color<Space>, ratio: number): void {
   ensurePolar(colorA);

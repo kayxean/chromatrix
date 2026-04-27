@@ -3,7 +3,7 @@ import { convertColor } from '~/api/convert';
 import { createMockArray, createMockOutput, expectColorCloseTo } from '../factory';
 
 describe('convert-color-lch', () => {
-  const input = createMockArray([100, 0, 0]);
+  const input = createMockArray([1, 0, 0]);
   test('convert (lch-to-rgb)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lch', 'rgb');
@@ -27,7 +27,7 @@ describe('convert-color-lch', () => {
   test('convert (lch-to-lab)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'lch', 'lab');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (lch-to-oklab)', () => {
     const output = createMockOutput();

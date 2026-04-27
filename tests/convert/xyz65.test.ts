@@ -27,12 +27,12 @@ describe('convert-color-xyz65', () => {
   test('convert (xyz65-to-lab)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'xyz65', 'lab');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (xyz65-to-lch)', () => {
     const output = createMockOutput();
     convertColor(input, output, 'xyz65', 'lch');
-    expectColorCloseTo(output, [100, 0, 0]);
+    expectColorCloseTo(output, [1, 0, 0]);
   });
   test('convert (xyz65-to-oklab)', () => {
     const output = createMockOutput();
