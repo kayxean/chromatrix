@@ -25,999 +25,984 @@ bun add @kayxean/chromatrix
 
 ## Core Library
 
-The foundational API, exported from `@kayxean/chromatrix`. Covers buffer management, color space conversion, CSS parsing and formatting, and color object lifecycle. All functions operate on `Float32Array` buffers and managed `Color` objects using a shared pool.
-
-### Matrix
-
-Creates, clones, and manages `Float32Array` buffers and `Color` objects from the pool.
-
-```ts
-export type ColorSpace =
-  | 'rgb'
-  | 'hsl'
-  | 'hsv'
-  | 'hwb'
-  | 'lab'
-  | 'lch'
-  | 'lrgb'
-  | 'oklab'
-  | 'oklch'
-  | 'xyz50'
-  | 'xyz65';
-
-export type ColorArray = Float32Array & { readonly __length: 3 };
-
-export type ColorMatrix<S extends ColorSpace = ColorSpace> = ColorArray & {
-  readonly __space: S;
-};
-
-export type Color<S extends ColorSpace = ColorSpace> = {
-  space: S;
-  value: ColorMatrix<S>;
-  alpha?: number;
-};
-```
-
-#### createMatrix()
-
-Retrieves a `Float32Array` buffer from the object pool, or creates a new one if the pool is empty. These buffers are the underlying storage for color values throughout the library.
-
-```ts
-function createMatrix<S extends ColorSpace>(space?: S): ColorMatrix<S>;
-```
-
-- `space` — The color space to initialize the matrix for. If not provided, defaults to `'rgb'`. This determines how the buffer will be interpreted when used in conversions.
-
-```ts
-const matrix = createMatrix('rgb');
-// matrix is a Float32Array(3) with __space: 'rgb'
-
-const oklabMatrix = createMatrix('oklab');
-// matrix is a Float32Array(3) with __space: 'oklab'
-
-dropMatrix(matrix); // Required to return buffer to pool
-dropMatrix(oklabMatrix);
-```
-
----
-
-#### dropMatrix()
-
-Returns a `Float32Array` buffer to the object pool for reuse. This is critical for performance — always return buffers when you're done to avoid allocations.
-
-```ts
-function dropMatrix(arr: ColorArray): void;
-```
-
-- `arr` — The buffer to return to the pool. Must have been obtained from `createMatrix`.
-
-```ts
-const matrix = createMatrix('rgb');
-// ... use the matrix ...
-dropMatrix(matrix); // Required to return buffer to pool
-```
-
----
-
-#### createColor()
-
-Creates a full `Color` object with a space, value buffer, and optional alpha. This is the primary way to instantiate colors for use with the library. The color's value buffer is obtained from the pool.
-
-```ts
-function createColor<S extends ColorSpace>(
-  space: S,
-  values: [number, number, number] | Float32Array | ColorArray,
-  alpha?: number,
-): Color<S>;
-```
-
-- `space` — The color space the color belongs to (e.g., `'rgb'`, `'oklch'`, `'lab'`).
-- `values` — An array or tuple of three numbers representing the color components. The expected range depends on the space (e.g., RGB expects 0-1, OKLCH expects L in 0-1, C in 0-0.4, H in 0-360).
-- `alpha` — Optional alpha value from 0 to 1. Defaults to 1 (fully opaque).
-
-```ts
-const red = createColor('rgb', [1, 0, 0]);
-const transparentBlue = createColor('oklch', [0.5, 0.2, 240], 0.5);
-
-dropColor(red); // Required to return buffer to pool
-dropColor(transparentBlue);
-```
-
----
-
-#### dropColor()
-
-Releases a `Color` object's underlying buffer back to the pool. Always call this when you're done with a color to prevent memory leaks.
-
-```ts
-function dropColor(color: Color): void;
-```
-
-- `color` — The color object to release. Its internal buffer is returned to the pool.
-
-```ts
-const color = createColor('rgb', [0.5, 0.2, 0.8]);
-// ... use the color ...
-dropColor(color); // Required to return buffer to pool
-```
-
----
-
-#### cloneColor()
-
-Creates a deep copy of a `Color` object, including its value buffer and alpha. Both the new color and its buffer are obtained from the pool — the original is not modified.
-
-```ts
-function cloneColor<S extends ColorSpace>(color: Color<S>): Color<S>;
-```
-
-- `color` — The color to clone.
-
-```ts
-const original = createColor('rgb', [0.5, 0.2, 0.8]);
-const copy = cloneColor(original);
-// original and copy are independent Color objects
-
-dropColor(original); // Required to return buffers to pool
-dropColor(copy);
-```
-
----
-
-#### preallocatePool()
-
-Pre-warms the object pool by allocating a specific number of `Float32Array` buffers upfront. Useful if you know you'll create many colors in a burst and want to avoid allocations during the intensive phase.
-
-```ts
-function preallocatePool(size: number): void;
-```
-
-- `size` — The number of buffers to pre-allocate. Maximum is 256; requests beyond this are clamped.
-
-```ts
-// Allocate 50 buffers ahead of time
-preallocatePool(50);
-```
-
----
-
-#### clearPool()
-
-Empties the entire object pool, freeing all pre-allocated buffers. Call this when you want to release memory explicitly, such as at the end of a processing batch.
-
-```ts
-function clearPool(): void;
-```
-
-```ts
-// After processing is done
-clearPool();
-```
-
-> [!IMPORTANT]
-> **Pool Limit:** The pool has a maximum of 256 buffers. When exhausted, new allocations fall back to standard garbage-collected `Float32Array`.
-
----
+Foundational API for buffer pool management, color space conversion, CSS parsing and formatting, and `Color` object lifecycle. All functions operate on `Float32Array` buffers using a shared pool for performance.
 
 ### Convert
 
-Converts color values between spaces using CIEXYZ hubs.
+Converts color values between spaces using CIEXYZ hubs with a pathfinding algorithm to determine optimal conversion paths. Supports all 11 color spaces defined in `Space`.
 
 ```ts
-export type ColorAdapter = (input: ColorArray, output: ColorArray) => void;
-```
-
-#### convertColor()
-
-Converts a color from one color space to another by routing through the appropriate hub (CIEXYZ D50 or D65) with a Bradford chromatic adaptation transform when needed. This is the core conversion engine that powers all higher-level operations.
-
-```ts
-function convertColor<S extends ColorSpace, X extends ColorSpace>(
-  input: ColorArray,
-  output: ColorArray,
-  from: S,
-  to: X,
+export function convertColor(
+  input: Float32Array,
+  output: Float32Array,
+  from: Space,
+  to: Space,
 ): void;
 ```
 
-- `input` — The source color values as a Float32Array.
-- `output` — The destination buffer to write the converted values into. Can be the same as input for in-place conversion.
-- `from` — The source color space (e.g., `'rgb'`, `'oklch'`, `'lab'`).
-- `to` — The target color space.
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix`.
+
+#### convertColor()
+
+Converts color values between spaces using CIEXYZ hubs with a pathfinding algorithm to determine optimal conversion paths.
+
+- `input`: The source color values as a Float32Array.
+- `output`: The destination buffer to write the converted values into. Can be the same as input for in-place conversion.
+- `from`: The source color space (e.g., `'rgb'`, `'oklch'`, `'lab'`).
+- `to`: The target color space.
 
 ```ts
-const input = createMatrix('rgb');
+const input = createMatrix();
 input.set([0.5, 0.2, 0.8]);
 
-const output = createMatrix('oklch');
+const output = createMatrix();
 convertColor(input, output, 'rgb', 'oklch');
 // output now contains OKLCH values
-```
 
----
-
-#### convertHue()
-
-Converts a color to its polar representation (HSL, LCH, or OKLCH) to access or manipulate the hue component. Useful when you need to work with hue angles regardless of the original color space.
-
-```ts
-function convertHue<S extends ColorSpace>(input: ColorArray, output: ColorArray, mode: S): void;
-```
-
-- `input` — The source color values.
-- `output` — The destination buffer for the polar-space representation.
-- `mode` — The target polar space. Must be one of `'rgb'`, `'hsl'`, `'lab'`, `'lch'`, `'lrgb'`, `'oklab'`, or `'oklch'`.
-
-```ts
-const input = createMatrix('rgb');
-input.set([1, 0, 0]);
-
-const polar = createMatrix('hsl');
-convertHue(input, polar, 'rgb');
-// polar now contains HSL values where polar[0] is the hue angle
+dropMatrix(input);
+dropMatrix(output);
 ```
 
 ---
 
 ### Format
 
-Converts `Color` objects to CSS string representations.
+Converts `Color` objects to CSS string representations. Supports all color spaces, configurable precision, and outputs `none` for NaN channel values (CSS Color Level 4 compliance).
+
+> [!NOTE]
+> When a channel value is `NaN`, it outputs the keyword `none` (e.g., `rgb(255 none 0 / none)`).
 
 ```ts
-export type ColorMode = 'hex' | Exclude<ColorSpace, 'hsv' | 'lrgb' | 'xyz65' | 'xyz50'>;
+export function formatCss<S extends Space>(
+  color: Color<S>,
+  asHex?: boolean,
+  precision?: number,
+): string;
 ```
+
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix`.
 
 #### formatCss()
 
-Formats a `Color` object as a CSS color string. Supports all color spaces and can output as hex on demand. Uses configurable precision for numeric values.
+Converts `Color` objects to CSS string representations. Supports all color spaces, configurable precision, and outputs `none` for NaN channel values.
+
+- `color`: The Color object to format.
+- `asHex`: If true and the color is in RGB space, output as hex string instead of functional notation. Defaults to false.
+- `precision`: Number of decimal places for numeric values. Defaults to 2.
 
 ```ts
-function formatCss(color: Color, asHex?: boolean, precision?: number): string;
-```
+const rgbColor = createColor('rgb', new Float32Array([0.62, 0.36, 0.7]));
+formatCss(rgbColor, true); // "#9e5cb3"
 
-- `color` — The Color object to format.
-- `asHex` — If true and the color is in RGB space, output as hex string instead of functional notation. Defaults to false.
-- `precision` — Number of decimal places for numeric values. Defaults to 2.
+const oklchColor = createColor('oklch', new Float32Array([0.6, 0.15, 30]));
+formatCss(oklchColor); // "oklch(60% 0.15 30deg)"
+formatCss(oklchColor, false, 3); // "oklch(60% 0.150 30deg)"
 
-```ts
-const color = createColor('oklch', [0.6, 0.15, 30]);
-formatCss(color); // "oklch(60% 0.15 30deg)"
-formatCss(color, true); // "#9e5cb3"
-formatCss(color, false, 3); // "oklch(60% 0.150 30deg)"
-```
-
----
-
-#### formatHex()
-
-Formats raw RGB values as a hex color string. Low-level utility that operates on 0-255 integers rather than Color objects.
-
-```ts
-function formatHex(r: number, g: number, b: number, a?: number): string;
-```
-
-- `r` — Red component (0-255).
-- `g` — Green component (0-255).
-- `b` — Blue component (0-255).
-- `a` — Optional alpha component (0-255). If provided and less than 255, outputs 8-digit hex with alpha.
-
-```ts
-formatHex(255, 0, 0); // "#ff0000"
-formatHex(255, 0, 0, 128); // "#ff000080"
-```
-
----
-
-#### roundTo()
-
-Rounds a number to a specific number of decimal places without the floating-point artifacts of `toFixed`. Used internally for consistent CSS output.
-
-```ts
-function roundTo(val: number, precision: number): number;
-```
-
-- `val` — The number to round.
-- `precision` — Number of decimal places (0-15).
-
-```ts
-roundTo(0.1566666666, 2); // 0.16
-roundTo(0.9999999, 3); // 1
+dropColor(rgbColor);
+dropColor(oklchColor);
 ```
 
 ---
 
 ### Parse
 
-Reads CSS color strings and hex values into `Color` objects.
+Reads CSS color strings and hex values into `Color` objects. Supports hex strings, functional notation, and the `none` keyword for all supported color spaces.
+
+```ts
+export function parseColor(css: string): Color<Space>;
+```
+
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix`.
 
 #### parseColor()
 
-Parses any valid CSS color string — hex, named colors, or functional notation — into a `Color` object. Supports spaces like rgb, hsl, hwb, lab, lch, oklab, oklch, and xyz-d50/d65.
+Parses any valid CSS color string into a `Color` object. Supports hex strings, functional notation, and the `none` keyword for missing channel values.
 
-```ts
-function parseColor(css: string): Color;
-```
-
-- `css` — The CSS color string to parse. Can be hex (#f00, #ff000080), named (red), or functional (rgb(255 0 0), oklch(60% 0.15 30)).
+- `css`: The CSS color string to parse. Can be hex (#f00, #ff000080), functional (rgb(255 0 0), oklch(60% 0.15 30)), or with `none` keyword.
 
 ```ts
 const color = parseColor('oklch(60% 0.15 30)');
 const hexColor = parseColor('#ff000080');
 
-dropColor(color); // Required to return buffer to pool
+dropColor(color);
 dropColor(hexColor);
 ```
 
 ---
 
-#### parseHex()
+### Color
 
-Parses a hex color string into its RGBA components. Low-level parser that handles 3, 4, 6, and 8-digit hex strings.
-
-```ts
-function parseHex(hex: string): { r: number; g: number; b: number; a: number };
-```
-
-- `hex` — The hex string (with or without the # prefix).
+Creates, manages, and manipulates `Color` objects and their underlying `Float32Array` buffers using a shared object pool for performance.
 
 ```ts
-parseHex('#ff0000'); // { r: 255, g: 0, b: 0, a: 255 }
-parseHex('f00'); // { r: 255, g: 0, b: 0, a: 255 }
-parseHex('#ff000080'); // { r: 255, g: 0, b: 0, a: 128 }
+export type Space =
+  | 'rgb'
+  | 'hsl'
+  | 'hsv'
+  | 'hwb'
+  | 'lab'
+  | 'lch'
+  | 'oklab'
+  | 'oklch'
+  | 'lrgb'
+  | 'xyz50'
+  | 'xyz65';
+
+export type Color<S extends Space> = {
+  space: S;
+  value: Float32Array;
+  alpha: number;
+};
+
+export function createMatrix(): Float32Array;
+export function dropMatrix(arr: Float32Array): void;
+export function mountMatrix(size: number): void;
+export function clearMatrix(): void;
+export function countMatrix(): number;
+
+export function createColor<S extends Space>(
+  space: S,
+  values: Float32Array,
+  alpha?: number,
+): Color<S>;
+export function dropColor<S extends Space>(color: Color<S>): void;
+export function cloneColor<S extends Space>(color: Color<S>): Color<S>;
+
+export function mutateColor<S extends Space>(color: Color<S>, to: S): void;
+export function deriveColor<S extends Space, T extends Space>(color: Color<S>, to: T): Color<T>;
 ```
 
----
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix`.
 
-### Shared
+#### createMatrix()
 
-Mutates or derives `Color` objects across different color spaces.
+Retrieves a `Float32Array` buffer from the object pool, or creates a new one if the pool is empty.
+
+```ts
+const matrix = createMatrix();
+// matrix is a Float32Array(3)
+```
+
+#### dropMatrix()
+
+Returns a `Float32Array` buffer to the object pool for reuse.
+
+- `arr`: The buffer to return to the pool.
+
+```ts
+const matrix = createMatrix();
+// use matrix
+dropMatrix(matrix);
+```
+
+#### mountMatrix()
+
+Initializes the object pool with a specific number of pre-allocated buffers.
+
+- `size`: Number of buffers to pre-allocate. Maximum is 2048.
+
+```ts
+mountMatrix(50); // Preallocate 50 buffers
+```
+
+#### clearMatrix()
+
+Empties the entire object pool, freeing all pre-allocated buffers.
+
+```ts
+clearMatrix();
+```
+
+#### countMatrix()
+
+Returns the number of buffers currently available in the pool.
+
+```ts
+countMatrix(); // e.g., 50
+```
+
+#### createColor()
+
+Creates a full `Color` object with a space, value buffer, and optional alpha.
+
+- `space`: The color space the color belongs to.
+- `values`: A Float32Array with 3 color components.
+- `alpha`: Optional alpha value from 0 to 1. Defaults to 1.
+
+```ts
+const red = createColor('rgb', new Float32Array([1, 0, 0]));
+const transparentBlue = createColor('oklch', new Float32Array([0.5, 0.2, 240]), 0.5);
+
+dropColor(red);
+dropColor(transparentBlue);
+```
+
+#### dropColor()
+
+Releases a `Color` object's underlying buffer back to the pool.
+
+- `color`: The color object to release.
+
+```ts
+const color = createColor('rgb', new Float32Array([0.5, 0.2, 0.8]));
+// use color
+dropColor(color);
+```
+
+#### cloneColor()
+
+Creates a deep copy of a `Color` object, including its value buffer and alpha.
+
+- `color`: The color to clone.
+
+```ts
+const original = createColor('rgb', new Float32Array([0.5, 0.2, 0.8]));
+const copy = cloneColor(original);
+// original and copy are independent
+
+dropColor(original);
+dropColor(copy);
+```
 
 #### mutateColor()
 
-Converts a color to a different color space in-place, modifying the original Color object. More efficient than `deriveColor` when you don't need to preserve the original.
+Converts a color to a different color space in-place, modifying the original Color object.
+
+- `color`: The color to convert. Its `space` and `value` will be overwritten.
+- `to`: The target color space.
 
 ```ts
-function mutateColor<S extends ColorSpace>(color: Color, to: S): void;
-```
-
-- `color` — The color to convert. Its `space` and `value` will be overwritten.
-- `to` — The target color space.
-
-```ts
-const color = createColor('rgb', [0.5, 0.2, 0.8]);
+const color = createColor('rgb', new Float32Array([0.5, 0.2, 0.8]));
 mutateColor(color, 'oklch');
 // color is now in OKLCH space
-```
 
----
+dropColor(color);
+```
 
 #### deriveColor()
 
-Creates a new Color in a different color space without modifying the original. Use this when you need to keep the source color intact.
+Creates a new Color in a different color space without modifying the original.
+
+- `color`: The source color.
+- `to`: The target color space.
 
 ```ts
-function deriveColor<S extends ColorSpace>(color: Color, to: S): Color<S>;
-```
-
-- `color` — The source color.
-- `to` — The target color space.
-
-```ts
-const original = createColor('rgb', [0.5, 0.2, 0.8]);
+const original = createColor('rgb', new Float32Array([0.5, 0.2, 0.8]));
 const converted = deriveColor(original, 'oklch');
 // original is still RGB, converted is OKLCH
 
-dropColor(original); // Required to return buffers to pool
+dropColor(original);
 dropColor(converted);
 ```
+
+> [!IMPORTANT]
+> **Pool Limit:** The pool has a maximum of 2048 buffers. When exhausted, new allocations fall back to standard garbage-collected `Float32Array`.
 
 ---
 
 ## Utilities
 
-Higher-level tools, imported from `@kayxean/chromatrix/utils/*`. Built on top of the core API for tasks like contrast checking, palette generation, gamut mapping, vision simulation, and gradient creation. These handle their own color object allocation — remember to `dropColor()` when done.
+Higher-level tools built on top of the core API for color adjustment, perceptual analysis, contrast checking, gamut mapping, gradient creation, palette generation, picker controls, and vision simulation. These handle their own color object allocation — remember to `dropColor()` when done.
 
-### Compare
+### Adjust
 
-Checks perceptual equality and calculates distance between colors.
-
-#### isEqual()
-
-Checks if two colors are perceptually equal, accounting for different color spaces and alpha. Converts to a common space internally if needed. The tolerance defaults to 0.0001 which is suitable for most use cases.
+In-place color adjustments using OKLCH or RGB space for perceptual modifications.
 
 ```ts
-function isEqual(a: Color, b: Color, tolerance?: number): boolean;
+export function lighten(color: Color<Space>, ratio: number): void;
+export function darken(color: Color<Space>, ratio: number): void;
+export function saturate(color: Color<Space>, ratio: number): void;
+export function desaturate(color: Color<Space>, ratio: number): void;
+export function whiten(color: Color<Space>, ratio: number): void;
+export function blacken(color: Color<Space>, ratio: number): void;
+export function rotate(color: Color<Space>, angle: number): void;
+export function invert(color: Color<Space>): void;
+export function matchLuminance(source: Color<Space>, target: Color<Space>): void;
 ```
 
-- `a` — First color to compare.
-- `b` — Second color to compare.
-- `tolerance` — Maximum allowed difference. Defaults to 0.0001.
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix/adjust`.
 
-> [!NOTE]
-> Tolerance applies per-channel, comparing absolute difference against the threshold.
+#### lighten()
+
+Increases lightness in OKLCH space.
+
+- `color`: Color to adjust (mutated in-place).
+- `ratio`: 0 (no effect) to 1 (maximize lightness).
 
 ```ts
-const a = createColor('rgb', [1, 0, 0]);
-const b = createColor('oklch', [0.6, 0.2, 30]);
-isEqual(a, b); // false — they're different colors
+const color = createColor('oklch', new Float32Array([0.6, 0.15, 30]));
+lighten(color, 0.5); // Increases lightness by 50% of remaining headroom
+
+dropColor(color);
+```
+
+#### darken()
+
+Decreases lightness in OKLCH space.
+
+- `color`: Color to adjust (mutated in-place).
+- `ratio`: 0 (no effect) to 1 (minimize lightness).
+
+```ts
+darken(color, 0.5); // Decreases lightness
+```
+
+#### saturate()
+
+Increases chroma in OKLCH space.
+
+- `color`: Color to adjust (mutated in-place).
+- `ratio`: 0 (no effect) to 1 (maximize chroma).
+
+```ts
+saturate(color, 0.5); // Increases chroma
+```
+
+#### desaturate()
+
+Decreases chroma in OKLCH space.
+
+- `color`: Color to adjust (mutated in-place).
+- `ratio`: 0 (no effect) to 1 (minimize chroma).
+
+```ts
+desaturate(color, 0.5); // Decreases chroma
+```
+
+#### whiten()
+
+Increases lightness and decreases chroma in OKLCH space.
+
+- `color`: Color to adjust (mutated in-place).
+- `ratio`: 0 (no effect) to 1 (maximize lightness, minimize chroma).
+
+```ts
+whiten(color, 0.5); // Makes color lighter and less saturated
+```
+
+#### blacken()
+
+Decreases lightness and chroma in OKLCH space.
+
+- `color`: Color to adjust (mutated in-place).
+- `ratio`: 0 (no effect) to 1 (minimize lightness and chroma).
+
+```ts
+blacken(color, 0.5); // Makes color darker and less saturated
+```
+
+#### rotate()
+
+Rotates hue by `angle` degrees in OKLCH space.
+
+- `color`: Color to adjust (mutated in-place).
+- `angle`: Degrees to rotate hue (wraps around 0-360).
+
+```ts
+rotate(color, 180); // Rotates hue by 180 degrees
+```
+
+#### invert()
+
+Inverts RGB components (1 - value) in RGB space.
+
+- `color`: Color to adjust (mutated in-place).
+
+```ts
+invert(color); // Inverts RGB values
+```
+
+#### matchLuminance()
+
+Copies lightness from `source` to `target` in OKLCH space.
+
+- `source`: Color whose lightness will be copied.
+- `target`: Color whose lightness will be overwritten.
+
+```ts
+matchLuminance(source, target); // target now has source's lightness
 ```
 
 ---
 
-#### getDistance()
+### Analyze
 
-Calculates the perceptual distance between two colors using OKLAB as the reference space. Returns a Delta-E-like metric where 0 means identical and larger values indicate greater difference.
+Perceptual color analysis, distance calculation, sorting, averaging, and chromatic adaptation.
 
 ```ts
-function getDistance(a: Color, b: Color): number;
+export function getDistance(
+  colorA: Color<Space>,
+  colorB: Color<Space>,
+  method: 'oklab' | 'deltaE2000' | 'itp' = 'oklab',
+): number;
+export function sortColors(
+  colors: Readonly<Color<Space>[]>,
+  by: 'luminance' | 'hue' | 'chroma' | 'distance',
+  target?: Color<Space>,
+): Color<Space>[];
+export function averageColor(colors: Readonly<Color<Space>[]>): Color<Space>;
+export function adaptColor(
+  color: Color<Space>,
+  from: 'd65' | 'd50',
+  to: 'd65' | 'd50',
+): Color<Space>;
+export function isEqual<S extends Space, T extends Space>(
+  a: Color<S>,
+  b: Color<T>,
+  tolerance?: number,
+): boolean;
 ```
 
-- `a` — First color.
-- `b` — Second color.
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix/analyze`.
+
+#### getDistance()
+
+Calculates perceptual distance between two colors using the specified method.
+
+- `colorA`: First color.
+- `colorB`: Second color.
+- `method`: Distance metric: `oklab` (default, Euclidean in OKLAB), `deltaE2000` (CIEDE2000), `itp` (ITU-R BT.2124).
 
 ```ts
-const red = createColor('rgb', [1, 0, 0]);
-const blue = createColor('rgb', [0, 0, 1]);
-getDistance(red, blue); // Returns a value like 0.67
+const red = createColor('rgb', new Float32Array([1, 0, 0]));
+const blue = createColor('rgb', new Float32Array([0, 0, 1]));
+getDistance(red, blue); // ~0.67 (oklab method)
+getDistance(red, blue, 'deltaE2000'); // CIEDE2000 distance
+
+dropColor(red);
+dropColor(blue);
+```
+
+#### sortColors()
+
+Sorts an array of colors by the specified property.
+
+- `colors`: Array of colors to sort.
+- `by`: Property to sort by: `luminance`, `hue`, `chroma`, or `distance` (requires `target`).
+- `target`: Target color for `distance` sorting.
+
+```ts
+const sorted = sortColors(colors, 'luminance');
+const byDistance = sortColors(colors, 'distance', targetColor);
+```
+
+#### averageColor()
+
+Returns the average color of an array of colors in OKLAB space.
+
+- `colors`: Array of colors to average.
+
+```ts
+const avg = averageColor([color1, color2, color3]);
+```
+
+#### adaptColor()
+
+Chromatic adaptation between D50 and D65 illuminants using Bradford CAT.
+
+- `color`: Color to adapt.
+- `from`: Source illuminant (`'d50'` or `'d65'`).
+- `to`: Target illuminant.
+
+```ts
+const color = createColor('xyz50', new Float32Array([0.5, 0.5, 0.5]));
+const adapted = adaptColor(color, 'd50', 'd65'); // Convert to D65
+
+dropColor(color);
+dropColor(adapted);
+```
+
+#### isEqual()
+
+Checks if two colors are perceptually equal, accounting for different color spaces and alpha.
+
+- `a`: First color.
+- `b`: Second color.
+- `tolerance`: Maximum allowed difference per channel. Defaults to 0.001.
+
+```ts
+const a = createColor('rgb', new Float32Array([1, 0, 0]));
+const b = createColor('oklch', new Float32Array([0.6, 0.2, 30]));
+isEqual(a, b); // false
 ```
 
 ---
 
 ### Contrast
 
-Calculates APCA contrast scores and adjusts colors for readability.
-
-#### getLuminanceD65()
-
-Extracts the relative luminance of a color in CIEXYZ D65 space. The Y component represents luminance. Used as the basis for contrast calculations.
+APCA contrast scoring, WCAG ratio checks, and contrast matching for accessibility.
 
 ```ts
-function getLuminanceD65(color: Color): number;
+export function getContrast(text: Color<Space>, background: Color<Space>): number;
+export function getContrastRating(
+  score: number,
+): 'platinum' | 'gold' | 'silver' | 'bronze' | 'ui' | 'fail';
+export function getContrastRatio(colorA: Color<Space>, colorB: Color<Space>): number;
+export function isAccessible(
+  text: Color<Space>,
+  background: Color<Space>,
+  level?: 'AA' | 'AAA',
+  isLargeText?: boolean,
+): boolean;
+export function matchContrast(
+  color: Color<Space>,
+  background: Color<Space>,
+  targetContrast: number,
+): void;
+export function pickContrast(
+  background: Color<Space>,
+  options: Readonly<Color<Space>[]>,
+): Color<Space>;
 ```
 
-- `color` — The color to measure.
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix/contrast`.
+
+#### getContrast()
+
+Calculates APCA (Advanced Perceptual Contrast Algorithm) contrast score between foreground and background.
+
+- `text`: Foreground color.
+- `background`: Background color.
 
 ```ts
-const white = createColor('rgb', [1, 1, 1]);
-getLuminanceD65(white); // 1
-const black = createColor('rgb', [0, 0, 0]);
-getLuminanceD65(black); // 0
+const white = createColor('rgb', new Float32Array([1, 1, 1]));
+const black = createColor('rgb', new Float32Array([0, 0, 0]));
+getContrast(black, white); // ~33.7
+
+dropColor(white);
+dropColor(black);
 ```
-
----
-
-#### checkContrast()
-
-Calculates the APCA (Advanced Perceptual Contrast Algorithm) contrast score between a foreground and background color. Returns a signed value where positive is light-on-dark and negative is dark-on-light.
-
-```ts
-function checkContrast(text: Color, background: Color): number;
-```
-
-- `text` — The foreground color (e.g., text).
-- `background` — The background color.
-
-```ts
-const text = createColor('rgb', [0, 0, 0]);
-const bg = createColor('rgb', [1, 1, 1]);
-checkContrast(text, bg); // Returns ~106 (platinum)
-```
-
----
 
 #### getContrastRating()
 
-Converts a raw APCA contrast score into a human-readable rating. Useful for accessibility compliance checks.
+Converts a raw APCA score to a human-readable rating.
+
+- `score`: Raw APCA score from `getContrast`.
 
 ```ts
-function getContrastRating(contrast: number): string;
+getContrastRating(95); // "platinum"
+getContrastRating(80); // "gold"
+getContrastRating(65); // "silver"
+getContrastRating(50); // "bronze"
+getContrastRating(35); // "ui"
+getContrastRating(10); // "fail"
 ```
 
-- `contrast` — The raw contrast score from `checkContrast`.
+#### getContrastRatio()
+
+Calculates WCAG 2.x contrast ratio between two colors.
+
+- `colorA`: First color.
+- `colorB`: Second color.
 
 ```ts
-getContrastRating(106); // "platinum"
-getContrastRating(75); // "gold"
-getContrastRating(45); // "bronze"
-getContrastRating(20); // "fail"
+getContrastRatio(black, white); // 21
 ```
 
----
+#### isAccessible()
+
+Checks if a text/background pair meets WCAG accessibility standards.
+
+- `text`: Foreground color.
+- `background`: Background color.
+- `level`: `'AA'` (default) or `'AAA'`.
+- `isLargeText`: Whether the text is large (>= 18pt or 14pt bold). Defaults to false.
+
+```ts
+isAccessible(text, bg, 'AA', false); // true
+```
 
 #### matchContrast()
 
-Adjusts a color's lightness to achieve a target contrast against a background. Maintains the hue and chroma while only modifying the L component in OKLCH.
+Adjusts a color's lightness to meet a target APCA contrast against a background.
+
+- `color`: Color to adjust (mutated in-place).
+- `background`: Background to contrast against.
+- `targetContrast`: Desired APCA contrast score.
 
 ```ts
-function matchContrast<S extends ColorSpace>(
-  color: Color<S>,
-  background: Color,
-  targetContrast: number,
-): Color<S>;
+const color = createColor('rgb', new Float32Array([0.5, 0.2, 0.8]));
+const bg = createColor('rgb', new Float32Array([1, 1, 1]));
+matchContrast(color, bg, 45); // Adjusts color to meet 45 APCA contrast
+
+dropColor(color);
+dropColor(bg);
 ```
 
-- `color` — The color to adjust.
-- `background` — The background to contrast against.
-- `targetContrast` — The desired contrast score (e.g., 45 for AA compliance).
+#### pickContrast()
+
+Selects the color with the highest contrast from an array against a background.
+
+- `background`: Background color.
+- `options`: Array of colors to choose from.
 
 ```ts
-const color = createColor('rgb', [0.5, 0.2, 0.8]);
-const bg = createColor('rgb', [1, 1, 1]);
-const adjusted = matchContrast(color, bg, 45);
-// adjusted now meets WCAG AA against white
-```
-
----
-
-#### checkContrastBulk()
-
-Batch processes multiple colors against a single background, returning contrast scores and ratings for each. More efficient than calling `checkContrast` and `getContrastRating` separately.
-
-```ts
-function checkContrastBulk(
-  background: Color,
-  colors: Color[],
-): { color: Color; contrast: number; rating: string }[];
-```
-
-- `background` — The background color to compare against.
-- `colors` — An array of colors to check.
-
-```ts
-const bg = createColor('rgb', [1, 1, 1]);
-const palette = [
-  createColor('rgb', [0, 0, 0]),
-  createColor('rgb', [0.5, 0.5, 0.5]),
-  createColor('rgb', [1, 0, 0]),
-];
-checkContrastBulk(bg, palette);
-// Returns array with contrast and rating for each
-```
-
----
-
-#### matchScales()
-
-Generates a color scale and adjusts each step to meet a target contrast against a background. Useful for creating accessible color palettes.
-
-```ts
-function matchScales<S extends ColorSpace>(
-  stops: Color<S>[],
-  background: Color,
-  targetContrast: number,
-  steps: number,
-): Color<S>[];
-```
-
-- `stops` — Endpoint colors for the scale.
-- `background` — The background to contrast against.
-- `targetContrast` — Desired contrast score.
-- `steps` — Number of colors to generate.
-
-```ts
-const stops = [createColor('rgb', [0.1, 0.1, 0.1]), createColor('rgb', [0.9, 0.9, 0.9])];
-const scale = matchScales(stops, createColor('rgb', [1, 1, 1]), 45, 5);
-// Returns 5 colors that each meet 45 contrast on white
+const best = pickContrast(bg, [color1, color2, color3]);
 ```
 
 ---
 
 ### Gamut
 
-Detects out-of-gamut colors and clamps them to valid ranges.
-
-#### checkGamut()
-
-Checks whether a color is within the valid range for its color space. For RGB-related spaces, this effectively checks sRGB gamut. Useful for detecting colors that can't be accurately represented in a target space.
+Gamut checking and clamping to ensure colors are within valid ranges for their color space.
 
 ```ts
-function checkGamut(color: Color, tolerance?: number): boolean;
+export function inGamut(color: Color<Space>, epsilon?: number): boolean;
+export function toGamut(color: Color<Space>): void;
+export function clampRgb(color: Color<Space>): void;
+export function clampHsv(color: Color<Space>): void;
+export function clampCartesian(color: Color<Space>): void;
+export function clampPolar(color: Color<Space>): void;
 ```
 
-- `color` — The color to check.
-- `tolerance` — Small buffer for floating-point comparison. Defaults to 0.0001.
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix/gamut`.
+
+#### inGamut()
+
+Checks if a color is within the valid sRGB gamut by converting to RGB space.
+
+- `color`: Color to check.
+- `epsilon`: Floating-point tolerance. Defaults to 0.0001.
 
 ```ts
-const inGamut = createColor('oklch', [1, 0.5, 300]);
-checkGamut(inGamut); // true or false depending on whether it's in sRGB
+const color = createColor('oklch', new Float32Array([1, 0.5, 300]));
+inGamut(color); // false (high chroma exceeds sRGB)
 
-const outOfGamut = createColor('oklch', [1, 0.4, 0]);
-checkGamut(outOfGamut); // false — high chroma in LCH can exceed sRGB
+dropColor(color);
 ```
 
----
+#### toGamut()
 
-#### clampColor()
+Clamps a color's chroma in OKLCH space to fit within sRGB gamut.
 
-Clamps a color's values to the valid range for its color space. Useful for colors that have been converted from a wider gamut space and now contain invalid values. Can operate in-place or return a new color.
+- `color`: Color to clamp (mutated in-place).
 
 ```ts
-function clampColor<S extends ColorSpace>(color: Color<S>, mutate?: boolean): Color<S>;
+const color = createColor('oklch', new Float32Array([1, 0.6, 180]));
+toGamut(color); // Reduces chroma to fit sRGB
+
+dropColor(color);
 ```
 
-- `color` — The color to clamp.
-- `mutate` — If true, modifies the color in-place. If false (default), returns a new color. Defaults to true.
+#### clampRgb()
+
+Clamps RGB values to 0-1 range.
+
+- `color`: Color to clamp (mutated in-place).
 
 ```ts
-const color = createColor('oklch', [1, 0.6, 180]);
-// If chroma exceeds sRGB, it gets reduced:
-const clamped = clampColor(color, false);
+clampRgb(color); // Color value now in 0-1 range
+```
+
+#### clampHsv()
+
+Clamps HSV values: saturation/value to 0-1, hue to 0-360.
+
+- `color`: Color in HSV space to clamp.
+
+```ts
+clampHsv(hsvColor);
+```
+
+#### clampCartesian()
+
+Clamps first channel to 0-1 for Cartesian spaces (lab, oklab).
+
+- `color`: Color in lab or oklab space to clamp.
+
+```ts
+clampCartesian(labColor);
+```
+
+#### clampPolar()
+
+Clamps polar space values: lightness to 0-1, chroma to 0+, hue to 0-360.
+
+- `color`: Color in lch or oklch space to clamp.
+
+```ts
+clampPolar(oklchColor);
 ```
 
 ---
 
 ### Gradient
 
-Generates CSS gradient strings from color stops.
+Generates CSS gradient strings from color stops, supporting linear, radial, and conic gradients.
 
 ```ts
 export type GradientType = 'linear' | 'radial' | 'conic';
+export type GradientStop = Readonly<{ color: Color<Space>; position?: number }>;
 
-export type GradientStop = {
-  color: Color;
-  position?: number;
-};
-
-export type LinearGradientOptions = {
-  angle?: number;
-  stops: GradientStop[];
-};
-
-export type RadialGradientOptions = {
-  shape?: 'circle' | 'ellipse';
-  position?: string;
-  stops: GradientStop[];
-};
-
-export type ConicGradientOptions = {
-  angle?: number;
-  position?: string;
-  stops: GradientStop[];
-};
+export function createLinearGradient(stops: ReadonlyArray<GradientStop>, angle?: number): string;
+export function createRadialGradient(
+  stops: ReadonlyArray<GradientStop>,
+  shape?: 'circle' | 'ellipse',
+  position?: string,
+): string;
+export function createConicGradient(
+  stops: ReadonlyArray<GradientStop>,
+  angle?: number,
+  position?: string,
+): string;
+export function createSmoothGradient(
+  start: Color<Space>,
+  end: Color<Space>,
+  steps: number,
+  type?: GradientType,
+  options?: Readonly<{ angle?: number; shape?: 'circle' | 'ellipse'; position?: string }>,
+): string;
+export function createMultiColorGradient(
+  colors: ReadonlyArray<Color<Space>>,
+  type?: GradientType,
+  options?: Readonly<{ angle?: number; shape?: 'circle' | 'ellipse'; position?: string }>,
+): string;
 ```
+
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix/gradient`.
 
 #### createLinearGradient()
 
-Creates a CSS linear gradient string from a set of color stops.
+Creates a CSS linear gradient string.
+
+- `stops`: Array of gradient stops with optional positions.
+- `angle`: Gradient angle in degrees. Defaults to 180.
 
 ```ts
-function createLinearGradient(options: LinearGradientOptions): string;
-```
-
-- `options` — An object with `angle` (degrees, defaults to 180) and `stops` (array of colors with optional positions).
-
-```ts
-const gradient = createLinearGradient({
-  angle: 45,
-  stops: [
-    { color: createColor('rgb', [1, 0, 0]) },
-    { color: createColor('rgb', [0, 0, 1]), position: 100 },
+const gradient = createLinearGradient(
+  [
+    { color: createColor('rgb', new Float32Array([1, 0, 0])) },
+    { color: createColor('rgb', new Float32Array([0, 0, 1])), position: 100 },
   ],
-});
+  45,
+);
 // "linear-gradient(45deg, rgb(255 0 0), rgb(0 0 255) 100%)"
 ```
-
----
 
 #### createRadialGradient()
 
 Creates a CSS radial gradient string.
 
-```ts
-function createRadialGradient(options: RadialGradientOptions): string;
-```
-
-- `options` — An object with `shape` ('circle' or 'ellipse'), `position` (CSS position), and `stops`.
+- `stops`: Array of gradient stops with optional positions.
+- `shape`: 'circle' or 'ellipse'. Defaults to 'ellipse'.
+- `position`: CSS position. Defaults to 'center'.
 
 ```ts
-const gradient = createRadialGradient({
-  shape: 'circle',
-  position: 'center',
-  stops: [{ color: createColor('rgb', [1, 1, 0]) }, { color: createColor('rgb', [0, 0, 1]) }],
-});
+const gradient = createRadialGradient(
+  [
+    { color: createColor('rgb', new Float32Array([1, 1, 0])) },
+    { color: createColor('rgb', new Float32Array([0, 0, 1])) },
+  ],
+  'circle',
+  'center',
+);
 ```
-
----
 
 #### createConicGradient()
 
 Creates a CSS conic gradient string.
 
-```ts
-function createConicGradient(options: ConicGradientOptions): string;
-```
-
-- `options` — An object with `angle` (starting angle), `position`, and `stops`.
+- `stops`: Array of gradient stops with optional positions.
+- `angle`: Starting angle in degrees. Defaults to 0.
+- `position`: CSS position. Defaults to 'center'.
 
 ```ts
-const gradient = createConicGradient({
-  angle: 0,
-  position: 'center',
-  stops: [{ color: createColor('rgb', [1, 0, 0]) }, { color: createColor('rgb', [0, 1, 0]) }],
-});
+const gradient = createConicGradient(
+  [
+    { color: createColor('rgb', new Float32Array([1, 0, 0])) },
+    { color: createColor('rgb', new Float32Array([0, 1, 0])) },
+  ],
+  0,
+  'center',
+);
 ```
-
----
 
 #### createSmoothGradient()
 
-Generates a gradient with interpolated color steps between two endpoints. Automatically handles color mixing and generates the appropriate CSS gradient string. Internally creates colors that must be dropped.
+Generates a gradient with interpolated steps between two endpoints.
+
+- `start`: Start color.
+- `end`: End color.
+- `steps`: Number of color stops (minimum 2).
+- `type`: Gradient type. Defaults to 'linear'.
+- `options`: Additional options for the gradient type.
 
 ```ts
-function createSmoothGradient(
-  start: Color,
-  end: Color,
-  steps: number,
-  type?: GradientType,
-  options?: { angle?: number; shape?: 'circle' | 'ellipse'; position?: string },
-): string;
+const gradient = createSmoothGradient(startColor, endColor, 5, 'linear', { angle: 45 });
 ```
-
-- `start` — Starting color.
-- `end` — Ending color.
-- `steps` — Number of color stops (minimum 2).
-- `type` — Type of gradient: 'linear', 'radial', or 'conic'. Defaults to 'linear'.
-- `options` — Additional options for the gradient type.
-
-```ts
-const start = createColor('rgb', [1, 0, 0]);
-const end = createColor('rgb', [0, 0, 1]);
-const gradient = createSmoothGradient(start, end, 5);
-```
-
----
 
 #### createMultiColorGradient()
 
-Creates a gradient that passes through multiple colors in sequence. Each color is evenly spaced by default.
+Creates a gradient passing through multiple colors in sequence.
+
+- `colors`: Array of colors to interpolate between.
+- `type`: Gradient type. Defaults to 'linear'.
+- `options`: Additional options for the gradient type.
 
 ```ts
-function createMultiColorGradient(
-  colors: Color[],
-  type?: GradientType,
-  options?: { angle?: number; shape?: 'circle' | 'ellipse'; position?: string },
-): string;
-```
-
-- `colors` — Array of colors to interpolate between.
-- `type` — Type of gradient. Defaults to 'linear'.
-- `options` — Additional options for the gradient.
-
-```ts
-const colors = [
-  createColor('rgb', [1, 0, 0]),
-  createColor('rgb', [0, 1, 0]),
-  createColor('rgb', [0, 0, 1]),
-];
-const gradient = createMultiColorGradient(colors);
-```
-
----
-
-### Naming
-
-Matches colors to CSS named colors by perceptual distance.
-
-#### findClosestName()
-
-Finds the closest CSS named color (like 'red', 'steelblue', 'wheat') to a given color using perceptual distance in OKLAB space.
-
-```ts
-function findClosestName(color: Color): { name: string; distance: number };
-```
-
-- `color` — The color to match.
-
-```ts
-const color = createColor('rgb', [0.9, 0.1, 0.1]);
-findClosestName(color); // { name: "crimson", distance: 0.12 }
-```
-
----
-
-#### getExactName()
-
-Returns a CSS color name only if the color is an exact perceptual match within the tolerance. More strict than `findClosestName`.
-
-```ts
-function getExactName(color: Color, tolerance?: number): string | null;
-```
-
-- `color` — The color to match.
-- `tolerance` — Maximum allowed distance. Defaults to 0.001.
-
-```ts
-const red = createColor('rgb', [1, 0, 0]);
-getExactName(red); // "red"
-
-const slightlyOff = createColor('rgb', [0.99, 0.01, 0.01]);
-getExactName(slightlyOff); // null — not close enough
-```
-
----
-
-#### findSimilarNames()
-
-Finds multiple similar CSS named colors sorted by perceptual distance. Useful for showing "did you mean" suggestions.
-
-```ts
-function findSimilarNames(color: Color, limit?: number): { name: string; distance: number }[];
-```
-
-- `color` — The color to match.
-- `limit` — Maximum number of results. Defaults to 5.
-
-```ts
-const color = createColor('rgb', [0.3, 0.5, 0.8]);
-findSimilarNames(color, 3);
-// Returns like: [{ name: "steelblue", distance: 0.1 }, ...]
-```
-
----
-
-#### parseColorName()
-
-Parses a CSS named color string into a Color object. The reverse of `getExactName` — takes 'red' and returns a Color in RGB space.
-
-```ts
-function parseColorName(name: string): Color | null;
-```
-
-- `name` — The named color (case-insensitive).
-
-```ts
-const color = parseColorName('cornflowerblue');
-// Returns Color in RGB space with RGB values
+const gradient = createMultiColorGradient([red, green, blue], 'linear');
 ```
 
 ---
 
 ### Palette
 
-Generates color harmonies, scales, shades, and mixes.
+Color harmonies, scales, shades, tints, and mixing utilities.
+
+```ts
+export function mixColor(colorA: Color<Space>, colorB: Color<Space>, ratio: number): void;
+export function mixSubtractive(colorA: Color<Space>, colorB: Color<Space>, ratio?: number): void;
+export function createHarmony(input: Color<Space>, ratios: Readonly<number[]>): Color<Space>[];
+export function createScales(stops: Readonly<Color<Space>[]>, steps: number): Color<Space>[];
+export function createTints(color: Color<Space>, steps: number): Color<Space>[];
+export function createShades(color: Color<Space>, steps: number): Color<Space>[];
+export function createTonal(color: Color<Space>, steps?: number): Color<Space>[];
+```
+
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix/palette`.
 
 #### mixColor()
 
-Interpolates between two colors in their native color space. Handles hue correctly for polar spaces (LCH, OKLCH) by taking the shortest path around the hue wheel.
+Interpolates between two colors in their native polar space (handles hue shortest path).
 
-> [!IMPORTANT]
-> Interpolation occurs in the native space of the `start` color.
-
-```ts
-function mixColor<S extends ColorSpace>(start: Color<S>, end: Color<S>, t: number): Color<S>;
-```
-
-- `start` — Starting color.
-- `end` — Ending color.
-- `t` — Interpolation factor from 0 (start) to 1 (end). Values outside 0-1 are clamped.
+- `colorA`: Start color (mutated in-place to the result).
+- `colorB`: End color.
+- `ratio`: Interpolation factor 0 (start) to 1 (end). Values outside 0-1 are clamped.
 
 ```ts
-const start = createColor('oklch', [0.5, 0.1, 200]);
-const end = createColor('oklch', [0.8, 0.3, 200]);
-const mid = mixColor(start, end, 0.5);
-// Returns a color halfway between
+const start = createColor('oklch', new Float32Array([0.5, 0.1, 200]));
+const end = createColor('oklch', new Float32Array([0.8, 0.3, 200]));
+mixColor(start, end, 0.5); // start is now the mixed color
 
-dropColor(start); // Required to return buffers to pool
+dropColor(start);
 dropColor(end);
-dropColor(mid);
 ```
 
----
+#### mixSubtractive()
 
-#### createScales()
+Subtractive color mixing in linear RGB space (simulates pigment mixing).
 
-Creates a multi-stop color scale by interpolating between sequential stop pairs. If you provide 3 colors and request 9 steps, you'll get a scale that smoothly transitions through all three.
+- `colorA`: First color.
+- `colorB`: Second color.
+- `ratio`: Mix ratio (0.5 default, 0 = all A, 1 = all B).
 
 ```ts
-function createScales<S extends ColorSpace>(stops: Color<S>[], steps: number): Color<S>[];
+mixSubtractive(colorA, colorB, 0.3);
 ```
-
-- `stops` — Array of colors defining the scale endpoints.
-- `steps` — Total number of colors to generate.
-
-```ts
-const stops = [
-  createColor('rgb', [1, 0, 0]),
-  createColor('rgb', [0, 1, 0]),
-  createColor('rgb', [0, 0, 1]),
-];
-const scale = createScales(stops, 7);
-// Returns 7 colors transitioning red -> green -> blue
-```
-
----
-
-#### createShades()
-
-Creates a simple two-stop shade scale between a dark and light endpoint. Unlike `createScales`, this only interpolates between exactly two colors.
-
-```ts
-function createShades<S extends ColorSpace>(
-  start: Color<S>,
-  end: Color<S>,
-  steps: number,
-): Color<S>[];
-```
-
-- `start` — The darker color.
-- `end` — The lighter color.
-- `steps` — Number of shades to generate.
-
-```ts
-const dark = createColor('oklch', [0.1, 0.05, 200]);
-const light = createColor('oklch', [0.95, 0.1, 200]);
-const shades = createShades(dark, light, 5);
-// Returns 5 colors from dark to light
-```
-
----
 
 #### createHarmony()
 
-Generates color harmonies by rotating the hue around the color wheel. You specify variant names and hue rotation ratios (in degrees), and it returns colors for each variant.
+Generates colors by rotating hue around the color wheel by specified ratios (degrees).
+
+- `input`: Base color.
+- `ratios`: Array of hue rotation angles in degrees.
 
 ```ts
-function createHarmony<S extends ColorSpace>(
-  input: Color<S>,
-  variants: { name: string; ratios: number[] }[],
-): { name: string; colors: Color<S>[] }[];
+const base = createColor('oklch', new Float32Array([0.6, 0.15, 30]));
+const harmonies = createHarmony(base, [180, 120, 240]);
+// Returns array of colors with hue rotated by each ratio
+
+dropColor(base);
 ```
 
-- `input` — The base color to create harmonies from.
-- `variants` — Array of harmony definitions, each with a name and array of hue ratios.
+#### createScales()
+
+Creates a multi-stop color scale by interpolating between sequential stop pairs.
+
+- `stops`: Array of colors defining scale endpoints.
+- `steps`: Total number of colors to generate.
 
 ```ts
-const base = createColor('oklch', [0.6, 0.15, 30]);
-const harmonies = createHarmony(base, [
-  { name: 'complementary', ratios: [180] },
-  { name: 'triadic', ratios: [120, 240] },
-  { name: 'analogous', ratios: [-30, 30] },
-]);
-// Returns array of harmony groups with colors
+const scale = createScales([red, green, blue], 7);
+// 7 colors transitioning red -> green -> blue
+```
+
+#### createTints()
+
+Generates tints from the color to white in OKLCH space.
+
+- `color`: Base color.
+- `steps`: Number of tints to generate.
+
+```ts
+const tints = createTints(color, 5); // 5 tints from color to white
+```
+
+#### createShades()
+
+Generates shades from the color to black in OKLCH space.
+
+- `color`: Base color.
+- `steps`: Number of shades to generate.
+
+```ts
+const shades = createShades(color, 5); // 5 shades from color to black
+```
+
+#### createTonal()
+
+Generates a full tonal scale from black to color to white in OKLCH space.
+
+- `color`: Base color.
+- `steps`: Number of steps. Defaults to 9.
+
+```ts
+const tonal = createTonal(color); // 9-step tonal scale from black to color to white
 ```
 
 ---
 
 ### Picker
 
-Maps 2D UI coordinates to color values for interactive selectors.
+Interactive color picker state management for UI controls, using HSV space for coordinate mapping.
 
 ```ts
-export type PickerValue = {
-  h: number; // hue (0-360)
-  s: number; // saturation (0-1)
-  v: number; // value/brightness (0-1)
-  a: number; // alpha (0-1)
-};
+export type PickerFn = <S extends Space>(hsv: Color<S>) => void;
 
-export type PickerSubscriber = (val: PickerValue, color: Color) => void;
+export function createPicker(color: Color<Space>): {
+  update: (x: number, y: number, type: 'sv' | 'h' | 'a') => void;
+  assign: (next: Color<Space>) => void;
+  setHue: (h: number) => void;
+  setSaturation: (s: number) => void;
+  setValue: (v: number) => void;
+  setAlpha: (a: number) => void;
+  subscribe: (fn: PickerFn) => () => void;
+  getState: () => Color<Space>;
+  getValue: () => { h: number; s: number; v: number; a: number };
+  getHue: () => number;
+  getSaturation: () => number;
+  getBrightness: () => number;
+  getAlpha: () => number;
+  getColor: () => Color<Space>;
+  getSolid: () => Color<Space>;
+  dispose: () => void;
+};
 ```
+
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix/picker`.
 
 #### createPicker()
 
-Creates an interactive picker instance for building color UI controls. Maintains internal state for hue, saturation, value, and alpha that can be updated via mouse/touch events.
+Creates an interactive picker instance with state management and subscriber support.
+
+- `color`: Initial color to seed the picker.
 
 ```ts
-function createPicker(init: Color, target?: ColorSpace): PickerInstance;
-```
-
-- `init` — Initial color to seed the picker.
-- `target` — Optional target color space for output.
-
-```ts
-const color = createColor('rgb', [0.5, 0.2, 0.8]);
+const color = createColor('rgb', new Float32Array([0.5, 0.2, 0.8]));
 const picker = createPicker(color);
 
-// Update saturation/value from mouse position
+// Update from mouse position (saturation, value)
 picker.update(0.8, 0.3, 'sv');
 
 // Subscribe to changes
-const unsubscribe = picker.subscribe((val, color) => {
-  console.log(color); // Current Color object
+const unsubscribe = picker.subscribe((hsvColor) => {
+  console.log(hsvColor);
 });
 
-// Clean up when done
+// Clean up
 picker.dispose();
+unsubscribe();
+dropColor(color);
 ```
 
 > [!IMPORTANT]
@@ -1025,131 +1010,99 @@ picker.dispose();
 
 ---
 
-#### toPicker()
-
-Converts a Color object to HSV picker coordinates. Useful for reading a color into picker-style values.
-
-```ts
-function toPicker(color: Color): PickerValue;
-```
-
-- `color` — The color to convert.
-
-```ts
-const color = createColor('rgb', [0.5, 0.2, 0.8]);
-const pickerValue = toPicker(color);
-// { h: 262, s: 0.6, v: 0.8, a: 1 }
-```
-
----
-
-#### fromPicker()
-
-Creates a Color from picker HSV coordinates. The inverse of `toPicker`.
-
-```ts
-function fromPicker<S extends ColorSpace>(val: PickerValue, space: S): Color;
-```
-
-- `val` — The picker value with h, s, v, a.
-- `space` — The target color space for the output color.
-
-```ts
-const pickerValue = { h: 180, s: 0.5, v: 1, a: 1 };
-const color = fromPicker(pickerValue, 'oklch');
-// Returns Color in OKLCH space
-```
-
----
-
 ### Simulate
 
-Projects colors into reduced spaces to simulate color vision deficiencies.
+Color vision deficiency and environmental simulation filters.
+
+```ts
+export type DeficiencyType = 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia';
+
+export function simulateDeficiency(
+  color: Color<Space>,
+  type: DeficiencyType | 'none',
+  severity?: number,
+): void;
+export function simulateAmbient(color: Color<Space>, intensity?: number): void;
+export function simulateNightMode(color: Color<Space>, intensity?: number): void;
+export function simulateLowLight(color: Color<Space>, darkness?: number): void;
+export function simulateCataract(color: Color<Space>, severity?: number): void;
+export function simulateSunlight(color: Color<Space>, intensity?: number): void;
+```
+
+> [!NOTE] All functions in this section are imported from `@kayxean/chromatrix/simulate`.
 
 #### simulateDeficiency()
 
-Applies a color vision deficiency simulation matrix to project how colors appear to people with different types of color blindness. Uses scientifically-accurate transformation matrices.
+Applies color vision deficiency simulation in linear RGB space.
+
+- `color`: Color to adjust (mutated in-place).
+- `type`: Deficiency type or 'none' to return a copy.
+- `severity`: 0 (no effect) to 1 (full deficiency). Defaults to 1.
 
 ```ts
-function simulateDeficiency<S extends ColorSpace>(
-  color: Color<S>,
-  type: DeficiencyType | 'none',
-): Color<S>;
+const normal = createColor('oklch', new Float32Array([0.6, 0.15, 30]));
+simulateDeficiency(normal, 'tritanopia', 1); // Applies full tritanopia simulation
 
-export type DeficiencyType = 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia';
+dropColor(normal);
 ```
-
-- `color` — The color to simulate.
-- `type` — The type of deficiency: `'protanopia'` (red-blind), `'deuteranopia'` (green-blind), `'tritanopia'` (blue-blind), `'achromatopsia'` (total color blindness), or `'none'` to return a copy.
-
-```ts
-const normal = createColor('oklch', [0.6, 0.15, 30]);
-const protanopia = simulateDeficiency(normal, 'tritanopia');
-// Returns a Color showing how it looks to someone with tritanopia
-
-dropColor(normal); // Required to return buffers to pool
-dropColor(protanopia);
-```
-
-> [!WARNING]
-> Values may exceed 0-1 range. Use `clampColor()` before `formatCss()` to ensure valid CSS output.
-
----
-
-#### simulateAnomaly()
-
-Applies a partial color vision deficiency simulation with variable severity. Blends between the original color and a full deficiency simulation based on the severity factor.
-
-```ts
-function simulateAnomaly<S extends ColorSpace>(
-  color: Color<S>,
-  type: Exclude<DeficiencyType, 'achromatopsia'>,
-  severity: number,
-): Color<S>;
-```
-
-- `color` — The color to simulate.
-- `type` — The type of deficiency: `'protanopia'`, `'deuteranopia'`, or `'tritanopia'`. Note: Does not support `'achromatopsia'`.
-- `severity` — The severity of the deficiency from 0 (no effect) to 1 (full deficiency). Defaults to 0.5.
-
-```ts
-const normal = createColor('oklch', [0.6, 0.15, 30]);
-const mildProtanopia = simulateAnomaly(normal, 'protanopia', 0.25);
-const fullProtanopia = simulateAnomaly(normal, 'protanopia', 1);
-
-dropColor(normal); // Required to return buffers to pool
-dropColor(mildProtanopia);
-dropColor(fullProtanopia);
-```
-
-> [!WARNING]
-> Values may exceed 0-1 range. Use `clampColor()` before `formatCss()` to ensure valid CSS output.
-
----
 
 #### simulateAmbient()
 
-Simulates ambient glare or washout effect by blending the color toward white based on intensity. Useful for accessibility and readability testing.
+Blends color toward white (glare/washout) in linear RGB space.
+
+- `color`: Color to adjust (mutated in-place).
+- `intensity`: 0 (no effect) to 1 (full white). Defaults to 0.4.
 
 ```ts
-function simulateAmbient<S extends ColorSpace>(color: Color<S>, glareIntensity: number): Color<S>;
+simulateAmbient(color, 0.4); // Mild glare
 ```
 
-- `color` — The color to simulate.
-- `glareIntensity` — The intensity of the glare from 0 (no effect/passthrough) to 1 (full washout/white). Defaults to 0.4.
+#### simulateNightMode()
+
+Reduces saturation and value for night vision simulation in linear RGB space.
+
+- `color`: Color to adjust (mutated in-place).
+- `intensity`: 0 (no effect) to 1 (full night mode). Defaults to 0.5.
 
 ```ts
-const normal = createColor('oklch', [0.6, 0.15, 30]);
-const mildGlare = simulateAmbient(normal, 0.4);
-const intenseGlare = simulateAmbient(normal, 0.9);
+simulateNightMode(color, 0.5); // Moderate night vision
+```
 
-dropColor(normal); // Required to return buffers to pool
-dropColor(mildGlare);
-dropColor(intenseGlare);
+#### simulateLowLight()
+
+Mixes color with luminance for low light condition simulation in linear RGB space.
+
+- `color`: Color to adjust (mutated in-place).
+- `darkness`: 0 (normal) to 1 (very dark). Defaults to 0.5.
+
+```ts
+simulateLowLight(color, 0.5); // Moderate low light
+```
+
+#### simulateCataract()
+
+Reduces blue channel and adds fog for cataract simulation in linear RGB space.
+
+- `color`: Color to adjust (mutated in-place).
+- `severity`: 0 (no effect) to 1 (full cataract). Defaults to 0.5.
+
+```ts
+simulateCataract(color, 0.5); // Moderate cataract
+```
+
+#### simulateSunlight()
+
+Blends color toward white for direct sunlight simulation in linear RGB space.
+
+- `color`: Color to adjust (mutated in-place).
+- `intensity`: 0 (no effect) to 1 (full sunlight). Defaults to 0.7.
+
+```ts
+simulateSunlight(color, 0.7); // Bright sunlight
 ```
 
 > [!WARNING]
-> Values may exceed 0-1 range. Use `clampColor()` before `formatCss()` to ensure valid CSS output.
+> Simulated values may exceed 0-1 range. Use `clampRgb()` or `toGamut()` before `formatCss()` to ensure valid CSS output.
 
 ---
 
