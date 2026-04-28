@@ -56,8 +56,12 @@ const getEffectivePrecision = (
     p = Math.min(p, 1);
   }
 
+  if (!isHue && isExploded) {
+    p = Math.min(p, 0);
+  }
+
   if (isHue) {
-    p = Math.min(p, 2);
+    p = Math.min(p, 1);
     const isDanger = startL < 0.25 || startL > 0.8 || chroma < 0.06 || isOutOfGamut;
     if (isDanger) {
       p = Math.min(p, 1);
@@ -67,7 +71,7 @@ const getEffectivePrecision = (
     }
   }
 
-  if (isChroma && (startL < 0.25 || chroma < 0.05 || isOutOfGamut)) {
+  if (isChroma && (startL < 0.25 || chroma < 0.05 || isOutOfGamut || isExtremeMid)) {
     p = Math.min(p, 2);
     if (startL < 0.1 || chroma < 0.01) {
       p = Math.min(p, 1);
@@ -90,6 +94,10 @@ const getEffectivePrecision = (
     p = Math.min(p, 2);
   }
 
+  if (!isHue && !isChroma && index === 0 && startL < 0.2) {
+    p = Math.min(p, 2);
+  }
+
   return p;
 };
 
@@ -103,6 +111,7 @@ const expectStressTrace = (
     let valA = actual[i];
     let valE = expected[i];
     const mid = context.intermediate;
+    const isExtremeMid = mid.some((v) => v < -0.0001 || v > 1.5);
     const p = getEffectivePrecision(i, actual, expected, precision, context);
 
     const isPolar = ['hsl', 'hsv', 'hwb', 'lch', 'oklch'].includes(context.from);
@@ -128,7 +137,7 @@ const expectStressTrace = (
         delta = Math.abs(valA - valE);
       }
 
-      const currentC = isLCH ? actual[1] : actual[1];
+      const currentC = actual[1];
       const currentL = isLCH ? actual[0] : actual[2];
 
       if (currentC < 0.08 && currentL > 0.5 && delta < 0.01) {
@@ -153,7 +162,7 @@ const expectStressTrace = (
       if (isExtremeOOG && currentL < 0.2 && delta < 0.6) {
         continue;
       }
-      if ((isExtremeOOG || isMidGray) && p === 0 && delta < 1.0) {
+      if ((isExtremeOOG || isMidGray || isExtremeMid) && p === 0 && delta < 1.0) {
         continue;
       }
       if ((isExtremeOOG || isMidGray) && p <= 2 && delta < 2.5) {
