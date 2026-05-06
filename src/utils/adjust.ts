@@ -1,5 +1,5 @@
-import type { Color, Space } from '../lib/types';
 import { mutateColor } from '../api/color';
+import type { Color, Space } from '../lib/types';
 
 export function lighten(color: Color<Space>, ratio: number): void {
   mutateColor(color, 'oklch');

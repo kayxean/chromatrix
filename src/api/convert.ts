@@ -1,4 +1,3 @@
-import type { Space } from '../lib/types';
 import { xyz50ToXyz65, xyz65ToXyz50 } from '../lib/chroma';
 import {
   labToLrgb,
@@ -26,6 +25,7 @@ import {
 } from '../lib/oklab';
 import { labToLch, lchToLab, oklabToOklch, oklchToOklab } from '../lib/polar';
 import { hslToHsv, hsvToHsl, hsvToHwb, hsvToRgb, hwbToHsv, rgbToHsv } from '../lib/srgb';
+import type { Space } from '../lib/types';
 
 type ConvertFn = (input: Float32Array, output: Float32Array) => void;
 
@@ -79,11 +79,9 @@ function getPath(start: number, target: number): ConvertFn[] {
   queue[tail++] = start;
   const parents = new Int16Array(COUNT).fill(-1);
   const stepFns = Array.from<unknown, ConvertFn | null>({ length: COUNT }, () => null);
-  let found = false;
   while (head < tail) {
     const curr = queue[head++];
     if (curr === target) {
-      found = true;
       break;
     }
     const neighbors = ADJACENCY[curr];
@@ -97,12 +95,11 @@ function getPath(start: number, target: number): ConvertFn[] {
       }
     }
   }
-  if (!found) return [];
   const path: ConvertFn[] = [];
   let curr = target;
   while (curr !== start) {
-    const fn = stepFns[curr];
-    if (fn) path.push(fn);
+    const fn = stepFns[curr]!;
+    path.push(fn);
     curr = parents[curr];
   }
   return path.toReversed();
@@ -154,36 +151,6 @@ function bake(steps: Readonly<ConvertFn[]>): ConvertFn {
         f1(R1, R2);
         f2(R2, R1);
         f3(R1, o);
-      };
-    }
-    case 5: {
-      const f0 = steps[0];
-      const f1 = steps[1];
-      const f2 = steps[2];
-      const f3 = steps[3];
-      const f4 = steps[4];
-      return (i, o) => {
-        f0(i, R1);
-        f1(R1, R2);
-        f2(R2, R1);
-        f3(R1, R2);
-        f4(R2, o);
-      };
-    }
-    case 6: {
-      const f0 = steps[0];
-      const f1 = steps[1];
-      const f2 = steps[2];
-      const f3 = steps[3];
-      const f4 = steps[4];
-      const f5 = steps[5];
-      return (i, o) => {
-        f0(i, R1);
-        f1(R1, R2);
-        f2(R2, R1);
-        f3(R1, R2);
-        f4(R2, R1);
-        f5(R1, o);
       };
     }
     default:

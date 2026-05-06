@@ -1,5 +1,5 @@
-import type { Color, Space } from '../lib/types';
 import { mutateColor } from '../api/color';
+import type { Color, Space } from '../lib/types';
 
 export type DeficiencyType = 'protanopia' | 'deuteranopia' | 'tritanopia' | 'achromatopsia';
 

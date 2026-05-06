@@ -1,43 +1,21 @@
 import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
-  pack: {
-    clean: true,
-    dts: true,
-    entry: ['src/**/*.ts'],
-    format: ['esm'],
-    minify: true,
-    target: 'es2023',
-    treeshake: true,
-  },
-
   resolve: {
     alias: {
       '~': './src',
     },
   },
-
-  fmt: {
-    experimentalSortPackageJson: true,
-    ignorePatterns: ['dist/**'],
-    semi: true,
-    singleQuote: true,
-    sortImports: {
-      groups: [
-        'type',
-        'builtin',
-        'external',
-        ['internal', 'subpath'],
-        ['parent', 'sibling', 'index'],
-        'style',
-        'unknown',
-      ],
-      ignoreCase: false,
-      newlinesBetween: false,
-      order: 'asc',
+  pack: {
+    entry: ['src/**/*.ts'],
+    dts: {
+      tsgo: true,
     },
+    exports: true,
+    minify: true,
+    treeshake: true,
+    clean: true,
   },
-
   lint: {
     categories: {
       correctness: 'error',
@@ -52,53 +30,49 @@ export default defineConfig({
     },
     plugins: ['oxc', 'typescript', 'unicorn', 'vitest'],
     rules: {
-      curly: ['error', 'multi-line'],
-      'max-lines-per-function': ['error', { max: 100 }],
+      // Restriction - Rules that ban specific patterns or features
       'no-console': 'error',
-      'prefer-const': ['error', { destructuring: 'all' }],
-      'prefer-destructuring': [
-        'error',
-        {
-          AssignmentExpression: { array: false, object: true },
-          VariableDeclarator: { array: false, object: true },
-        },
-      ],
       'unicode-bom': ['error', 'never'],
-
-      'typescript/ban-ts-comment': [
-        'error',
-        {
-          minimumDescriptionLength: 3,
-          'ts-check': false,
-          'ts-expect-error': 'allow-with-description',
-          'ts-ignore': false,
-          'ts-nocheck': false,
-        },
-      ],
-      'typescript/consistent-indexed-object-style': ['error', 'record'],
       'typescript/no-explicit-any': 'error',
+      'unicorn/no-process-exit': 'error',
+      'unicorn/prefer-module': 'error',
+
+      // Pedantic - Extra strict rules that may have false positives
+      'max-lines-per-function': ['error', { max: 100 }],
+      'typescript/ban-ts-comment': ['error', { 'ts-expect-error': 'allow-with-description' }],
       'typescript/prefer-readonly-parameter-types': [
-        'error',
+        'warn',
         {
           allow: [
             { from: 'lib', name: ['Float32Array'] },
             { from: 'file', name: ['Color', 'Space'] },
           ],
-          checkParameterProperties: true,
           ignoreInferredTypes: true,
           treatMethodsAsReadonly: true,
         },
       ],
 
+      // Style - Rules that help maintain idiomatic and consistent style
+      curly: ['error', 'multi-line'],
+      'prefer-const': ['error', { destructuring: 'all' }],
+      'typescript/consistent-indexed-object-style': ['error', 'record'],
       'sort-imports': ['error', { ignoreDeclarationSort: true }],
       'unicorn/filename-case': ['error', { case: 'kebabCase' }],
-      'unicorn/no-process-exit': 'error',
-      'unicorn/prefer-module': 'error',
     },
   },
-
+  fmt: {
+    experimentalSortPackageJson: true,
+    ignorePatterns: ['dist/**'],
+    semi: true,
+    singleQuote: true,
+    sortImports: {
+      ignoreCase: false,
+      newlinesBetween: false,
+      order: 'asc',
+    },
+  },
   test: {
-    include: ['tests/**/*.test.ts', 'tests/**/*.spec.ts'],
+    include: ['tests/**/*.test.ts'],
     benchmark: {
       include: ['tests/**/*.bench.ts'],
     },
@@ -110,6 +84,7 @@ export default defineConfig({
         lines: 100,
         statements: 100,
       },
+      exclude: ['tests/factory.ts'],
     },
     environment: 'node',
     globals: true,

@@ -1,5 +1,5 @@
-import type { Color, Space } from '../lib/types';
 import { cloneColor, dropColor, mutateColor } from '../api/color';
+import type { Color, Space } from '../lib/types';
 
 export function clampRgb(color: Color<Space>): void {
   const v = color.value;

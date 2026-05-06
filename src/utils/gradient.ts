@@ -1,6 +1,6 @@
-import type { Color, Space } from '../lib/types';
 import { dropColor } from '../api/color';
 import { formatCss } from '../api/format';
+import type { Color, Space } from '../lib/types';
 import { createScales } from './palette';
 
 export type GradientType = 'linear' | 'radial' | 'conic';

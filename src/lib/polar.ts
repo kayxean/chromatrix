@@ -18,7 +18,7 @@ function toCartesian(input: Float32Array, output: Float32Array): void {
   output[2] = input[1] * Math.sin(r);
 }
 
-export const labToLch = toPolar;
-export const lchToLab = toCartesian;
-export const oklabToOklch = toPolar;
-export const oklchToOklab = toCartesian;
+export const labToLch: typeof toPolar = toPolar;
+export const lchToLab: typeof toCartesian = toCartesian;
+export const oklabToOklch: typeof toPolar = toPolar;
+export const oklchToOklab: typeof toCartesian = toCartesian;
