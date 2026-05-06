@@ -1,9 +1,9 @@
-import { bench, describe } from 'vitest';
+import { bench, describe } from 'vite-plus/test';
 import { convertColor } from '~/api/convert';
 import { createMockArray, createMockOutput } from '../factory';
 
 describe('convert-color-hsv', () => {
-  const input = createMockArray([0, 0, 1]);
+  const input = createMockArray([0, 0, 0]);
   const output = createMockOutput();
   bench('convert (hsv-to-rgb)', () => {
     convertColor(input, output, 'hsv', 'rgb');

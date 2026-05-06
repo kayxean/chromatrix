@@ -1,4 +1,4 @@
-import { beforeEach, bench, describe } from 'vitest';
+import { beforeEach, bench, describe } from 'vite-plus/test';
 import { createColor, mountMatrix } from '~/api/color';
 import { clampCartesian, clampHsv, clampPolar, clampRgb, inGamut, toGamut } from '~/utils/gamut';
 

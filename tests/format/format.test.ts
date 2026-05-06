@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vite-plus/test';
 import { formatCss } from '~/api/format';
 import { createMockColor } from '../factory';
 
@@ -18,6 +18,10 @@ describe('format-css-hex', () => {
   test('format (hex-alpha)', () => {
     const color = createMockColor('rgb', [1, 0, 0], 0.5);
     expect(formatCss(color, true)).toBe('#ff000080');
+  });
+  test('format (hex-negative-alpha)', () => {
+    const color = createMockColor('rgb', [1, 0, 0], -0.1);
+    expect(formatCss(color, true)).toBe('#ff000000');
   });
 });
 

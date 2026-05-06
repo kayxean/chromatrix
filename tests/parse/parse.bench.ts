@@ -1,9 +1,9 @@
-import { bench, describe } from 'vitest';
+import { bench, describe } from 'vite-plus/test';
 import { parseColor } from '~/api/parse';
 
 describe('parse-color-hex', () => {
   bench('parse (hex)', () => {
-    parseColor('#ff0080');
+    parseColor('#f08');
   });
   bench('parse (hex-min)', () => {
     parseColor('#000000');
