@@ -1,6 +1,6 @@
-import type { Color, Space } from '../lib/types';
 import { createMatrix, dropMatrix, mutateColor } from '../api/color';
 import { convertColor } from '../api/convert';
+import type { Color, Space } from '../lib/types';
 
 const APCA_SCALE = 1.14;
 const DARK_THRESH = 0.022;

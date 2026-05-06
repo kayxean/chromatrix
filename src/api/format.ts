@@ -12,7 +12,7 @@ const DEGREE = 'deg';
 const PERCENT = '%';
 const EMPTY = '';
 
-function serialize(v: number, f: number, u: string): string {
+const serialize = (v: number, f: number, u: string): string => {
   if (Number.isNaN(v)) return NONE;
 
   if (v < 1e-6 && v > -1e-6) return '0' + u;
@@ -24,12 +24,14 @@ function serialize(v: number, f: number, u: string): string {
 
   const bias = v < 0 ? -0.5 : 0.5;
   return Math.trunc(v * f + bias) / f + u;
-}
+};
+
+const toByte = (n: number): number => Math.max(0, Math.min(255, Math.trunc(n * 255 + 0.5)));
 
 function rgbToHex(v: Float32Array, a: number | undefined): string {
-  const r = v[0] < 0 ? 0 : v[0] > 1 ? 255 : Math.trunc(v[0] * 255 + 0.5);
-  const g = v[1] < 0 ? 0 : v[1] > 1 ? 255 : Math.trunc(v[1] * 255 + 0.5);
-  const b = v[2] < 0 ? 0 : v[2] > 1 ? 255 : Math.trunc(v[2] * 255 + 0.5);
+  const r = toByte(v[0]);
+  const g = toByte(v[1]);
+  const b = toByte(v[2]);
   let s = '#' + HEX_L[r] + HEX_R[r] + HEX_L[g] + HEX_R[g] + HEX_L[b] + HEX_R[b];
   if (a !== undefined && a < 1) {
     const ai = a < 0 ? 0 : Math.trunc(a * 255 + 0.5);
@@ -162,10 +164,5 @@ export function formatCss<S extends Space>(color: Color<S>, asHex = false, preci
   const alphaPart =
     alpha === undefined || alpha >= 1 ? EMPTY : SLASH + serialize(alpha, factor, EMPTY);
 
-  const fn = FORMATTERS[space];
-  if (fn !== undefined) {
-    return fn(value, factor, alphaPart);
-  }
-
-  return 'unknown-color';
+  return FORMATTERS[space](value, factor, alphaPart);
 }

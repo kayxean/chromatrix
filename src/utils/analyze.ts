@@ -1,6 +1,6 @@
-import type { Color, Space } from '../lib/types';
 import { cloneColor, createMatrix, deriveColor, dropColor, mutateColor } from '../api/color';
 import { convertColor } from '../api/convert';
+import type { Color, Space } from '../lib/types';
 
 const pq = (v: number): number => {
   const v_pow = v ** (1 / 78.84375);

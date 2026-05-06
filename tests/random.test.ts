@@ -1,6 +1,8 @@
-import { afterAll, describe, expect, test } from 'vitest';
+import { afterAll, describe, expect, test } from 'vite-plus/test';
 import { convertColor } from '~/api/convert';
 import { SPACES, createMockOutput, formatColorTrace, generateValidColor, utils } from './factory';
+
+const ENABLE_LOGS = false;
 
 describe('convert-color-random', () => {
   const inputBuf = new Float32Array(3);
@@ -21,6 +23,7 @@ describe('convert-color-random', () => {
   }
 
   afterAll(() => {
+    if (!ENABLE_LOGS) return;
     process.stdout.write('\n  --- Random Conversion Traces ---\n');
     colorLogs.forEach((log) => {
       process.stdout.write('  ' + log + '\n');

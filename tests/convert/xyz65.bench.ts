@@ -1,9 +1,9 @@
-import { bench, describe } from 'vitest';
+import { bench, describe } from 'vite-plus/test';
 import { convertColor } from '~/api/convert';
 import { createMockArray, createMockOutput } from '../factory';
 
 describe('convert-color-xyz65', () => {
-  const input = createMockArray([0.95047, 1, 1.08883]);
+  const input = createMockArray([0, 0, 0]);
   const output = createMockOutput();
   bench('convert (xyz65-to-rgb)', () => {
     convertColor(input, output, 'xyz65', 'rgb');

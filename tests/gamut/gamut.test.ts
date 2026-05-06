@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vite-plus/test';
 import { createColor, mountMatrix } from '~/api/color';
 import { clampCartesian, clampHsv, clampPolar, clampRgb, inGamut, toGamut } from '~/utils/gamut';
 import { expectColorCloseTo } from '../factory';

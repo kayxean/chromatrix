@@ -1,6 +1,6 @@
 {
   "name": "@kayxean/chromatrix",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": false,
   "description": "CIEXYZ-based color engine using Float32Array matrix pooling",
   "keywords": [
@@ -11,6 +11,9 @@
     "palette"
   ],
   "homepage": "https://github.com/kayxean/chromatrix#readme",
+  "bugs": {
+    "url": "https://github.com/kayxean/chromatrix/issues"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -21,63 +24,49 @@
   ],
   "type": "module",
   "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "types": "./dist/index.d.mts"
-    },
-    "./types": {
-      "import": "./dist/lib/types.mjs",
-      "types": "./dist/lib/types.d.mts"
-    },
-    "./adjust": {
-      "import": "./dist/utils/adjust.mjs",
-      "types": "./dist/utils/adjust.d.mts"
-    },
-    "./analyze": {
-      "import": "./dist/utils/analyze.mjs",
-      "types": "./dist/utils/analyze.d.mts"
-    },
-    "./contrast": {
-      "import": "./dist/utils/contrast.mjs",
-      "types": "./dist/utils/contrast.d.mts"
-    },
-    "./gamut": {
-      "import": "./dist/utils/gamut.mjs",
-      "types": "./dist/utils/gamut.d.mts"
-    },
-    "./gradient": {
-      "import": "./dist/utils/gradient.mjs",
-      "types": "./dist/utils/gradient.d.mts"
-    },
-    "./palette": {
-      "import": "./dist/utils/palette.mjs",
-      "types": "./dist/utils/palette.d.mts"
-    },
-    "./picker": {
-      "import": "./dist/utils/picker.mjs",
-      "types": "./dist/utils/picker.d.mts"
-    },
-    "./simulate": {
-      "import": "./dist/utils/simulate.mjs",
-      "types": "./dist/utils/simulate.d.mts"
-    }
+    ".": "./dist/index.mjs",
+    "./api/color": "./dist/api/color.mjs",
+    "./api/convert": "./dist/api/convert.mjs",
+    "./api/format": "./dist/api/format.mjs",
+    "./api/parse": "./dist/api/parse.mjs",
+    "./lib/chroma": "./dist/lib/chroma.mjs",
+    "./lib/cielab": "./dist/lib/cielab.mjs",
+    "./lib/linear": "./dist/lib/linear.mjs",
+    "./lib/oklab": "./dist/lib/oklab.mjs",
+    "./lib/polar": "./dist/lib/polar.mjs",
+    "./lib/srgb": "./dist/lib/srgb.mjs",
+    "./lib/types": "./dist/lib/types.mjs",
+    "./utils/adjust": "./dist/utils/adjust.mjs",
+    "./utils/analyze": "./dist/utils/analyze.mjs",
+    "./utils/contrast": "./dist/utils/contrast.mjs",
+    "./utils/gamut": "./dist/utils/gamut.mjs",
+    "./utils/gradient": "./dist/utils/gradient.mjs",
+    "./utils/palette": "./dist/utils/palette.mjs",
+    "./utils/picker": "./dist/utils/picker.mjs",
+    "./utils/simulate": "./dist/utils/simulate.mjs",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "dev": "vp pack --watch",
     "build": "vp pack",
+    "dev": "vp pack --watch",
     "test": "vp test",
-    "lint": "vp check",
-    "format": "vp check --fix"
+    "check": "vp check",
+    "prepublishOnly": "vp run build",
+    "prepare": "vp config"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@typescript/native-preview": "^7.0.0-dev.20260505.1",
     "typescript": "^6.0.3",
-    "vite-plus": "^0.1.19",
-    "vitest": "^4.1.5"
+    "vite-plus": "^0.1.20"
   },
-  "packageManager": "pnpm@10.33.0"
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+  },
+  "packageManager": "bun@1.3.13"
 }

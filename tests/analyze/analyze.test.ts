@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vite-plus/test';
 import { DEAD_CELL, createColor, mountMatrix } from '~/api/color';
 import { adaptColor, averageColor, getDistance, isEqual, sortColors } from '~/utils/analyze';
 import { expectColorCloseTo } from '../factory';

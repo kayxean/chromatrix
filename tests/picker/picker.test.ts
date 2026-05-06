@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vite-plus/test';
 import { createColor, mountMatrix } from '~/api/color';
 import { createPicker } from '~/utils/picker';
 

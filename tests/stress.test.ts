@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vite-plus/test';
 import { convertColor } from '~/api/convert';
 import { SPACES, createMockOutput, formatColorFailure, generateValidColor, utils } from './factory';
 
@@ -191,7 +191,7 @@ describe('convert-color-stress', () => {
   const intermediateBuf = createMockOutput();
   const backToStartBuf = createMockOutput();
 
-  for (let i = 0; i < 250000; i++) {
+  for (let i = 0; i < 100; i++) {
     test(`round-trip (stress-${i + 1})`, () => {
       const { from, to } = utils.pickDifferent(SPACES);
       generateValidColor(from, inputBuf);

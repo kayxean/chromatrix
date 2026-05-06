@@ -1,6 +1,6 @@
-import type { Color, Space } from '~/lib/types';
-import { expect } from 'vitest';
+import { expect } from 'vite-plus/test';
 import { convertColor } from '~/api/convert';
+import type { Color, Space } from '~/lib/types';
 
 export const SPACES: readonly Space[] = [
   'rgb',
@@ -81,11 +81,11 @@ export function generateValidColor(space: Space, target: Float32Array): void {
 }
 
 export const utils = {
-  round: (value: number, p: number) => {
+  round: (value: number, p: number): number => {
     const m = Math.pow(10, p);
     return Math.round(value * m) / m;
   },
-  range: (min: number, max: number, decimals = 3) => {
+  range: (min: number, max: number, decimals = 3): number => {
     const r = Math.random();
     let val: number;
     if (r < 0.005) {
@@ -97,7 +97,12 @@ export const utils = {
     }
     return utils.round(val, decimals);
   },
-  pickDifferent: (arr: readonly Space[]) => {
+  pickDifferent: (
+    arr: readonly Space[],
+  ): {
+    from: Space;
+    to: Space;
+  } => {
     const fromIdx = Math.floor(Math.random() * arr.length);
     const offset = 1 + Math.floor(Math.random() * (arr.length - 1));
     const toIdx = (fromIdx + offset) % arr.length;

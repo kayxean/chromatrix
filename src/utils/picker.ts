@@ -1,5 +1,5 @@
-import type { Color, Space } from '../lib/types';
 import { cloneColor, dropColor, mutateColor } from '../api/color';
+import type { Color, Space } from '../lib/types';
 
 export type PickerFn = <S extends Space>(hsv: Color<S>) => void;
 
@@ -90,47 +90,47 @@ export function createPicker(color: Color<Space>) {
   };
 
   return {
-    update: (x: number, y: number, type: 'sv' | 'h' | 'a') => {
+    update: (x: number, y: number, type: 'sv' | 'h' | 'a'): void => {
       if (handleUpdate(hsv, x, y, type)) notify();
     },
-    assign: (next: Color<Space>) => {
+    assign: (next: Color<Space>): void => {
       if (handleAssign(hsv, next)) notify();
     },
-    setHue: (h: number) => {
+    setHue: (h: number): void => {
       if (handleChannel(hsv, h, 'h')) notify();
     },
-    setSaturation: (s: number) => {
+    setSaturation: (s: number): void => {
       if (handleChannel(hsv, s, 's')) notify();
     },
-    setValue: (v: number) => {
+    setValue: (v: number): void => {
       if (handleChannel(hsv, v, 'v')) notify();
     },
-    setAlpha: (a: number) => {
+    setAlpha: (a: number): void => {
       if (handleChannel(hsv, a, 'a')) notify();
     },
-    subscribe: (fn: PickerFn) => {
+    subscribe: (fn: PickerFn): (() => boolean) => {
       subs.add(fn);
       fn(hsv);
       return () => subs.delete(fn);
     },
-    getState: () => hsv,
-    getValue: () => ({
+    getState: (): Color<Space> => hsv,
+    getValue: (): { h: number; s: number; v: number; a: number } => ({
       h: hsv.value[0],
       s: hsv.value[1],
       v: hsv.value[2],
       a: hsv.alpha,
     }),
-    getHue: () => hsv.value[0],
-    getSaturation: () => hsv.value[1],
-    getBrightness: () => hsv.value[2],
-    getAlpha: () => hsv.alpha,
-    getColor: () => cloneColor(hsv),
-    getSolid: () => {
+    getHue: (): number => hsv.value[0],
+    getSaturation: (): number => hsv.value[1],
+    getBrightness: (): number => hsv.value[2],
+    getAlpha: (): number => hsv.alpha,
+    getColor: (): Color<Space> => cloneColor(hsv),
+    getSolid: (): Color<Space> => {
       const solid = cloneColor(hsv);
       solid.alpha = 1;
       return solid;
     },
-    dispose: () => {
+    dispose: (): void => {
       dropColor(hsv);
       subs.clear();
     },

@@ -1,12 +1,12 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vite-plus/test';
 import { parseColor } from '~/api/parse';
 import { expectColorCloseTo } from '../factory';
 
 describe('parse-color-hex', () => {
   test('parse hex', () => {
-    const { space, value } = parseColor('#ff0080');
+    const { space, value } = parseColor('#f08');
     expect(space).toBe('rgb');
-    expectColorCloseTo(value, [1, 0, 0.502]);
+    expectColorCloseTo(value, [1, 0, 0.5333]);
   });
   test('parse (hex-min)', () => {
     const { value } = parseColor('#000000');

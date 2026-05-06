@@ -4,7 +4,7 @@ const I255 = 1 / 255;
 const SCRATCH = new Uint8Array(256);
 let cur = 0;
 
-export function parseHex(b: Readonly<Uint8Array>, slen: number): Color<'rgb'> {
+const parseHex = (b: Readonly<Uint8Array>, slen: number): Color<'rgb'> => {
   const v = new Float32Array(3);
   const start = ++cur;
 
@@ -35,9 +35,9 @@ export function parseHex(b: Readonly<Uint8Array>, slen: number): Color<'rgb'> {
   }
 
   return { space: 'rgb', value: v, alpha: a };
-}
+};
 
-export function parseCss(b: Readonly<Uint8Array>, slen: number, space: Space): Color<Space> {
+const parseCss = (b: Readonly<Uint8Array>, slen: number, space: Space): Color<Space> => {
   const v = new Float32Array(3);
   let alpha = 1;
 
@@ -90,32 +90,24 @@ export function parseCss(b: Readonly<Uint8Array>, slen: number, space: Space): C
 
     if (idx === 3) {
       alpha = isPct ? res * 0.01 : res;
+    } else if (space === 'rgb') {
+      v[idx] = isPct ? res * 0.01 : res * I255;
     } else if (idx === 0) {
-      if (space === 'rgb') {
-        v[0] = Number.isNaN(res) ? NaN : isPct ? res * 0.01 : res * I255;
-      } else if (space === 'hsl' || space === 'hwb') {
+      if (space === 'hsl' || space === 'hwb') {
         v[0] = res === 360 ? 360 : ((res % 360) + 360) % 360;
-      } else if (space === 'oklch' || space === 'oklab') {
-        v[0] = res * 0.01;
-      } else if (isPct) {
+      } else if (space === 'oklch' || space === 'oklab' || isPct) {
         v[0] = res * 0.01;
       } else {
         v[0] = res;
       }
     } else if (idx === 1) {
-      if (space === 'rgb') {
-        v[1] = Number.isNaN(res) ? NaN : isPct ? res * 0.01 : res * I255;
-      } else if (space === 'hsl' || space === 'hwb') {
-        v[1] = res * 0.01;
-      } else if (space === 'oklab' && isPct) {
+      if (space === 'hsl' || space === 'hwb' || (space === 'oklab' && isPct)) {
         v[1] = res * 0.01;
       } else {
         v[1] = res;
       }
     } else {
-      if (space === 'rgb') {
-        v[2] = Number.isNaN(res) ? NaN : isPct ? res * 0.01 : res * I255;
-      } else if (space === 'hsl' || space === 'hwb') {
+      if (space === 'hsl' || space === 'hwb') {
         v[2] = res * 0.01;
       } else if (space === 'oklch' || space === 'lch') {
         v[2] = res === 360 ? 360 : ((res % 360) + 360) % 360;
@@ -125,13 +117,14 @@ export function parseCss(b: Readonly<Uint8Array>, slen: number, space: Space): C
     }
   }
   return { space, value: v, alpha };
-}
+};
 
 export function parseColor(s: string): Color<Space> {
   const slen = s.length;
   const b = slen <= 256 ? SCRATCH : new Uint8Array(slen);
-  for (let k = 0; k < slen; k++) {
-    b[k] = s.codePointAt(k) ?? 0;
+  let k = 0;
+  for (const char of s) {
+    b[k++] = char.codePointAt(0)!;
   }
 
   cur = 0;

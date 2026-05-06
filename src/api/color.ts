@@ -11,7 +11,7 @@ const CACHE: Float32Array[] = Array.from({ length: MAX_CELLS }, (_, i) =>
   MATRIX_BUFFER.subarray(i * CHANNELS, (i + 1) * CHANNELS),
 );
 
-export const DEAD_CELL = new Float32Array(CHANNELS);
+export const DEAD_CELL: Float32Array = new Float32Array(CHANNELS);
 let HEAD: number = MAX_INDEX;
 
 export function createMatrix(): Float32Array {

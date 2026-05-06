@@ -1,5 +1,5 @@
-import type { Color, Space } from '../lib/types';
 import { createMatrix, mutateColor } from '../api/color';
+import type { Color, Space } from '../lib/types';
 
 const ensurePolar = (color: Color<Space>): void => {
   const s = color.space;
